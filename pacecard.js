@@ -127,12 +127,6 @@ class PaceCard extends HTMLElement {
           border-radius: ${border_radius};
           padding: 20px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          transition: all 0.3s ease;
-        }
-        
-        .card:hover {
-          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-          transform: translateY(-2px);
         }
         
         .title {

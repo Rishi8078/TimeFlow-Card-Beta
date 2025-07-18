@@ -1,45 +1,41 @@
-# Pace Card - Countdown Timer for Home Assistant
+# Pace Card
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A beautiful countdown timer card for Home Assistant with an animated progress circle, inspired by modern design principles.
 
-A beautiful and customizable countdown timer card for Home Assistant dashboards, designed to work seamlessly with HACS.
+![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
 
-## Features
+## ✨ Features
 
-- ✨ **Modern Design**: Clean, responsive interface with smooth animations
-- ⏰ **Flexible Display**: Show/hide days, hours, minutes, and seconds as needed
-- 🎨 **Customizable Styling**: Configure colors, font sizes, and border radius
-- 📱 **Mobile Responsive**: Optimized for all device sizes
-- ⚡ **Real-time Updates**: Live countdown with second-by-second updates
-- 🔧 **Easy Configuration**: Visual configuration editor in the UI
-- 🎯 **Target Date Support**: Set any future date and time as your target
+- 🎨 **Three Modern Card Styles**: Modern (gradient), Classic (solid), and Minimal (clean)
+- ⭕ **Animated Progress Circle**: Beautiful SVG-based circular progress indicator
+- ⏰ **Flexible Time Display**: Show/hide days, hours, minutes, seconds as needed
+- 📱 **Responsive Design**: Adapts beautifully to different screen sizes
+- 🎛️ **Customizable Colors**: Full control over text, background, and progress colors
+- 💅 **Modern UI**: Gradient backgrounds, smooth animations, and hover effects
+- 🏠 **Home Assistant Native**: Built specifically for Home Assistant dashboards
 
-## Installation
+## 🚀 Installation
 
-### HACS (Recommended)
-
-1. Open HACS in your Home Assistant instance
-2. Click on "Frontend" 
-3. Click the "+" button in the bottom right
+### Option 1: HACS (Recommended)
+1. Open HACS in Home Assistant
+2. Go to "Frontend" section
+3. Click the "+" button
 4. Search for "Pace Card"
-5. Click "Install"
-6. Restart Home Assistant
+5. Install the card
+6. Add to your Lovelace configuration
 
-### Manual Installation
+### Option 2: Manual Installation
+1. Download `pacecard.js` from the [latest release](https://github.com/Rishi8078/Pacecard/releases)
+2. Copy it to `config/www/` directory
+3. Add to your Lovelace resources:
 
-1. Download `pacecard.js` from the [latest release](https://github.com/yourusername/pacecard/releases)
-2. Copy it to `<config directory>/www/pacecard.js`
-3. Add the following to your `configuration.yaml`:
-   ```yaml
-   lovelace:
-     resources:
-       - url: /local/pacecard.js
-         type: module
-   ```
-4. Restart Home Assistant
+```yaml
+resources:
+  - url: /local/pacecard.js
+    type: module
+```
 
-## Configuration
+## 📝 Configuration
 
 ### Basic Configuration
 
@@ -49,120 +45,172 @@ title: "New Year Countdown"
 target_date: "2024-12-31T23:59:59"
 ```
 
-### Full Configuration Options
+### Full Configuration Example
 
 ```yaml
 type: custom:pace-card
-title: "Custom Countdown"
+title: "Event Countdown"
 target_date: "2024-12-31T23:59:59"
-expired_text: "Happy New Year!"
+creation_date: "2024-01-01T00:00:00"  # Optional: for progress calculation
+expired_text: "Event Started!"
+card_style: modern                     # modern, classic, or minimal
 show_days: true
-show_hours: true
+show_hours: true  
 show_minutes: true
 show_seconds: true
-font_size: "2rem"
-color: "#ffffff"
-background_color: "#1976d2"
-border_radius: "8px"
+color: "#ffffff"                       # Text color
+background_color: "#1976d2"            # Card background
+progress_color: "#4CAF50"              # Progress circle color
 ```
 
-### Configuration Options
+## ⚙️ Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `type` | string | **Required** | Must be `custom:pace-card` |
-| `title` | string | `"Countdown Timer"` | Card title |
-| `target_date` | string | **Required** | Target date in ISO format (YYYY-MM-DDTHH:mm:ss) |
-| `expired_text` | string | `"Timer Expired!"` | Text shown when countdown reaches zero |
+| `type` | string | **Required** | `custom:pace-card` |
+| `title` | string | `"Countdown Timer"` | Card title text |
+| `target_date` | string | **Required** | Target date in ISO format (`YYYY-MM-DDTHH:mm:ss`) |
+| `creation_date` | string | `null` | Start date for progress calculation (optional) |
+| `expired_text` | string | `"Timer Expired!"` | Text shown when countdown ends |
+| `card_style` | string | `"modern"` | Card style: `modern`, `classic`, or `minimal` |
 | `show_days` | boolean | `true` | Show days in countdown |
 | `show_hours` | boolean | `true` | Show hours in countdown |
 | `show_minutes` | boolean | `true` | Show minutes in countdown |
 | `show_seconds` | boolean | `true` | Show seconds in countdown |
-| `font_size` | string | `"2rem"` | Font size for countdown numbers |
-| `color` | string | `"#ffffff"` | Text color (hex, rgb, or color name) |
-| `background_color` | string | `"#1976d2"` | Background color of the card |
-| `border_radius` | string | `"8px"` | Border radius for rounded corners |
+| `color` | string | `"#ffffff"` | Text color (hex format) |
+| `background_color` | string | `"#1976d2"` | Card background color |
+| `progress_color` | string | `"#4CAF50"` | Progress circle color |
 
-## Usage Examples
+## 🎨 Card Styles
 
-### Event Countdown
+### Modern Style (Default)
+Beautiful gradient background with smooth color transitions:
 ```yaml
-type: custom:pace-card
-title: "Conference Starts In"
-target_date: "2024-06-15T09:00:00"
-background_color: "#4CAF50"
+card_style: modern
+background_color: "#1976d2"  # Creates gradient from this color
 ```
 
-### Birthday Countdown
+### Classic Style  
+Clean solid background color:
+```yaml
+card_style: classic
+background_color: "#1976d2"  # Solid color background
+```
+
+### Minimal Style
+Clean design with subtle border:
+```yaml
+card_style: minimal
+background_color: "#1976d2"  # Minimal styling with border
+```
+
+## 📱 Layout Examples
+
+### Single Unit Display
+When only one time unit is shown, the layout automatically centers:
 ```yaml
 type: custom:pace-card
-title: "Birthday Countdown"
-target_date: "2024-08-20T00:00:00"
+title: "Days Remaining"
+target_date: "2024-12-31T23:59:59"
+show_days: true
+show_hours: false
+show_minutes: false
 show_seconds: false
-background_color: "#E91E63"
-expired_text: "Happy Birthday! 🎉"
 ```
 
-### Work Timer
+### Multiple Units Display
+Shows progress circle and detailed countdown side by side:
 ```yaml
 type: custom:pace-card
-title: "Weekend Countdown"
-target_date: "2024-05-17T17:00:00"
-show_days: false
-background_color: "#FF9800"
-font_size: "1.5rem"
+title: "Complete Countdown" 
+target_date: "2024-12-31T23:59:59"
+show_days: true
+show_hours: true
+show_minutes: true
+show_seconds: true
 ```
 
-## Visual Editor
+## 🎯 Use Cases
 
-The card includes a visual configuration editor that can be accessed through the Home Assistant UI:
+- **Event Countdowns**: Weddings, birthdays, holidays
+- **Project Deadlines**: Work milestones, release dates
+- **Holiday Timers**: Christmas, New Year, vacation countdowns
+- **Personal Goals**: Fitness challenges, habit tracking
+- **Home Automation**: Maintenance reminders, scheduled events
 
-1. Add a new card to your dashboard
-2. Select "Custom: Pace Card" from the card types
-3. Use the visual editor to configure all options
-4. Preview your changes in real-time
+## 🔧 Advanced Examples
 
-## Styling
+### Wedding Countdown
+```yaml
+type: custom:pace-card
+title: "Days Until Wedding"
+target_date: "2024-06-15T14:30:00"
+creation_date: "2023-12-01T00:00:00"
+card_style: modern
+background_color: "#E91E63"
+progress_color: "#FFC107"
+color: "#ffffff"
+show_days: true
+show_hours: false
+show_minutes: false
+show_seconds: false
+```
 
-The card is designed to integrate seamlessly with Home Assistant themes. You can customize:
+### New Year Countdown
+```yaml
+type: custom:pace-card
+title: "New Year 2025"
+target_date: "2025-01-01T00:00:00"
+expired_text: "Happy New Year! 🎉"
+card_style: classic
+background_color: "#673AB7"
+progress_color: "#FFD700"
+color: "#ffffff"
+```
 
-- **Colors**: Background and text colors with full hex/rgb support
-- **Typography**: Adjustable font sizes with CSS units (rem, px, em)
-- **Layout**: Configurable border radius and responsive design
-- **Animations**: Smooth hover effects and blinking separators
+### Project Deadline
+```yaml
+type: custom:pace-card
+title: "Project Deadline"
+target_date: "2024-03-15T17:00:00"
+creation_date: "2024-01-01T09:00:00"
+expired_text: "Deadline Reached!"
+card_style: minimal
+background_color: "#FF5722"
+progress_color: "#4CAF50"
+show_seconds: false
+```
 
-## Browser Support
+## 🐛 Troubleshooting
 
-- Chrome/Chromium 60+
-- Firefox 55+
-- Safari 11+
-- Edge 79+
+### Card Not Showing
+1. Ensure the resource is properly added to Lovelace
+2. Check browser console for JavaScript errors
+3. Verify the `target_date` format is correct
+4. Clear browser cache and refresh
 
-## Contributing
+### Date Format Issues
+- Use ISO 8601 format: `YYYY-MM-DDTHH:mm:ss`
+- Example: `"2024-12-31T23:59:59"`
+- Avoid spaces or different date formats
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Custom Colors Not Working
+- Use hex format: `"#FF5733"`
+- Ensure quotes around color values
+- Check for typos in color property names
 
-## License
+## 🤝 Contributing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.
 
-## Changelog
+## 📄 License
 
-### v1.0.0
-- Initial release
-- Basic countdown functionality
-- Visual configuration editor
-- Responsive design
-- HACS integration
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## Support
+## ⭐ Support
 
-If you find this card useful, please consider:
-- ⭐ Starring this repository
-- 🐛 Reporting issues
-- 💡 Suggesting new features
-- 📖 Contributing to the documentation
+If you find this card useful, please consider giving it a star on GitHub!
 
 ---
 
-Made with ❤️ for the Home Assistant community
+**Made with ❤️ for the Home Assistant community**

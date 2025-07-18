@@ -15,7 +15,13 @@ class ProgressCircle extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
-      this[name.replace('-', '')] = name === 'progress' ? Number(newValue) : newValue;
+      if (name === 'stroke-width') {
+        this.strokeWidth = Number(newValue);
+      } else if (name === 'progress') {
+        this.progress = Number(newValue);
+      } else {
+        this[name] = newValue;
+      }
       this.render();
     }
   }

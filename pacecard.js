@@ -280,6 +280,7 @@ class PaceCardEditor extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._config = {};
     this._hass = null;
+    this._initialized = false;
   }
 
   set hass(hass) {
@@ -288,7 +289,12 @@ class PaceCardEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = { ...config };
-    this.render();
+    if (!this._initialized) {
+      this.render();
+      this._initialized = true;
+    } else {
+      this.updateValues();
+    }
   }
 
   render() {
@@ -481,6 +487,22 @@ class PaceCardEditor extends HTMLElement {
     });
   }
 
+  updateValues() {
+    // Update input values without re-rendering the entire DOM
+    this.shadowRoot.querySelectorAll('input[data-config-key]').forEach(input => {
+      const configKey = input.dataset.configKey;
+      const configValue = this._config[configKey];
+      
+      if (input.type === 'checkbox') {
+        input.checked = configValue !== false;
+      } else if (configKey === 'target_date' && configValue) {
+        input.value = configValue.slice(0, 16);
+      } else if (configValue !== undefined) {
+        input.value = configValue;
+      }
+    });
+  }
+
   _valueChanged(ev) {
     const target = ev.target;
     const configKey = target.dataset.configKey;
@@ -499,24 +521,34 @@ class PaceCardEditor extends HTMLElement {
       value = target.value;
     }
 
-    // Update config
-    const newConfig = {
-      ...this._config,
-      [configKey]: value
-    };
+    // Only update if value actually changed
+    if (this._config[configKey] !== value) {
+      // Update config
+      const newConfig = {
+        ...this._config,
+        [configKey]: value
+      };
 
-    this._config = newConfig;
-    this._fireConfigChanged();
+      this._config = newConfig;
+      this._fireConfigChanged();
+    }
   }
 
   _fireConfigChanged() {
-    // Create and dispatch the config-changed event
-    const event = new CustomEvent('config-changed', {
-      detail: { config: this._config },
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(event);
+    // Debounce the config change events to prevent rapid firing
+    if (this._configChangeTimeout) {
+      clearTimeout(this._configChangeTimeout);
+    }
+    
+    this._configChangeTimeout = setTimeout(() => {
+      // Create and dispatch the config-changed event
+      const event = new CustomEvent('config-changed', {
+        detail: { config: this._config },
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
+    }, 100); // 100ms debounce
   }
 
   static get version() {

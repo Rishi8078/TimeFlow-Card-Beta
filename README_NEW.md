@@ -45,24 +45,6 @@ title: "New Year Countdown"
 target_date: "2024-12-31T23:59:59"
 ```
 
-### Using Entities (Dynamic Values)
-
-```yaml
-type: custom:pace-card
-title: "Laundry Timer"
-target_date: sensor.washing_machine_end_time    # Entity with datetime value
-creation_date: input_datetime.last_wash_cycle   # Entity with datetime value
-background_color: "#1a1a1a"
-color: "#f3ecec"
-show_seconds: false
-show_minutes: false
-show_hours: false
-show_days: true
-progress_color: "#62ea64"
-card_style: classic
-expired_text: "Laundry Done!"
-```
-
 ### Full Configuration Example
 
 ```yaml
@@ -87,8 +69,8 @@ progress_color: "#4CAF50"              # Progress circle color
 |--------|------|---------|-------------|
 | `type` | string | **Required** | `custom:pace-card` |
 | `title` | string | `"Countdown Timer"` | Card title text |
-| `target_date` | string | **Required** | Target date in ISO format (`YYYY-MM-DDTHH:mm:ss`) or entity ID (e.g., `sensor.target_date`) |
-| `creation_date` | string | `null` | Start date for progress calculation (optional) - can be date string or entity ID |
+| `target_date` | string | **Required** | Target date in ISO format (`YYYY-MM-DDTHH:mm:ss`) |
+| `creation_date` | string | `null` | Start date for progress calculation (optional) |
 | `expired_text` | string | `"Timer Expired!"` | Text shown when countdown ends |
 | `card_style` | string | `"modern"` | Card style: `modern`, `classic`, or `minimal` |
 | `show_days` | boolean | `true` | Show days in countdown |
@@ -98,35 +80,6 @@ progress_color: "#4CAF50"              # Progress circle color
 | `color` | string | `"#ffffff"` | Text color (hex format) |
 | `background_color` | string | `"#1976d2"` | Card background color |
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
-
-## 🔗 Using Home Assistant Entities
-
-The card supports reading values from Home Assistant entities for dynamic countdowns:
-
-### Supported Entity Types
-- **Date/Time Sensors**: `sensor.target_date`, `sensor.end_time`
-- **Input DateTime**: `input_datetime.event_date`, `input_datetime.start_time`
-- **Any entity with datetime state**: Must be in ISO format or parseable date
-
-### Example with Entities
-```yaml
-type: custom:pace-card
-title: "Washing Machine"
-target_date: sensor.washing_machine_end_time
-creation_date: input_datetime.wash_start
-show_hours: true
-show_minutes: true
-show_seconds: false
-show_days: false
-background_color: "#2196F3"
-progress_color: "#4CAF50"
-expired_text: "Wash Complete!"
-```
-
-### Entity Requirements
-- Entity state must contain a valid datetime string
-- Supported formats: ISO 8601 (`2024-12-31T23:59:59`), most standard date formats
-- If entity is unavailable, card will show an error state
 
 ## 🎨 Card Styles
 
@@ -201,38 +154,6 @@ show_days: true
 show_hours: false
 show_minutes: false
 show_seconds: false
-```
-
-### Dynamic Laundry Timer (Using Entities)
-```yaml
-type: custom:pace-card
-title: "Laundry Timer"
-target_date: sensor.washing_machine_end_time
-creation_date: input_datetime.wash_start
-background_color: "#1a1a1a"
-color: "#f3ecec"
-show_seconds: false
-show_minutes: false
-show_hours: false
-show_days: true
-progress_color: "#62ea64"
-card_style: classic
-expired_text: "Laundry Done!"
-```
-
-### Automation-Triggered Timer
-```yaml
-type: custom:pace-card
-title: "Backup Complete In"
-target_date: sensor.next_backup_time
-creation_date: sensor.last_backup_time
-show_days: false
-show_hours: true
-show_minutes: true
-show_seconds: true
-background_color: "#37474F"
-progress_color: "#00BCD4"
-expired_text: "Backup Running..."
 ```
 
 ### New Year Countdown

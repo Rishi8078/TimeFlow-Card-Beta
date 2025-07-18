@@ -95,7 +95,8 @@ class PaceCard extends HTMLElement {
     return {
       type: 'custom:pace-card',
       title: 'Countdown Timer',
-      target_date: '2024-12-31T23:59:59',
+      target_date: '2024-12-31T23:59:59', // Can also be an entity like 'sensor.target_date'
+      creation_date: null, // Optional: can be a date string or entity like 'input_datetime.start_date'
       show_days: true,
       show_hours: true,
       show_minutes: true,
@@ -109,7 +110,7 @@ class PaceCard extends HTMLElement {
 
   setConfig(config) {
     if (!config.target_date) {
-      throw new Error('You need to define a target_date');
+      throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
     this._config = { ...config };
     this.render();
@@ -147,7 +148,10 @@ class PaceCard extends HTMLElement {
     if (!this._config.target_date) return;
     
     const now = new Date().getTime();
-    const targetDate = new Date(this._config.target_date).getTime();
+    const targetDateValue = this._getEntityValueOrString(this._config.target_date);
+    if (!targetDateValue) return;
+    
+    const targetDate = new Date(targetDateValue).getTime();
     const difference = targetDate - now;
 
     if (difference > 0) {
@@ -220,16 +224,37 @@ class PaceCard extends HTMLElement {
   }
 
   _getProgress() {
-    const targetDate = new Date(this._config.target_date).getTime();
-    const creationDate = this._config.creation_date ? 
-      new Date(this._config.creation_date).getTime() : 
-      targetDate - (365 * 24 * 60 * 60 * 1000);
+    const targetDateValue = this._getEntityValueOrString(this._config.target_date);
+    if (!targetDateValue) return 0;
+    
+    const targetDate = new Date(targetDateValue).getTime();
+    
+    let creationDate;
+    if (this._config.creation_date) {
+      const creationDateValue = this._getEntityValueOrString(this._config.creation_date);
+      creationDate = creationDateValue ? new Date(creationDateValue).getTime() : targetDate - (365 * 24 * 60 * 60 * 1000);
+    } else {
+      creationDate = targetDate - (365 * 24 * 60 * 60 * 1000);
+    }
     
     const totalDuration = targetDate - creationDate;
     const elapsed = Date.now() - creationDate;
     const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     
     return this._expired ? 100 : progress;
+  }
+
+  _getEntityValueOrString(value) {
+    if (!value) return null;
+    
+    // If it starts with an entity domain (has a dot), treat as entity
+    if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
+      const entity = this._hass.states[value];
+      return entity.state;
+    }
+    
+    // Otherwise, treat as a direct value
+    return value;
   }
 
   _getMainDisplay() {

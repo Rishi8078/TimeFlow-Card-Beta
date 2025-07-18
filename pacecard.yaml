@@ -1,0 +1,6 @@
+name: "Pacecard"
+description: "A beautiful circular progress card for Home Assistant"
+version: "1.0.0"
+resources:
+  - url: /local/community/pacecard/pacecard.js
+    type: module 

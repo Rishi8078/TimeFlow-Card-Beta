@@ -339,11 +339,11 @@ class PaceCard extends HTMLElement {
         }
         
         .title {
-          font-size: 0.9rem;
-          font-weight: 500;
+          font-size: 2.2rem;
+          font-weight: bold;
           margin-bottom: 8px;
           opacity: 0.9;
-          text-align: center;
+          text-align: left;
         }
         
         .content {
@@ -365,7 +365,7 @@ class PaceCard extends HTMLElement {
         .main-display {
           display: flex;
           flex-direction: column;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
           flex: 1;
         }
@@ -460,11 +460,11 @@ class PaceCard extends HTMLElement {
           }
           
           .main-display {
-            align-items: center;
+            align-items: flex-start;
           }
           
           .time-display {
-            align-items: center;
+            align-items: flex-start;
           }
           
           .progress-section {

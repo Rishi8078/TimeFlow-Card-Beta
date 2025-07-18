@@ -289,51 +289,6 @@ class PaceCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = { ...config };
     this.render();
-    this.attachEventListeners();
-  }
-
-  get _title() {
-    return this._config.title || 'Countdown Timer';
-  }
-
-  get _target_date() {
-    return this._config.target_date || '';
-  }
-
-  get _show_days() {
-    return this._config.show_days !== false;
-  }
-
-  get _show_hours() {
-    return this._config.show_hours !== false;
-  }
-
-  get _show_minutes() {
-    return this._config.show_minutes !== false;
-  }
-
-  get _show_seconds() {
-    return this._config.show_seconds !== false;
-  }
-
-  get _font_size() {
-    return this._config.font_size || '2rem';
-  }
-
-  get _color() {
-    return this._config.color || '#ffffff';
-  }
-
-  get _background_color() {
-    return this._config.background_color || '#1976d2';
-  }
-
-  get _border_radius() {
-    return this._config.border_radius || '8px';
-  }
-
-  get _expired_text() {
-    return this._config.expired_text || 'Timer Expired!';
   }
 
   render() {
@@ -407,9 +362,8 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-input">
             <input 
               type="text"
-              .value="${this._title}"
-              .configValue="${'title'}"
-              @input="${this._valueChanged}"
+              value="${this._config.title || 'Countdown Timer'}"
+              data-config-key="title"
               placeholder="Countdown Timer">
           </div>
         </div>
@@ -419,9 +373,8 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-input">
             <input 
               type="datetime-local"
-              .value="${this._target_date ? this._target_date.slice(0, 16) : ''}"
-              .configValue="${'target_date'}"
-              @input="${this._dateTimeChanged}">
+              value="${this._config.target_date ? this._config.target_date.slice(0, 16) : ''}"
+              data-config-key="target_date">
           </div>
         </div>
         
@@ -430,9 +383,8 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-input">
             <input 
               type="text"
-              .value="${this._expired_text}"
-              .configValue="${'expired_text'}"
-              @input="${this._valueChanged}"
+              value="${this._config.expired_text || 'Timer Expired!'}"
+              data-config-key="expired_text"
               placeholder="Timer Expired!">
           </div>
         </div>
@@ -443,36 +395,32 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-label">Show Days</div>
           <input 
             type="checkbox"
-            ?checked="${this._show_days}"
-            .configValue="${'show_days'}"
-            @change="${this._valueChanged}">
+            ${this._config.show_days !== false ? 'checked' : ''}
+            data-config-key="show_days">
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Hours</div>
           <input 
             type="checkbox"
-            ?checked="${this._show_hours}"
-            .configValue="${'show_hours'}"
-            @change="${this._valueChanged}">
+            ${this._config.show_hours !== false ? 'checked' : ''}
+            data-config-key="show_hours">
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Minutes</div>
           <input 
             type="checkbox"
-            ?checked="${this._show_minutes}"
-            .configValue="${'show_minutes'}"
-            @change="${this._valueChanged}">
+            ${this._config.show_minutes !== false ? 'checked' : ''}
+            data-config-key="show_minutes">
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Seconds</div>
           <input 
             type="checkbox"
-            ?checked="${this._show_seconds}"
-            .configValue="${'show_seconds'}"
-            @change="${this._valueChanged}">
+            ${this._config.show_seconds !== false ? 'checked' : ''}
+            data-config-key="show_seconds">
         </div>
         
         <div class="section-header">Styling</div>
@@ -482,9 +430,8 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-input">
             <input 
               type="text"
-              .value="${this._font_size}"
-              .configValue="${'font_size'}"
-              @input="${this._valueChanged}"
+              value="${this._config.font_size || '2rem'}"
+              data-config-key="font_size"
               placeholder="2rem">
           </div>
         </div>
@@ -495,9 +442,8 @@ class PaceCardEditor extends HTMLElement {
             <input 
               type="color" 
               class="color-input"
-              .value="${this._color}"
-              @change="${this._colorChanged}"
-              data-config-value="color">
+              value="${this._config.color || '#ffffff'}"
+              data-config-key="color">
           </div>
         </div>
         
@@ -507,9 +453,8 @@ class PaceCardEditor extends HTMLElement {
             <input 
               type="color" 
               class="color-input"
-              .value="${this._background_color}"
-              @change="${this._colorChanged}"
-              data-config-value="background_color">
+              value="${this._config.background_color || '#1976d2'}"
+              data-config-key="background_color">
           </div>
         </div>
         
@@ -518,100 +463,54 @@ class PaceCardEditor extends HTMLElement {
           <div class="config-input">
             <input 
               type="text"
-              .value="${this._border_radius}"
-              .configValue="${'border_radius'}"
-              @input="${this._valueChanged}"
+              value="${this._config.border_radius || '8px'}"
+              data-config-key="border_radius"
               placeholder="8px">
           </div>
         </div>
       </div>
     `;
-  }
 
-  attachEventListeners() {
-    // Event listeners are attached through the template
+    // Add event listeners after rendering
+    this.shadowRoot.querySelectorAll('input').forEach(input => {
+      const configKey = input.dataset.configKey;
+      if (configKey) {
+        input.addEventListener('input', this._valueChanged.bind(this));
+        input.addEventListener('change', this._valueChanged.bind(this));
+      }
+    });
   }
 
   _valueChanged(ev) {
-    if (!this._config) {
-      return;
-    }
-
     const target = ev.target;
-    const configValue = target.dataset.configValue;
+    const configKey = target.dataset.configKey;
     
-    if (!configValue) {
+    if (!configKey) {
       return;
     }
 
     let value;
     if (target.type === 'checkbox') {
       value = target.checked;
+    } else if (configKey === 'target_date' && target.value) {
+      // Convert datetime-local format to ISO string
+      value = target.value + ':00';
     } else {
       value = target.value;
     }
 
-    if (this._config[configValue] === value) {
-      return;
-    }
-
+    // Update config
     const newConfig = {
       ...this._config,
-      [configValue]: value
+      [configKey]: value
     };
 
     this._config = newConfig;
-    this._configChanged();
+    this._fireConfigChanged();
   }
 
-  _dateTimeChanged(ev) {
-    if (!this._config) {
-      return;
-    }
-
-    const target = ev.target;
-    const configValue = target.dataset.configValue;
-    
-    if (!configValue) {
-      return;
-    }
-
-    // Convert datetime-local format to ISO string
-    const value = target.value ? target.value + ':00' : '';
-
-    if (this._config[configValue] === value) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      [configValue]: value
-    };
-
-    this._config = newConfig;
-    this._configChanged();
-  }
-
-  _colorChanged(ev) {
-    const target = ev.target;
-    const configValue = target.dataset.configValue;
-    const value = target.value;
-
-    if (!configValue || this._config[configValue] === value) {
-      return;
-    }
-
-    const newConfig = {
-      ...this._config,
-      [configValue]: value
-    };
-
-    this._config = newConfig;
-    this._configChanged();
-  }
-
-  _configChanged() {
-    // Fire the config changed event
+  _fireConfigChanged() {
+    // Create and dispatch the config-changed event
     const event = new CustomEvent('config-changed', {
       detail: { config: this._config },
       bubbles: true,

@@ -1,49 +1,56 @@
-import { LitElement, html, css } from 'lit';
-
 // Progress Circle Component
-class ProgressCircle extends LitElement {
-  static properties = {
-    progress: { type: Number },
-    color: { type: String },
-    size: { type: Number },
-    strokeWidth: { type: Number }
-  };
-
+class ProgressCircle extends HTMLElement {
   constructor() {
     super();
+    this.attachShadow({ mode: 'open' });
     this.progress = 0;
     this.color = '#4CAF50';
-    this.size = 80;
+    this.size = 90;
     this.strokeWidth = 6;
   }
 
-  static styles = css`
-    :host {
-      display: inline-block;
+  static get observedAttributes() {
+    return ['progress', 'color', 'size', 'stroke-width'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue !== newValue) {
+      this[name.replace('-', '')] = name === 'progress' ? Number(newValue) : newValue;
+      this.render();
     }
-    
-    .progress-circle {
-      transform: rotate(-90deg);
-    }
-    
-    .progress-track {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.2);
-    }
-    
-    .progress-bar {
-      fill: none;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.5s ease;
-    }
-  `;
+  }
+
+  connectedCallback() {
+    this.render();
+  }
 
   render() {
     const radius = (this.size - this.strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (this.progress / 100) * circumference;
     
-    return html`
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: inline-block;
+        }
+        
+        .progress-circle {
+          transform: rotate(-90deg);
+        }
+        
+        .progress-track {
+          fill: none;
+          stroke: rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-bar {
+          fill: none;
+          stroke-linecap: round;
+          transition: stroke-dashoffset 0.5s ease;
+        }
+      </style>
+      
       <svg
         class="progress-circle"
         width="${this.size}"
@@ -73,18 +80,12 @@ class ProgressCircle extends LitElement {
 }
 
 // Main Pace Card Component
-class PaceCard extends LitElement {
-  static properties = {
-    _config: { type: Object, state: true },
-    hass: { type: Object },
-    _timeRemaining: { type: Object, state: true },
-    _expired: { type: Boolean, state: true }
-  };
-
+class PaceCard extends HTMLElement {
   constructor() {
     super();
+    this.attachShadow({ mode: 'open' });
     this._config = {};
-    this.hass = null;
+    this._hass = null;
     this._timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
     this._expired = false;
     this._interval = null;
@@ -103,179 +104,31 @@ class PaceCard extends LitElement {
       show_hours: true,
       show_minutes: true,
       show_seconds: true,
-      font_size: '2rem',
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
-      card_style: 'modern' // modern, classic, minimal
+      card_style: 'modern'
     };
   }
-
-  static styles = css`
-    :host {
-      display: block;
-      font-family: var(--paper-font-body1_-_font-family, 'Roboto', sans-serif);
-    }
-    
-    .card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      border-radius: 16px;
-      position: relative;
-      overflow: hidden;
-      min-height: 120px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .card.modern {
-      background: linear-gradient(135deg, var(--background-color, #1976d2), var(--background-color-secondary, #1565c0));
-    }
-    
-    .card.classic {
-      background: var(--background-color, #1976d2);
-    }
-    
-    .card.minimal {
-      background: var(--background-color, #f5f5f5);
-      border: 1px solid var(--divider-color, #e0e0e0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .title {
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 8px;
-      opacity: 0.9;
-      text-align: center;
-      color: var(--text-color, #ffffff);
-    }
-    
-    .content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      width: 100%;
-    }
-    
-    .progress-section {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    
-    .progress-content {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-color, #ffffff);
-    }
-    
-    .main-value {
-      font-size: 1.8rem;
-      font-weight: bold;
-      line-height: 1;
-    }
-    
-    .main-label {
-      font-size: 0.7rem;
-      opacity: 0.8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 2px;
-    }
-    
-    .time-display {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-    }
-    
-    .time-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--text-color, #ffffff);
-      opacity: 0.9;
-    }
-    
-    .time-value {
-      font-weight: 600;
-      min-width: 20px;
-    }
-    
-    .time-label {
-      font-size: 0.75rem;
-      opacity: 0.7;
-      text-transform: lowercase;
-    }
-    
-    .expired {
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-    
-    .single-layout {
-      flex-direction: column;
-      gap: 12px;
-    }
-    
-    .single-layout .time-display {
-      align-items: center;
-    }
-    
-    .single-layout .time-row {
-      justify-content: center;
-    }
-    
-    @media (max-width: 480px) {
-      .card {
-        padding: 16px;
-      }
-      
-      .content {
-        flex-direction: column;
-        gap: 12px;
-      }
-      
-      .main-value {
-        font-size: 1.4rem;
-      }
-      
-      .time-display {
-        align-items: center;
-      }
-    }
-  `;
 
   setConfig(config) {
     if (!config.target_date) {
       throw new Error('You need to define a target_date');
     }
     this._config = { ...config };
-    this.requestUpdate();
+    this.render();
     this._startTimer();
   }
 
+  set hass(hass) {
+    this._hass = hass;
+  }
+
   connectedCallback() {
-    super.connectedCallback();
     this._startTimer();
   }
 
   disconnectedCallback() {
-    super.disconnectedCallback();
     this._stopTimer();
   }
 
@@ -313,14 +166,68 @@ class PaceCard extends LitElement {
       this._timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
       this._expired = true;
     }
+    
+    this._updateDisplay();
+  }
+
+  _updateDisplay() {
+    const progressCircle = this.shadowRoot.querySelector('progress-circle');
+    const mainValue = this.shadowRoot.querySelector('.main-value');
+    const mainLabel = this.shadowRoot.querySelector('.main-label');
+    const timeDisplay = this.shadowRoot.querySelector('.time-display');
+    const card = this.shadowRoot.querySelector('.card');
+    
+    if (progressCircle) {
+      progressCircle.setAttribute('progress', this._getProgress());
+    }
+    
+    const mainDisplay = this._getMainDisplay();
+    if (mainValue) mainValue.textContent = mainDisplay.value;
+    if (mainLabel) mainLabel.textContent = mainDisplay.label;
+    
+    if (timeDisplay) {
+      this._updateTimeDisplay(timeDisplay);
+    }
+    
+    if (card) {
+      card.classList.toggle('expired', this._expired);
+    }
+  }
+
+  _updateTimeDisplay(timeDisplay) {
+    const { show_days, show_hours, show_minutes, show_seconds } = this._config;
+    const activeTimeUnits = [show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
+    const isSingleUnit = activeTimeUnits <= 1;
+    
+    if (isSingleUnit || this._expired) {
+      timeDisplay.style.display = 'none';
+      return;
+    }
+    
+    timeDisplay.style.display = 'flex';
+    
+    const timeRows = [];
+    if (show_days) {
+      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.days}</span><span class="time-label">days</span></div>`);
+    }
+    if (show_hours) {
+      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.hours}</span><span class="time-label">hours</span></div>`);
+    }
+    if (show_minutes) {
+      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.minutes}</span><span class="time-label">min</span></div>`);
+    }
+    if (show_seconds) {
+      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.seconds}</span><span class="time-label">sec</span></div>`);
+    }
+    
+    timeDisplay.innerHTML = timeRows.join('');
   }
 
   _getProgress() {
-    // Calculate progress based on the total time from creation to target
     const targetDate = new Date(this._config.target_date).getTime();
     const creationDate = this._config.creation_date ? 
       new Date(this._config.creation_date).getTime() : 
-      targetDate - (365 * 24 * 60 * 60 * 1000); // Default to 1 year ago
+      targetDate - (365 * 24 * 60 * 60 * 1000);
     
     const totalDuration = targetDate - creationDate;
     const elapsed = Date.now() - creationDate;
@@ -349,6 +256,15 @@ class PaceCard extends LitElement {
     return { value: '00', label: 'expired' };
   }
 
+  _adjustColor(color, amount) {
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+
   render() {
     const {
       title = 'Countdown Timer',
@@ -363,74 +279,186 @@ class PaceCard extends LitElement {
       expired_text = 'Timer Expired!'
     } = this._config;
 
-    const mainDisplay = this._getMainDisplay();
-    const progress = this._getProgress();
     const activeTimeUnits = [show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
     const isSingleUnit = activeTimeUnits <= 1;
 
-    this.style.setProperty('--text-color', color);
-    this.style.setProperty('--background-color', background_color);
-    this.style.setProperty('--background-color-secondary', this._adjustColor(background_color, -20));
-
-    return html`
-      <div class="card ${card_style} ${this._expired ? 'expired' : ''} ${isSingleUnit ? 'single-layout' : ''}">
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          font-family: var(--paper-font-body1_-_font-family, 'Roboto', sans-serif);
+        }
+        
+        .card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          border-radius: 16px;
+          position: relative;
+          overflow: hidden;
+          min-height: 120px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          color: ${color};
+        }
+        
+        .card.modern {
+          background: linear-gradient(135deg, ${background_color}, ${this._adjustColor(background_color, -20)});
+        }
+        
+        .card.classic {
+          background: ${background_color};
+        }
+        
+        .card.minimal {
+          background: ${background_color};
+          border: 1px solid var(--divider-color, #e0e0e0);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .title {
+          font-size: 0.9rem;
+          font-weight: 500;
+          margin-bottom: 8px;
+          opacity: 0.9;
+          text-align: center;
+        }
+        
+        .content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 20px;
+          width: 100%;
+        }
+        
+        .progress-section {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+        
+        .progress-content {
+          position: absolute;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: ${color};
+        }
+        
+        .main-value {
+          font-size: 1.8rem;
+          font-weight: bold;
+          line-height: 1;
+        }
+        
+        .main-label {
+          font-size: 0.7rem;
+          opacity: 0.8;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-top: 2px;
+        }
+        
+        .time-display {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+        
+        .time-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.85rem;
+          opacity: 0.9;
+        }
+        
+        .time-value {
+          font-weight: 600;
+          min-width: 20px;
+        }
+        
+        .time-label {
+          font-size: 0.75rem;
+          opacity: 0.7;
+          text-transform: lowercase;
+        }
+        
+        .expired {
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        
+        ${isSingleUnit ? `
+          .content {
+            flex-direction: column;
+            gap: 12px;
+          }
+          
+          .time-display {
+            align-items: center;
+          }
+          
+          .time-row {
+            justify-content: center;
+          }
+        ` : ''}
+        
+        @media (max-width: 480px) {
+          .card {
+            padding: 16px;
+          }
+          
+          .content {
+            flex-direction: column;
+            gap: 12px;
+          }
+          
+          .main-value {
+            font-size: 1.4rem;
+          }
+          
+          .time-display {
+            align-items: center;
+          }
+        }
+      </style>
+      
+      <div class="card ${card_style} ${this._expired ? 'expired' : ''}">
         <div class="title">${this._expired ? expired_text : title}</div>
         
         <div class="content">
           <div class="progress-section">
             <progress-circle
-              .progress=${progress}
-              .color=${progress_color}
-              .size=${90}
-              .strokeWidth=${6}
+              progress="${this._getProgress()}"
+              color="${progress_color}"
+              size="90"
+              stroke-width="6"
             ></progress-circle>
             <div class="progress-content">
-              <div class="main-value">${mainDisplay.value}</div>
-              <div class="main-label">${mainDisplay.label}</div>
+              <div class="main-value">${this._getMainDisplay().value}</div>
+              <div class="main-label">${this._getMainDisplay().label}</div>
             </div>
           </div>
           
-          ${!isSingleUnit && !this._expired ? html`
-            <div class="time-display">
-              ${show_days ? html`
-                <div class="time-row">
-                  <span class="time-value">${this._timeRemaining.days}</span>
-                  <span class="time-label">days</span>
-                </div>
-              ` : ''}
-              ${show_hours ? html`
-                <div class="time-row">
-                  <span class="time-value">${this._timeRemaining.hours}</span>
-                  <span class="time-label">hours</span>
-                </div>
-              ` : ''}
-              ${show_minutes ? html`
-                <div class="time-row">
-                  <span class="time-value">${this._timeRemaining.minutes}</span>
-                  <span class="time-label">min</span>
-                </div>
-              ` : ''}
-              ${show_seconds ? html`
-                <div class="time-row">
-                  <span class="time-value">${this._timeRemaining.seconds}</span>
-                  <span class="time-label">sec</span>
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
+          <div class="time-display" style="display: ${!isSingleUnit && !this._expired ? 'flex' : 'none'}">
+            <!-- Time rows will be populated by _updateTimeDisplay -->
+          </div>
         </div>
       </div>
     `;
-  }
-
-  _adjustColor(color, amount) {
-    // Simple color adjustment for gradient effect
-    const hex = color.replace('#', '');
-    const num = parseInt(hex, 16);
-    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
-    const g = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amount));
-    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    
+    // Initial display update
+    setTimeout(() => this._updateDisplay(), 0);
   }
 
   getCardSize() {
@@ -443,86 +471,82 @@ class PaceCard extends LitElement {
 }
 
 // Configuration Editor
-class PaceCardEditor extends LitElement {
-  static properties = {
-    _config: { type: Object, state: true },
-    hass: { type: Object }
-  };
-
+class PaceCardEditor extends HTMLElement {
   constructor() {
     super();
     this._config = {};
     this.hass = null;
+    this.attachShadow({ mode: 'open' });
   }
-
-  static styles = css`
-    .card-config {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 16px;
-      background: var(--primary-background-color);
-      border-radius: 8px;
-    }
-    
-    .config-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    
-    .config-label {
-      min-width: 120px;
-      font-weight: 500;
-      color: var(--primary-text-color);
-    }
-    
-    .config-input {
-      flex: 1;
-      min-width: 200px;
-    }
-    
-    input[type="text"], input[type="datetime-local"], select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid var(--divider-color);
-      border-radius: 4px;
-      background: var(--card-background-color);
-      color: var(--primary-text-color);
-      font-family: inherit;
-    }
-    
-    input[type="checkbox"] {
-      margin-left: auto;
-      transform: scale(1.2);
-    }
-    
-    .section-header {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: var(--primary-text-color);
-      margin: 16px 0 8px 0;
-      border-bottom: 1px solid var(--divider-color);
-      padding-bottom: 4px;
-    }
-    
-    .color-input {
-      width: 60px;
-      height: 40px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  `;
 
   setConfig(config) {
     this._config = { ...config };
-    this.requestUpdate();
+    this.render();
   }
 
   render() {
-    return html`
+    this.shadowRoot.innerHTML = `
+      <style>
+        .card-config {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding: 16px;
+          background: var(--primary-background-color);
+          border-radius: 8px;
+        }
+        
+        .config-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        
+        .config-label {
+          min-width: 120px;
+          font-weight: 500;
+          color: var(--primary-text-color);
+        }
+        
+        .config-input {
+          flex: 1;
+          min-width: 200px;
+        }
+        
+        input[type="text"], input[type="datetime-local"], select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid var(--divider-color);
+          border-radius: 4px;
+          background: var(--card-background-color);
+          color: var(--primary-text-color);
+          font-family: inherit;
+        }
+        
+        input[type="checkbox"] {
+          margin-left: auto;
+          transform: scale(1.2);
+        }
+        
+        .section-header {
+          font-size: 1.1rem;
+          font-weight: bold;
+          color: var(--primary-text-color);
+          margin: 16px 0 8px 0;
+          border-bottom: 1px solid var(--divider-color);
+          padding-bottom: 4px;
+        }
+        
+        .color-input {
+          width: 60px;
+          height: 40px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+      </style>
+      
       <div class="card-config">
         <div class="section-header">Basic Settings</div>
         
@@ -531,8 +555,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-input">
             <input 
               type="text"
-              .value=${this._config.title || 'Countdown Timer'}
-              @input=${this._valueChanged}
+              value="${this._config.title || 'Countdown Timer'}"
               data-config-key="title"
               placeholder="Countdown Timer">
           </div>
@@ -543,8 +566,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-input">
             <input 
               type="datetime-local"
-              .value=${this._config.target_date ? this._config.target_date.slice(0, 16) : ''}
-              @input=${this._valueChanged}
+              value="${this._config.target_date ? this._config.target_date.slice(0, 16) : ''}"
               data-config-key="target_date">
           </div>
         </div>
@@ -554,8 +576,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-input">
             <input 
               type="datetime-local"
-              .value=${this._config.creation_date ? this._config.creation_date.slice(0, 16) : ''}
-              @input=${this._valueChanged}
+              value="${this._config.creation_date ? this._config.creation_date.slice(0, 16) : ''}"
               data-config-key="creation_date"
               placeholder="Optional: for progress calculation">
           </div>
@@ -566,8 +587,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-input">
             <input 
               type="text"
-              .value=${this._config.expired_text || 'Timer Expired!'}
-              @input=${this._valueChanged}
+              value="${this._config.expired_text || 'Timer Expired!'}"
               data-config-key="expired_text"
               placeholder="Timer Expired!">
           </div>
@@ -578,13 +598,10 @@ class PaceCardEditor extends LitElement {
         <div class="config-row">
           <div class="config-label">Card Style</div>
           <div class="config-input">
-            <select 
-              .value=${this._config.card_style || 'modern'}
-              @change=${this._valueChanged}
-              data-config-key="card_style">
-              <option value="modern">Modern</option>
-              <option value="classic">Classic</option>
-              <option value="minimal">Minimal</option>
+            <select data-config-key="card_style">
+              <option value="modern" ${this._config.card_style === 'modern' ? 'selected' : ''}>Modern</option>
+              <option value="classic" ${this._config.card_style === 'classic' ? 'selected' : ''}>Classic</option>
+              <option value="minimal" ${this._config.card_style === 'minimal' ? 'selected' : ''}>Minimal</option>
             </select>
           </div>
         </div>
@@ -593,8 +610,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-label">Show Days</div>
           <input 
             type="checkbox"
-            .checked=${this._config.show_days !== false}
-            @change=${this._valueChanged}
+            ${this._config.show_days !== false ? 'checked' : ''}
             data-config-key="show_days">
         </div>
         
@@ -602,8 +618,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-label">Show Hours</div>
           <input 
             type="checkbox"
-            .checked=${this._config.show_hours !== false}
-            @change=${this._valueChanged}
+            ${this._config.show_hours !== false ? 'checked' : ''}
             data-config-key="show_hours">
         </div>
         
@@ -611,8 +626,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-label">Show Minutes</div>
           <input 
             type="checkbox"
-            .checked=${this._config.show_minutes !== false}
-            @change=${this._valueChanged}
+            ${this._config.show_minutes !== false ? 'checked' : ''}
             data-config-key="show_minutes">
         </div>
         
@@ -620,8 +634,7 @@ class PaceCardEditor extends LitElement {
           <div class="config-label">Show Seconds</div>
           <input 
             type="checkbox"
-            .checked=${this._config.show_seconds !== false}
-            @change=${this._valueChanged}
+            ${this._config.show_seconds !== false ? 'checked' : ''}
             data-config-key="show_seconds">
         </div>
         
@@ -633,8 +646,7 @@ class PaceCardEditor extends LitElement {
             <input 
               type="color" 
               class="color-input"
-              .value=${this._config.color || '#ffffff'}
-              @input=${this._valueChanged}
+              value="${this._config.color || '#ffffff'}"
               data-config-key="color">
           </div>
         </div>
@@ -645,8 +657,7 @@ class PaceCardEditor extends LitElement {
             <input 
               type="color" 
               class="color-input"
-              .value=${this._config.background_color || '#1976d2'}
-              @input=${this._valueChanged}
+              value="${this._config.background_color || '#1976d2'}"
               data-config-key="background_color">
           </div>
         </div>
@@ -657,13 +668,18 @@ class PaceCardEditor extends LitElement {
             <input 
               type="color" 
               class="color-input"
-              .value=${this._config.progress_color || '#4CAF50'}
-              @input=${this._valueChanged}
+              value="${this._config.progress_color || '#4CAF50'}"
               data-config-key="progress_color">
           </div>
         </div>
       </div>
     `;
+
+    // Add event listeners
+    this.shadowRoot.querySelectorAll('input, select').forEach(element => {
+      element.addEventListener('input', this._valueChanged.bind(this));
+      element.addEventListener('change', this._valueChanged.bind(this));
+    });
   }
 
   _valueChanged(ev) {

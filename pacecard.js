@@ -261,29 +261,6 @@ class PaceCard extends HTMLElement {
     }
   }
 
-  _getCardColors() {
-    const colors = {
-      'christmas': { bg: '#e74c3c', accent: '#c0392b', progress: '#f39c12' },
-      'retirement': { bg: '#34495e', accent: '#2c3e50', progress: '#e67e22' },
-      'anniversary': { bg: '#2980b9', accent: '#1f618d', progress: '#1abc9c' },
-      'project': { bg: '#95a5a6', accent: '#7f8c8d', progress: '#27ae60' },
-      'superbowl': { bg: '#16a085', accent: '#138d75', progress: '#f1c40f' },
-      'streak': { bg: '#3498db', accent: '#2980b9', progress: '#f39c12' },
-      'quit': { bg: '#f39c12', accent: '#e67e22', progress: '#9b59b6' },
-      'default': { bg: '#1976d2', accent: '#1565c0', progress: '#4CAF50' }
-    };
-
-    const title = this._config.title?.toLowerCase() || '';
-    
-    for (const [key, value] of Object.entries(colors)) {
-      if (title.includes(key)) {
-        return value;
-      }
-    }
-    
-    return colors.default;
-  }
-
   render() {
     const {
       title = 'Countdown Timer',
@@ -299,10 +276,8 @@ class PaceCard extends HTMLElement {
       expired_text = 'Completed! 🎉'
     } = this._config;
 
-    const cardColors = this._getCardColors();
-    const bgColor = background_color || cardColors.bg;
-    const progressColor = progress_color || cardColors.progress;
-    const accentColor = cardColors.accent;
+    const bgColor = background_color || '#1976d2';
+    const progressColor = progress_color || '#4CAF50';
 
     const sizeClasses = {
       small: 'size-small',
@@ -328,14 +303,8 @@ class PaceCard extends HTMLElement {
           background: ${bgColor};
           color: ${color};
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           border: none;
-          aspect-ratio: 1.5;
-        }
-        
-        .card:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+          aspect-ratio: 16:9;
         }
         
         .card.size-small {
@@ -469,10 +438,6 @@ class PaceCard extends HTMLElement {
         @media (prefers-color-scheme: dark) {
           .card {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-          }
-          
-          .card:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
           }
         }
       </style>

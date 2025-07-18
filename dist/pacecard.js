@@ -366,12 +366,19 @@ class PaceCardEditor extends HTMLElement {
           min-width: 200px;
         }
         
-        ha-textfield {
+        input[type="text"], input[type="datetime-local"] {
           width: 100%;
+          padding: 8px;
+          border: 1px solid var(--divider-color);
+          border-radius: 4px;
+          background: var(--card-background-color);
+          color: var(--primary-text-color);
+          font-family: inherit;
         }
         
-        ha-switch {
+        input[type="checkbox"] {
           margin-left: auto;
+          transform: scale(1.2);
         }
         
         .section-header {
@@ -398,37 +405,35 @@ class PaceCardEditor extends HTMLElement {
         <div class="config-row">
           <div class="config-label">Title</div>
           <div class="config-input">
-            <ha-textfield 
+            <input 
+              type="text"
               .value="${this._title}"
               .configValue="${'title'}"
               @input="${this._valueChanged}"
               placeholder="Countdown Timer">
-            </ha-textfield>
           </div>
         </div>
         
         <div class="config-row">
           <div class="config-label">Target Date</div>
           <div class="config-input">
-            <ha-textfield 
-              .value="${this._target_date}"
+            <input 
+              type="datetime-local"
+              .value="${this._target_date ? this._target_date.slice(0, 16) : ''}"
               .configValue="${'target_date'}"
-              @input="${this._valueChanged}"
-              placeholder="2024-12-31T23:59:59"
-              helper-text="Format: YYYY-MM-DDTHH:mm:ss">
-            </ha-textfield>
+              @input="${this._dateTimeChanged}">
           </div>
         </div>
         
         <div class="config-row">
           <div class="config-label">Expired Text</div>
           <div class="config-input">
-            <ha-textfield 
+            <input 
+              type="text"
               .value="${this._expired_text}"
               .configValue="${'expired_text'}"
               @input="${this._valueChanged}"
               placeholder="Timer Expired!">
-            </ha-textfield>
           </div>
         </div>
         
@@ -436,38 +441,38 @@ class PaceCardEditor extends HTMLElement {
         
         <div class="config-row">
           <div class="config-label">Show Days</div>
-          <ha-switch 
+          <input 
+            type="checkbox"
             ?checked="${this._show_days}"
             .configValue="${'show_days'}"
             @change="${this._valueChanged}">
-          </ha-switch>
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Hours</div>
-          <ha-switch 
+          <input 
+            type="checkbox"
             ?checked="${this._show_hours}"
             .configValue="${'show_hours'}"
             @change="${this._valueChanged}">
-          </ha-switch>
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Minutes</div>
-          <ha-switch 
+          <input 
+            type="checkbox"
             ?checked="${this._show_minutes}"
             .configValue="${'show_minutes'}"
             @change="${this._valueChanged}">
-          </ha-switch>
         </div>
         
         <div class="config-row">
           <div class="config-label">Show Seconds</div>
-          <ha-switch 
+          <input 
+            type="checkbox"
             ?checked="${this._show_seconds}"
             .configValue="${'show_seconds'}"
             @change="${this._valueChanged}">
-          </ha-switch>
         </div>
         
         <div class="section-header">Styling</div>
@@ -475,12 +480,12 @@ class PaceCardEditor extends HTMLElement {
         <div class="config-row">
           <div class="config-label">Font Size</div>
           <div class="config-input">
-            <ha-textfield 
+            <input 
+              type="text"
               .value="${this._font_size}"
               .configValue="${'font_size'}"
               @input="${this._valueChanged}"
               placeholder="2rem">
-            </ha-textfield>
           </div>
         </div>
         
@@ -511,12 +516,12 @@ class PaceCardEditor extends HTMLElement {
         <div class="config-row">
           <div class="config-label">Border Radius</div>
           <div class="config-input">
-            <ha-textfield 
+            <input 
+              type="text"
               .value="${this._border_radius}"
               .configValue="${'border_radius'}"
               @input="${this._valueChanged}"
               placeholder="8px">
-            </ha-textfield>
           </div>
         </div>
       </div>
@@ -528,23 +533,51 @@ class PaceCardEditor extends HTMLElement {
   }
 
   _valueChanged(ev) {
-    if (!this._config || !this._hass) {
+    if (!this._config) {
       return;
     }
 
     const target = ev.target;
-    const configValue = target.configValue;
+    const configValue = target.dataset.configValue;
     
     if (!configValue) {
       return;
     }
 
     let value;
-    if (target.type === 'checkbox' || target.tagName === 'HA-SWITCH') {
+    if (target.type === 'checkbox') {
       value = target.checked;
     } else {
       value = target.value;
     }
+
+    if (this._config[configValue] === value) {
+      return;
+    }
+
+    const newConfig = {
+      ...this._config,
+      [configValue]: value
+    };
+
+    this._config = newConfig;
+    this._configChanged();
+  }
+
+  _dateTimeChanged(ev) {
+    if (!this._config) {
+      return;
+    }
+
+    const target = ev.target;
+    const configValue = target.dataset.configValue;
+    
+    if (!configValue) {
+      return;
+    }
+
+    // Convert datetime-local format to ISO string
+    const value = target.value ? target.value + ':00' : '';
 
     if (this._config[configValue] === value) {
       return;

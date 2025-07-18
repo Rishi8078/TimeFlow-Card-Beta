@@ -174,6 +174,8 @@ class PaceCard extends HTMLElement {
     const progressCircle = this.shadowRoot.querySelector('progress-circle');
     const mainValue = this.shadowRoot.querySelector('.main-value');
     const mainLabel = this.shadowRoot.querySelector('.main-label');
+    const progressMainValue = this.shadowRoot.querySelector('.progress-main-value');
+    const progressMainLabel = this.shadowRoot.querySelector('.progress-main-label');
     const timeDisplay = this.shadowRoot.querySelector('.time-display');
     const card = this.shadowRoot.querySelector('.card');
     
@@ -184,6 +186,10 @@ class PaceCard extends HTMLElement {
     const mainDisplay = this._getMainDisplay();
     if (mainValue) mainValue.textContent = mainDisplay.value;
     if (mainLabel) mainLabel.textContent = mainDisplay.label;
+    
+    const progressDisplay = this._getProgressDisplay();
+    if (progressMainValue) progressMainValue.textContent = progressDisplay.value;
+    if (progressMainLabel) progressMainLabel.textContent = progressDisplay.label;
     
     if (timeDisplay) {
       this._updateTimeDisplay(timeDisplay);
@@ -277,6 +283,15 @@ class PaceCard extends HTMLElement {
     return { value: '00', label: 'expired' };
   }
 
+  _getProgressDisplay() {
+    if (this._expired) {
+      return { value: '100', label: '%' };
+    }
+    
+    const progress = Math.round(this._getProgress());
+    return { value: progress.toString(), label: '%' };
+  }
+
   _adjustColor(color, amount) {
     const hex = color.replace('#', '');
     const num = parseInt(hex, 16);
@@ -352,13 +367,14 @@ class PaceCard extends HTMLElement {
           justify-content: center;
           gap: 20px;
           width: 100%;
+          position: relative;
         }
         
         .progress-section {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
+          position: absolute;
+          bottom: 16px;
+          right: 16px;
+          z-index: 10;
         }
         
         .progress-content {
@@ -368,16 +384,41 @@ class PaceCard extends HTMLElement {
           align-items: center;
           justify-content: center;
           color: ${color};
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        
+        .main-display {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
         }
         
         .main-value {
-          font-size: 1.8rem;
+          font-size: 2.2rem;
           font-weight: bold;
           line-height: 1;
         }
         
         .main-label {
-          font-size: 0.7rem;
+          font-size: 0.9rem;
+          opacity: 0.8;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-top: 4px;
+        }
+        
+        .progress-main-value {
+          font-size: 1.2rem;
+          font-weight: bold;
+          line-height: 1;
+        }
+        
+        .progress-main-label {
+          font-size: 0.6rem;
           opacity: 0.8;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -425,12 +466,23 @@ class PaceCard extends HTMLElement {
             gap: 12px;
           }
           
+          .main-display {
+            align-items: center;
+          }
+          
           .time-display {
             align-items: center;
           }
           
           .time-row {
             justify-content: center;
+          }
+          
+          .progress-section {
+            position: relative;
+            bottom: auto;
+            right: auto;
+            margin-top: 16px;
           }
         ` : ''}
         
@@ -445,11 +497,22 @@ class PaceCard extends HTMLElement {
           }
           
           .main-value {
-            font-size: 1.4rem;
+            font-size: 1.8rem;
+          }
+          
+          .main-display {
+            align-items: center;
           }
           
           .time-display {
             align-items: center;
+          }
+          
+          .progress-section {
+            position: relative;
+            bottom: auto;
+            right: auto;
+            margin-top: 12px;
           }
         }
       </style>
@@ -458,21 +521,26 @@ class PaceCard extends HTMLElement {
         <div class="title">${this._expired ? expired_text : title}</div>
         
         <div class="content">
+          <div class="main-display">
+            <div class="main-value">${this._getMainDisplay().value}</div>
+            <div class="main-label">${this._getMainDisplay().label}</div>
+            
+            <div class="time-display" style="display: ${!isSingleUnit && !this._expired ? 'flex' : 'none'}">
+              <!-- Time rows will be populated by _updateTimeDisplay -->
+            </div>
+          </div>
+          
           <div class="progress-section">
             <progress-circle
               progress="${this._getProgress()}"
               color="${progress_color}"
-              size="90"
-              stroke-width="6"
+              size="60"
+              stroke-width="4"
             ></progress-circle>
             <div class="progress-content">
-              <div class="main-value">${this._getMainDisplay().value}</div>
-              <div class="main-label">${this._getMainDisplay().label}</div>
+              <div class="progress-main-value">${this._getProgressDisplay().value}</div>
+              <div class="progress-main-label">${this._getProgressDisplay().label}</div>
             </div>
-          </div>
-          
-          <div class="time-display" style="display: ${!isSingleUnit && !this._expired ? 'flex' : 'none'}">
-            <!-- Time rows will be populated by _updateTimeDisplay -->
           </div>
         </div>
       </div>

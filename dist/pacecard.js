@@ -357,14 +357,14 @@ class PaceCard extends HTMLElement {
         
         .progress-section {
           flex-shrink: 0;
-          margin-left: 12px;
+          margin-left: auto;
         }
         
         /* CONTENT SECTION - Like reference cards bottom area */
         .content {
           display: flex;
           align-items: flex-end;
-          justify-content: flex-start;
+          justify-content: space-between;
           margin-top: auto;
           padding-top: 12px;
         }
@@ -448,6 +448,13 @@ class PaceCard extends HTMLElement {
             <h2 class="title">${this._expired ? expired_text : title}</h2>
             <p class="subtitle">${this._getSubtitle()}</p>
           </div>
+        </div>
+        
+        <div class="content">
+          <div class="main-display">
+            <div class="main-value">${this._getMainDisplay().value}</div>
+            <div class="main-label">${this._getMainDisplay().label}</div>
+          </div>
           <div class="progress-section">
             <progress-circle
               class="progress-circle"
@@ -456,13 +463,6 @@ class PaceCard extends HTMLElement {
               size="80"
               stroke-width="10"
             ></progress-circle>
-          </div>
-        </div>
-        
-        <div class="content">
-          <div class="main-display">
-            <div class="main-value">${this._getMainDisplay().value}</div>
-            <div class="main-label">${this._getMainDisplay().label}</div>
           </div>
         </div>
       </div>

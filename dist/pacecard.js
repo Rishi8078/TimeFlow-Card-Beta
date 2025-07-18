@@ -320,96 +320,107 @@ class PaceCard extends HTMLElement {
         .card {
           display: flex;
           flex-direction: column;
+          justify-content: space-between;
           padding: 20px;
           border-radius: 16px;
           position: relative;
           overflow: hidden;
           background: ${bgColor};
           color: ${color};
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           border: none;
-          backdrop-filter: blur(10px);
-          background-image: 
-            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+          aspect-ratio: 1.5;
         }
         
         .card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
         
         .card.size-small {
-          min-height: 120px;
+          min-height: 100px;
           padding: 16px;
         }
         
         .card.size-medium {
-          min-height: 140px;
+          min-height: 120px;
           padding: 20px;
         }
         
         .card.size-large {
-          min-height: 160px;
+          min-height: 140px;
           padding: 24px;
         }
         
+        /* CLEAN HEADER SECTION - Like reference cards */
         .header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 16px;
+          margin-bottom: 0;
         }
         
         .title-section {
           flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
         }
         
+        /* IMPROVED TYPOGRAPHY - Matching reference cards */
         .title {
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin: 0 0 4px 0;
-          opacity: 0.95;
-          line-height: 1.2;
+          font-size: 1rem;
+          font-weight: 500;
+          margin: 0;
+          opacity: 0.9;
+          line-height: 1.3;
           letter-spacing: -0.01em;
         }
         
         .subtitle {
-          font-size: 0.85rem;
-          opacity: 0.7;
+          font-size: 0.8rem;
+          opacity: 0.65;
           margin: 0;
           font-weight: 400;
+          line-height: 1.2;
         }
         
         .progress-section {
           flex-shrink: 0;
+          margin-left: 12px;
         }
         
+        /* CONTENT SECTION - Like reference cards bottom area */
         .content {
           display: flex;
           align-items: flex-end;
-          justify-content: space-between;
+          justify-content: flex-start;
           margin-top: auto;
+          padding-top: 12px;
         }
         
         .main-display {
           flex: 1;
         }
         
+        /* MAIN VALUE - Large number like reference cards */
         .main-value {
-          font-size: 2.5rem;
-          font-weight: 700;
-          line-height: 1;
-          margin: 0;
+          font-size: 2.2rem;
+          font-weight: 600;
+          line-height: 0.9;
+          margin: 0 0 2px 0;
           letter-spacing: -0.02em;
         }
         
+        /* MAIN LABEL - Small text under main value */
         .main-label {
-          font-size: 0.9rem;
-          opacity: 0.8;
-          margin: 4px 0 0 0;
-          font-weight: 500;
+          font-size: 0.75rem;
+          opacity: 0.7;
+          margin: 0;
+          font-weight: 400;
+          text-transform: lowercase;
+          line-height: 1.2;
         }
         
         .size-small .main-value {

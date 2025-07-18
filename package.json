@@ -1,0 +1,33 @@
+{
+  "name": "pacecard",
+  "version": "1.0.0",
+  "description": "A beautiful countdown timer card for Home Assistant dashboards",
+  "main": "pacecard.js",
+  "scripts": {
+    "lint": "eslint *.js",
+    "build": "echo 'No build step required for this card'",
+    "release": "npm version patch && git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/pacecard.git"
+  },
+  "keywords": [
+    "home-assistant",
+    "hacs",
+    "lovelace",
+    "countdown",
+    "timer",
+    "dashboard",
+    "card"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/pacecard/issues"
+  },
+  "homepage": "https://github.com/yourusername/pacecard#readme",
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}

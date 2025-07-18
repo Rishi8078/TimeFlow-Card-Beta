@@ -41,13 +41,13 @@ class ProgressCircle extends HTMLElement {
         
         .progress-track {
           fill: none;
-          stroke: rgba(255, 255, 255, 0.2);
+          stroke: rgba(255, 255, 255, 0.15);
         }
         
         .progress-bar {
           fill: none;
           stroke-linecap: round;
-          transition: stroke-dashoffset 0.5s ease;
+          transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
       </style>
       
@@ -95,8 +95,8 @@ class PaceCard extends HTMLElement {
     return {
       type: 'custom:pace-card',
       title: 'Countdown Timer',
-      target_date: '2024-12-31T23:59:59', // Can also be an entity like 'sensor.target_date'
-      creation_date: null, // Optional: can be a date string or entity like 'input_datetime.start_date'
+      target_date: '2024-12-31T23:59:59',
+      creation_date: null,
       show_days: true,
       show_hours: true,
       show_minutes: true,
@@ -104,7 +104,8 @@ class PaceCard extends HTMLElement {
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
-      card_style: 'modern'
+      card_style: 'modern',
+      size: 'medium' // small, medium, large
     };
   }
 
@@ -174,7 +175,7 @@ class PaceCard extends HTMLElement {
     const progressCircle = this.shadowRoot.querySelector('progress-circle');
     const mainValue = this.shadowRoot.querySelector('.main-value');
     const mainLabel = this.shadowRoot.querySelector('.main-label');
-    const timeDisplay = this.shadowRoot.querySelector('.time-display');
+    const subtitle = this.shadowRoot.querySelector('.subtitle');
     const card = this.shadowRoot.querySelector('.card');
     
     if (progressCircle) {
@@ -185,42 +186,13 @@ class PaceCard extends HTMLElement {
     if (mainValue) mainValue.textContent = mainDisplay.value;
     if (mainLabel) mainLabel.textContent = mainDisplay.label;
     
-    if (timeDisplay) {
-      this._updateTimeDisplay(timeDisplay);
+    if (subtitle) {
+      subtitle.textContent = this._getSubtitle();
     }
     
     if (card) {
       card.classList.toggle('expired', this._expired);
     }
-  }
-
-  _updateTimeDisplay(timeDisplay) {
-    const { show_days, show_hours, show_minutes, show_seconds } = this._config;
-    const activeTimeUnits = [show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
-    const isSingleUnit = activeTimeUnits <= 1;
-    
-    if (isSingleUnit || this._expired) {
-      timeDisplay.style.display = 'none';
-      return;
-    }
-    
-    timeDisplay.style.display = 'flex';
-    
-    const timeRows = [];
-    if (show_days) {
-      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.days}</span><span class="time-label">days</span></div>`);
-    }
-    if (show_hours) {
-      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.hours}</span><span class="time-label">hours</span></div>`);
-    }
-    if (show_minutes) {
-      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.minutes}</span><span class="time-label">min</span></div>`);
-    }
-    if (show_seconds) {
-      timeRows.push(`<div class="time-row"><span class="time-value">${this._timeRemaining.seconds}</span><span class="time-label">sec</span></div>`);
-    }
-    
-    timeDisplay.innerHTML = timeRows.join('');
   }
 
   _getProgress() {
@@ -247,13 +219,11 @@ class PaceCard extends HTMLElement {
   _getEntityValueOrString(value) {
     if (!value) return null;
     
-    // If it starts with an entity domain (has a dot), treat as entity
     if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
       const entity = this._hass.states[value];
       return entity.state;
     }
     
-    // Otherwise, treat as a direct value
     return value;
   }
 
@@ -261,7 +231,7 @@ class PaceCard extends HTMLElement {
     const { show_days, show_hours, show_minutes, show_seconds } = this._config;
     
     if (this._expired) {
-      return { value: '00', label: 'expired' };
+      return { value: '🎉', label: 'Completed!' };
     }
     
     if (show_days && this._timeRemaining.days > 0) {
@@ -274,16 +244,44 @@ class PaceCard extends HTMLElement {
       return { value: this._timeRemaining.seconds.toString(), label: 'seconds left' };
     }
     
-    return { value: '00', label: 'expired' };
+    return { value: '🎉', label: 'Completed!' };
   }
 
-  _adjustColor(color, amount) {
-    const hex = color.replace('#', '');
-    const num = parseInt(hex, 16);
-    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
-    const g = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amount));
-    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  _getSubtitle() {
+    if (this._expired) return 'Timer has expired';
+    
+    const { days, hours, minutes } = this._timeRemaining;
+    
+    if (days > 0) {
+      return `${hours}h ${minutes}m remaining`;
+    } else if (hours > 0) {
+      return `${minutes}m remaining`;
+    } else {
+      return `${minutes}m ${this._timeRemaining.seconds}s`;
+    }
+  }
+
+  _getCardColors() {
+    const colors = {
+      'christmas': { bg: '#e74c3c', accent: '#c0392b', progress: '#f39c12' },
+      'retirement': { bg: '#34495e', accent: '#2c3e50', progress: '#e67e22' },
+      'anniversary': { bg: '#2980b9', accent: '#1f618d', progress: '#1abc9c' },
+      'project': { bg: '#95a5a6', accent: '#7f8c8d', progress: '#27ae60' },
+      'superbowl': { bg: '#16a085', accent: '#138d75', progress: '#f1c40f' },
+      'streak': { bg: '#3498db', accent: '#2980b9', progress: '#f39c12' },
+      'quit': { bg: '#f39c12', accent: '#e67e22', progress: '#9b59b6' },
+      'default': { bg: '#1976d2', accent: '#1565c0', progress: '#4CAF50' }
+    };
+
+    const title = this._config.title?.toLowerCase() || '';
+    
+    for (const [key, value] of Object.entries(colors)) {
+      if (title.includes(key)) {
+        return value;
+      }
+    }
+    
+    return colors.default;
   }
 
   render() {
@@ -294,227 +292,216 @@ class PaceCard extends HTMLElement {
       show_minutes = true,
       show_seconds = true,
       color = '#ffffff',
-      background_color = '#1976d2',
-      progress_color = '#4CAF50',
+      background_color,
+      progress_color,
       card_style = 'modern',
-      expired_text = 'Timer Expired!'
+      size = 'medium',
+      expired_text = 'Completed! 🎉'
     } = this._config;
 
-    const activeTimeUnits = [show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
-    const isSingleUnit = activeTimeUnits <= 1;
+    const cardColors = this._getCardColors();
+    const bgColor = background_color || cardColors.bg;
+    const progressColor = progress_color || cardColors.progress;
+    const accentColor = cardColors.accent;
+
+    const sizeClasses = {
+      small: 'size-small',
+      medium: 'size-medium',
+      large: 'size-large'
+    };
 
     this.shadowRoot.innerHTML = `
       <style>
         :host {
           display: block;
-          font-family: var(--paper-font-body1_-_font-family, 'Roboto', sans-serif);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
         }
         
         .card {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
+          padding: 20px;
           border-radius: 16px;
           position: relative;
           overflow: hidden;
-          min-height: 120px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          background: ${bgColor};
           color: ${color};
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: none;
+          backdrop-filter: blur(10px);
+          background-image: 
+            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
         }
         
-        .card.modern {
-          background: linear-gradient(135deg, ${background_color}, ${this._adjustColor(background_color, -20)});
+        .card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
         }
         
-        .card.classic {
-          background: ${background_color};
+        .card.size-small {
+          min-height: 120px;
+          padding: 16px;
         }
         
-        .card.minimal {
-          background: ${background_color};
-          border: 1px solid var(--divider-color, #e0e0e0);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .card.size-medium {
+          min-height: 140px;
+          padding: 20px;
+        }
+        
+        .card.size-large {
+          min-height: 160px;
+          padding: 24px;
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
+        }
+        
+        .title-section {
+          flex: 1;
         }
         
         .title {
-          font-size: 2.2rem;
-          font-weight: bold;
-          margin-bottom: 8px;
-          opacity: 0.9;
-          text-align: left;
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin: 0 0 4px 0;
+          opacity: 0.95;
+          line-height: 1.2;
+          letter-spacing: -0.01em;
+        }
+        
+        .subtitle {
+          font-size: 0.85rem;
+          opacity: 0.7;
+          margin: 0;
+          font-weight: 400;
+        }
+        
+        .progress-section {
+          flex-shrink: 0;
         }
         
         .content {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 20px;
-          width: 100%;
-          position: relative;
-        }
-        
-        .progress-section {
-          position: absolute;
-          bottom: 16px;
-          right: 16px;
-          z-index: 10;
+          align-items: flex-end;
+          justify-content: space-between;
+          margin-top: auto;
         }
         
         .main-display {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          justify-content: center;
           flex: 1;
         }
         
         .main-value {
-          font-size: 2.2rem;
-          font-weight: bold;
+          font-size: 2.5rem;
+          font-weight: 700;
           line-height: 1;
+          margin: 0;
+          letter-spacing: -0.02em;
         }
         
         .main-label {
           font-size: 0.9rem;
           opacity: 0.8;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-top: 4px;
+          margin: 4px 0 0 0;
+          font-weight: 500;
         }
         
-        .time-display {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 4px;
+        .size-small .main-value {
+          font-size: 2rem;
         }
         
-        .time-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 0.85rem;
-          opacity: 0.9;
-        }
-        
-        .time-value {
-          font-weight: 600;
-          min-width: 20px;
-        }
-        
-        .time-label {
-          font-size: 0.75rem;
-          opacity: 0.7;
-          text-transform: lowercase;
+        .size-large .main-value {
+          font-size: 3rem;
         }
         
         .expired {
-          animation: pulse 2s infinite;
+          animation: celebration 0.8s ease-in-out;
         }
         
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
+        @keyframes celebration {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
         }
         
-        ${isSingleUnit ? `
-          .content {
-            flex-direction: column;
-            gap: 12px;
-          }
-          
-          .main-display {
-            align-items: flex-start;
-          }
-          
-          .time-display {
-            align-items: flex-start;
-          }
-          
-          .time-row {
-            justify-content: flex-start;
-          }
-          
-          .progress-section {
-            position: relative;
-            bottom: auto;
-            right: auto;
-            margin-top: 16px;
-          }
-        ` : ''}
+        .progress-circle {
+          opacity: 0.9;
+        }
         
+        /* Responsive design */
         @media (max-width: 480px) {
           .card {
             padding: 16px;
+            border-radius: 12px;
           }
           
           .title {
-            font-size: 1.8rem;
-          }
-          
-          .content {
-            flex-direction: column;
-            gap: 12px;
+            font-size: 1rem;
           }
           
           .main-value {
-            font-size: 1.8rem;
+            font-size: 2rem;
           }
           
-          .main-display {
-            align-items: flex-start;
+          .subtitle {
+            font-size: 0.8rem;
+          }
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .card {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
           }
           
-          .time-display {
-            align-items: flex-start;
-          }
-          
-          .progress-section {
-            position: relative;
-            bottom: auto;
-            right: auto;
-            margin-top: 12px;
+          .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
           }
         }
       </style>
       
-      <div class="card ${card_style} ${this._expired ? 'expired' : ''}">
-        <div class="title">${this._expired ? expired_text : title}</div>
+      <div class="card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
+        <div class="header">
+          <div class="title-section">
+            <h2 class="title">${this._expired ? expired_text : title}</h2>
+            <p class="subtitle">${this._getSubtitle()}</p>
+          </div>
+          <div class="progress-section">
+            <progress-circle
+              class="progress-circle"
+              progress="${this._getProgress()}"
+              color="${progressColor}"
+              size="50"
+              stroke-width="6"
+            ></progress-circle>
+          </div>
+        </div>
         
         <div class="content">
           <div class="main-display">
             <div class="main-value">${this._getMainDisplay().value}</div>
             <div class="main-label">${this._getMainDisplay().label}</div>
-            
-            <div class="time-display" style="display: ${!isSingleUnit && !this._expired ? 'flex' : 'none'}">
-              <!-- Time rows will be populated by _updateTimeDisplay -->
-            </div>
-          </div>
-          
-          <div class="progress-section">
-            <progress-circle
-              progress="${this._getProgress()}"
-              color="${progress_color}"
-              size="60"
-              stroke-width="8"
-            ></progress-circle>
           </div>
         </div>
       </div>
     `;
     
-    // Initial display update
     setTimeout(() => this._updateDisplay(), 0);
   }
 
   getCardSize() {
-    return 3;
+    const size = this._config.size || 'medium';
+    return size === 'small' ? 2 : size === 'large' ? 4 : 3;
   }
 
   static get version() {
-    return '2.0.0';
+    return '3.0.0';
   }
 }
 

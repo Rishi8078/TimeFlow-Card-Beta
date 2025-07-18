@@ -460,8 +460,8 @@ class PaceCard extends HTMLElement {
               class="progress-circle"
               progress="${this._getProgress()}"
               color="${progressColor}"
-              size="80"
-              stroke-width="10"
+              size="100"
+              stroke-width="15"
             ></progress-circle>
           </div>
         </div>

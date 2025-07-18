@@ -270,7 +270,7 @@ window.customCards.push({
   name: 'Pace Card',
   description: 'A beautiful countdown timer card for Home Assistant',
   preview: true,
-  documentationURL: 'https://github.com/yourusername/pacecard'
+  documentationURL: 'https://github.com/Rishi8078/Pacecard'
 });
 
 // Configuration Editor

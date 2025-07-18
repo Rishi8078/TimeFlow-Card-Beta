@@ -8,12 +8,12 @@ class PaceCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement('pacecard-editor');
+    return document.createElement('pace-card-editor');
   }
 
   static getStubConfig() {
     return {
-      type: 'custom:pacecard',
+      type: 'custom:pace-card',
       title: 'Countdown Timer',
       target_date: '2024-12-31T23:59:59',
       show_days: true,
@@ -261,12 +261,12 @@ class PaceCard extends HTMLElement {
   }
 }
 
-customElements.define('pacecard', PaceCard);
+customElements.define('pace-card', PaceCard);
 
 // Register the card with the custom card registry
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'pacecard',
+  type: 'pace-card',
   name: 'Pace Card',
   description: 'A beautiful countdown timer card for Home Assistant',
   preview: true,
@@ -592,7 +592,7 @@ class PaceCardEditor extends HTMLElement {
   }
 }
 
-customElements.define('pacecard-editor', PaceCardEditor);
+customElements.define('pace-card-editor', PaceCardEditor);
 
 console.info(
   `%c  PACE-CARD  \n%c  Version ${PaceCard.version}    `,

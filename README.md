@@ -44,7 +44,7 @@ A beautiful and customizable countdown timer card for Home Assistant dashboards,
 ### Basic Configuration
 
 ```yaml
-type: custom:pacecard
+type: custom:pace-card
 title: "New Year Countdown"
 target_date: "2024-12-31T23:59:59"
 ```
@@ -52,7 +52,7 @@ target_date: "2024-12-31T23:59:59"
 ### Full Configuration Options
 
 ```yaml
-type: custom:pacecard
+type: custom:pace-card
 title: "Custom Countdown"
 target_date: "2024-12-31T23:59:59"
 expired_text: "Happy New Year!"
@@ -70,7 +70,7 @@ border_radius: "8px"
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `type` | string | **Required** | Must be `custom:pacecard` |
+| `type` | string | **Required** | Must be `custom:pace-card` |
 | `title` | string | `"Countdown Timer"` | Card title |
 | `target_date` | string | **Required** | Target date in ISO format (YYYY-MM-DDTHH:mm:ss) |
 | `expired_text` | string | `"Timer Expired!"` | Text shown when countdown reaches zero |
@@ -87,7 +87,7 @@ border_radius: "8px"
 
 ### Event Countdown
 ```yaml
-type: custom:pacecard
+type: custom:pace-card
 title: "Conference Starts In"
 target_date: "2024-06-15T09:00:00"
 background_color: "#4CAF50"
@@ -95,7 +95,7 @@ background_color: "#4CAF50"
 
 ### Birthday Countdown
 ```yaml
-type: custom:pacecard
+type: custom:pace-card
 title: "Birthday Countdown"
 target_date: "2024-08-20T00:00:00"
 show_seconds: false
@@ -105,7 +105,7 @@ expired_text: "Happy Birthday! 🎉"
 
 ### Work Timer
 ```yaml
-type: custom:pacecard
+type: custom:pace-card
 title: "Weekend Countdown"
 target_date: "2024-05-17T17:00:00"
 show_days: false

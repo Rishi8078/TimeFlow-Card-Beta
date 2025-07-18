@@ -426,15 +426,15 @@ class PaceCard extends HTMLElement {
           }
           
           .main-display {
-            align-items: center;
+            align-items: flex-start;
           }
           
           .time-display {
-            align-items: center;
+            align-items: flex-start;
           }
           
           .time-row {
-            justify-content: center;
+            justify-content: flex-start;
           }
           
           .progress-section {
@@ -448,6 +448,10 @@ class PaceCard extends HTMLElement {
         @media (max-width: 480px) {
           .card {
             padding: 16px;
+          }
+          
+          .title {
+            font-size: 1.8rem;
           }
           
           .content {

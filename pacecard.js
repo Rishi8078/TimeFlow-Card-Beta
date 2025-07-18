@@ -477,11 +477,17 @@ class PaceCardEditor extends HTMLElement {
     this._config = {};
     this.hass = null;
     this.attachShadow({ mode: 'open' });
+    this._initialized = false;
   }
 
   setConfig(config) {
     this._config = { ...config };
-    this.render();
+    if (!this._initialized) {
+      this.render();
+      this._initialized = true;
+    } else {
+      this._updateValues();
+    }
   }
 
   render() {
@@ -682,6 +688,45 @@ class PaceCardEditor extends HTMLElement {
     });
   }
 
+  _updateValues() {
+    // Update input values without re-rendering
+    const titleInput = this.shadowRoot.querySelector('[data-config-key="title"]');
+    if (titleInput) titleInput.value = this._config.title || 'Countdown Timer';
+    
+    const targetDateInput = this.shadowRoot.querySelector('[data-config-key="target_date"]');
+    if (targetDateInput) targetDateInput.value = this._config.target_date ? this._config.target_date.slice(0, 16) : '';
+    
+    const creationDateInput = this.shadowRoot.querySelector('[data-config-key="creation_date"]');
+    if (creationDateInput) creationDateInput.value = this._config.creation_date ? this._config.creation_date.slice(0, 16) : '';
+    
+    const expiredTextInput = this.shadowRoot.querySelector('[data-config-key="expired_text"]');
+    if (expiredTextInput) expiredTextInput.value = this._config.expired_text || 'Timer Expired!';
+    
+    const cardStyleSelect = this.shadowRoot.querySelector('[data-config-key="card_style"]');
+    if (cardStyleSelect) cardStyleSelect.value = this._config.card_style || 'modern';
+    
+    const showDaysCheckbox = this.shadowRoot.querySelector('[data-config-key="show_days"]');
+    if (showDaysCheckbox) showDaysCheckbox.checked = this._config.show_days !== false;
+    
+    const showHoursCheckbox = this.shadowRoot.querySelector('[data-config-key="show_hours"]');
+    if (showHoursCheckbox) showHoursCheckbox.checked = this._config.show_hours !== false;
+    
+    const showMinutesCheckbox = this.shadowRoot.querySelector('[data-config-key="show_minutes"]');
+    if (showMinutesCheckbox) showMinutesCheckbox.checked = this._config.show_minutes !== false;
+    
+    const showSecondsCheckbox = this.shadowRoot.querySelector('[data-config-key="show_seconds"]');
+    if (showSecondsCheckbox) showSecondsCheckbox.checked = this._config.show_seconds !== false;
+    
+    const colorInput = this.shadowRoot.querySelector('[data-config-key="color"]');
+    if (colorInput) colorInput.value = this._config.color || '#ffffff';
+    
+    const backgroundColorInput = this.shadowRoot.querySelector('[data-config-key="background_color"]');
+    if (backgroundColorInput) backgroundColorInput.value = this._config.background_color || '#1976d2';
+    
+    const progressColorInput = this.shadowRoot.querySelector('[data-config-key="progress_color"]');
+    if (progressColorInput) progressColorInput.value = this._config.progress_color || '#4CAF50';
+  }
+
   _valueChanged(ev) {
     const target = ev.target;
     const configKey = target.dataset.configKey;
@@ -702,6 +747,7 @@ class PaceCardEditor extends HTMLElement {
     if (this._config[configKey] !== value) {
       const newConfig = { ...this._config, [configKey]: value };
       this._config = newConfig;
+      // Don't call _updateValues here to avoid disrupting user input
       this._fireConfigChanged();
     }
   }

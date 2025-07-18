@@ -330,7 +330,7 @@ class PaceCard extends HTMLElement {
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           border: none;
-          aspect-ratio: 1.5;
+          aspect-ratio: 16:9;
         }
         
         .card:hover {
@@ -370,7 +370,7 @@ class PaceCard extends HTMLElement {
         
         /* IMPROVED TYPOGRAPHY - Matching reference cards */
         .title {
-          font-size: 1rem;
+          font-size: 2rem;
           font-weight: 500;
           margin: 0;
           opacity: 0.9;
@@ -379,7 +379,7 @@ class PaceCard extends HTMLElement {
         }
         
         .subtitle {
-          font-size: 0.8rem;
+          font-size: 1.6rem;
           opacity: 0.65;
           margin: 0;
           font-weight: 400;

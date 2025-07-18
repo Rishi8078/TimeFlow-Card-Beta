@@ -370,7 +370,7 @@ class PaceCard extends HTMLElement {
         
         /* IMPROVED TYPOGRAPHY - Matching reference cards */
         .title {
-          font-size: 1rem;
+          font-size: 2rem;
           font-weight: 500;
           margin: 0;
           opacity: 0.9;
@@ -379,7 +379,7 @@ class PaceCard extends HTMLElement {
         }
         
         .subtitle {
-          font-size: 0.8rem;
+          font-size: 1.6rem;
           opacity: 0.65;
           margin: 0;
           font-weight: 400;

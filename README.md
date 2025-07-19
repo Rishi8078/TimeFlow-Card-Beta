@@ -1,10 +1,11 @@
 # Pace Card
 
+![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
+
 A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
 ![Pace Card Preview](assets/asset.png)
 
-![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
 
 ## ✨ Features
 

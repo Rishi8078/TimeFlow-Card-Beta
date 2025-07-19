@@ -1,19 +1,23 @@
 # Pace Card
 
-A beautiful and customizable countdown timer card for Home Assistant dashboards.
+A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
 ## Features
-- Real-time countdown display
-- Customizable styling (colors, fonts, borders)
-- Responsive design for all devices
-- Show/hide different time units (days, hours, minutes, seconds)
-- Visual configuration editor
-- Smooth animations and hover effects
+- Animated SVG progress circle with configurable thickness
+- Smart time display with natural language formatting
+- Cascading time units for accurate countdown display
+- Cross-platform compatible date parsing (iOS/Android/Web)
+- Responsive design with aspect ratio 2:1
+- Configurable card sizes (small, medium, large)
+- Entity support for dynamic countdowns
+- Show/hide months, days, hours, minutes, seconds
+- Customizable colors and styling
 
 ## Quick Start
 1. Install through HACS
-2. Add to your dashboard with type: `custom:pacecard`
-3. Set your target date
-4. Customize the appearance to match your theme
+2. Add to your dashboard with type: `custom:pace-card`
+3. Set your target date in ISO format: `"2025-12-31T23:59:59"`
+4. Customize time units and appearance
+5. Optionally set creation_date for progress tracking
 
 See the full README for detailed configuration options and examples.

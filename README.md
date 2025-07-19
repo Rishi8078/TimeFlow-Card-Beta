@@ -1,18 +1,19 @@
 # Pace Card
 
-A beautiful countdown timer card for Home Assistant with an animated progress circle, inspired by modern design principles.
+A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
 ![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
 
 ## ✨ Features
 
-- 🎨 **Three Modern Card Styles**: Modern (gradient), Classic (solid), and Minimal (clean)
-- ⭕ **Animated Progress Circle**: Beautiful SVG-based circular progress indicator
-- ⏰ **Flexible Time Display**: Show/hide days, hours, minutes, seconds as needed
-- 📱 **Responsive Design**: Adapts beautifully to different screen sizes
-- 🎛️ **Customizable Colors**: Full control over text, background, and progress colors
-- 💅 **Modern UI**: Gradient backgrounds, smooth animations, and hover effects
-- 🏠 **Home Assistant Native**: Built specifically for Home Assistant dashboards
+- ⭕ **Animated Progress Circle**: Beautiful SVG-based circular progress indicator with configurable thickness
+- ⏰ **Smart Time Display**: Cascading time units with natural language formatting (e.g., "2 months and 5 days" or "3d 4h 12m")
+- 🧠 **Intelligent Unit Management**: Disabled time units cascade into enabled ones for accurate display
+- 📱 **Responsive Design**: Aspect ratio 2:1 with configurable size constraints
+- 🎛️ **Highly Customizable**: Control colors, sizes, time units, and display text
+- 💅 **Modern UI**: Clean design with smooth animations and hover effects
+- 🌐 **Cross-Platform Compatible**: Robust date parsing that works consistently across web and mobile devices
+- 🏠 **Home Assistant Native**: Built specifically for Home Assistant dashboards with entity support
 
 ## 🚀 Installation
 
@@ -42,7 +43,7 @@ resources:
 ```yaml
 type: custom:pace-card
 title: "New Year Countdown"
-target_date: "2024-12-31T23:59:59"
+target_date: "2025-01-01T00:00:00"
 ```
 
 ### Using Entities (Dynamic Values)
@@ -59,7 +60,6 @@ show_minutes: false
 show_hours: false
 show_days: true
 progress_color: "#62ea64"
-card_style: classic
 expired_text: "Laundry Done!"
 ```
 
@@ -68,10 +68,10 @@ expired_text: "Laundry Done!"
 ```yaml
 type: custom:pace-card
 title: "Event Countdown"
-target_date: "2024-12-31T23:59:59"
-creation_date: "2024-01-01T00:00:00"  # Optional: for progress calculation
+target_date: "2025-12-31T23:59:59"
+creation_date: "2025-01-01T00:00:00"  # Optional: for progress calculation
 expired_text: "Event Started!"
-card_style: modern                     # modern, classic, or minimal
+show_months: false                     # Show months in countdown
 show_days: true
 show_hours: true  
 show_minutes: true
@@ -79,6 +79,7 @@ show_seconds: true
 color: "#ffffff"                       # Text color
 background_color: "#1976d2"            # Card background
 progress_color: "#4CAF50"              # Progress circle color
+size: "medium"                         # small, medium, large
 ```
 
 ## ⚙️ Configuration Options
@@ -89,8 +90,8 @@ progress_color: "#4CAF50"              # Progress circle color
 | `title` | string | `"Countdown Timer"` | Card title text |
 | `target_date` | string | **Required** | Target date in ISO format (`YYYY-MM-DDTHH:mm:ss`) or entity ID (e.g., `sensor.target_date`) |
 | `creation_date` | string | `null` | Start date for progress calculation (optional) - can be date string or entity ID |
-| `expired_text` | string | `"Timer Expired!"` | Text shown when countdown ends |
-| `card_style` | string | `"modern"` | Card style: `modern`, `classic`, or `minimal` |
+| `expired_text` | string | `"Completed! 🎉"` | Text shown when countdown ends |
+| `show_months` | boolean | `false` | Show months in countdown |
 | `show_days` | boolean | `true` | Show days in countdown |
 | `show_hours` | boolean | `true` | Show hours in countdown |
 | `show_minutes` | boolean | `true` | Show minutes in countdown |
@@ -98,6 +99,7 @@ progress_color: "#4CAF50"              # Progress circle color
 | `color` | string | `"#ffffff"` | Text color (hex format) |
 | `background_color` | string | `"#1976d2"` | Card background color |
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
+| `size` | string | `"medium"` | Card size: `small`, `medium`, or `large` |
 
 ## 🔗 Using Home Assistant Entities
 
@@ -125,56 +127,78 @@ expired_text: "Wash Complete!"
 
 ### Entity Requirements
 - Entity state must contain a valid datetime string
-- Supported formats: ISO 8601 (`2024-12-31T23:59:59`), most standard date formats
+- Supported formats: ISO 8601 (`2025-12-31T23:59:59`), most standard date formats
+- Cross-platform compatible date parsing ensures consistent behavior on all devices
 - If entity is unavailable, card will show an error state
 
-## 🎨 Card Styles
+## 🧠 Smart Time Display Features
 
-### Modern Style (Default)
-Beautiful gradient background with smooth color transitions:
+### Natural Language Formatting
+The card intelligently formats time displays based on the number of enabled units:
+
+- **1-2 enabled units**: Natural language (e.g., "2 months and 5 days", "1 hour and 30 minutes")
+- **3+ enabled units**: Compact format (e.g., "2mo 5d 3h", "1d 12h 30m 45s")
+
+### Cascading Time Units
+When time units are disabled, their values cascade into enabled units:
+
 ```yaml
-card_style: modern
-background_color: "#1976d2"  # Creates gradient from this color
+# Only show days - months cascade into days
+show_months: false
+show_days: true
+show_hours: false
+# Result: Shows total days including month values
 ```
 
-### Classic Style  
-Clean solid background color:
+### Examples of Time Display Logic
+- **All units enabled**: "2mo 5d 3h 30m 45s"
+- **Days and hours only**: "65 days and 3 hours" 
+- **Minutes and seconds only**: "1,830 minutes and 45 seconds"
+- **Days only**: "65 days"
+
+## 📱 Card Sizes and Layout
+
+### Size Options
+Configure the card size to fit your dashboard layout:
+
 ```yaml
-card_style: classic
-background_color: "#1976d2"  # Solid color background
+size: "small"    # Min height: 100px, Max height: 150px
+size: "medium"   # Min height: 120px, Max height: 200px (default)
+size: "large"    # Min height: 140px, Max height: 250px
 ```
 
-### Minimal Style
-Clean design with subtle border:
-```yaml
-card_style: minimal
-background_color: "#1976d2"  # Minimal styling with border
-```
-
-## 📱 Layout Examples
+### Layout Behavior
+- **Aspect Ratio**: Fixed 2:1 ratio for consistent appearance
+- **Progress Circle**: Always shown on the right side with animated progress
+- **Title & Subtitle**: Clean header section with natural time formatting
+- **Responsive**: Adapts to different screen sizes with appropriate font scaling
 
 ### Single Unit Display
-When only one time unit is shown, the layout automatically centers:
+When only one time unit is shown, it uses natural language:
 ```yaml
 type: custom:pace-card
 title: "Days Remaining"
-target_date: "2024-12-31T23:59:59"
+target_date: "2025-12-31T23:59:59"
+show_months: false
 show_days: true
 show_hours: false
 show_minutes: false
 show_seconds: false
+# Result: "165 days" in subtitle
 ```
 
 ### Multiple Units Display
-Shows progress circle and detailed countdown side by side:
+Shows progress circle and detailed countdown:
 ```yaml
 type: custom:pace-card
 title: "Complete Countdown" 
-target_date: "2024-12-31T23:59:59"
+target_date: "2025-12-31T23:59:59"
+show_months: true
 show_days: true
 show_hours: true
 show_minutes: true
 show_seconds: true
+# Result: "5mo 4d 12h 30m 45s" in subtitle
 ```
 
 ## 🎯 Use Cases
@@ -191,16 +215,17 @@ show_seconds: true
 ```yaml
 type: custom:pace-card
 title: "Days Until Wedding"
-target_date: "2024-06-15T14:30:00"
-creation_date: "2023-12-01T00:00:00"
-card_style: modern
+target_date: "2025-06-15T14:30:00"
+creation_date: "2024-12-01T00:00:00"
 background_color: "#E91E63"
 progress_color: "#FFC107"
 color: "#ffffff"
+show_months: true
 show_days: true
 show_hours: false
 show_minutes: false
 show_seconds: false
+size: "large"
 ```
 
 ### Dynamic Laundry Timer (Using Entities)
@@ -211,12 +236,12 @@ target_date: sensor.washing_machine_end_time
 creation_date: input_datetime.wash_start
 background_color: "#1a1a1a"
 color: "#f3ecec"
+show_months: false
+show_days: false
+show_hours: true
+show_minutes: true
 show_seconds: false
-show_minutes: false
-show_hours: false
-show_days: true
 progress_color: "#62ea64"
-card_style: classic
 expired_text: "Laundry Done!"
 ```
 
@@ -226,6 +251,7 @@ type: custom:pace-card
 title: "Backup Complete In"
 target_date: sensor.next_backup_time
 creation_date: sensor.last_backup_time
+show_months: false
 show_days: false
 show_hours: true
 show_minutes: true
@@ -238,26 +264,34 @@ expired_text: "Backup Running..."
 ### New Year Countdown
 ```yaml
 type: custom:pace-card
-title: "New Year 2025"
-target_date: "2025-01-01T00:00:00"
+title: "New Year 2026"
+target_date: "2026-01-01T00:00:00"
 expired_text: "Happy New Year! 🎉"
-card_style: classic
 background_color: "#673AB7"
 progress_color: "#FFD700"
 color: "#ffffff"
+show_months: true
+show_days: true
+show_hours: true
+show_minutes: true
+show_seconds: true
 ```
 
 ### Project Deadline
 ```yaml
 type: custom:pace-card
 title: "Project Deadline"
-target_date: "2024-03-15T17:00:00"
-creation_date: "2024-01-01T09:00:00"
+target_date: "2025-03-15T17:00:00"
+creation_date: "2025-01-01T09:00:00"
 expired_text: "Deadline Reached!"
-card_style: minimal
 background_color: "#FF5722"
 progress_color: "#4CAF50"
+show_months: false
+show_days: true
+show_hours: true
+show_minutes: false
 show_seconds: false
+size: "medium"
 ```
 
 ## 🐛 Troubleshooting
@@ -270,8 +304,19 @@ show_seconds: false
 
 ### Date Format Issues
 - Use ISO 8601 format: `YYYY-MM-DDTHH:mm:ss`
-- Example: `"2024-12-31T23:59:59"`
-- Avoid spaces or different date formats
+- Example: `"2025-12-31T23:59:59"`
+- The card uses cross-platform compatible date parsing for iOS/Android devices
+- Avoid spaces or ambiguous date formats
+
+### Time Display Issues
+- If time units seem incorrect, check which units are enabled/disabled
+- Remember that disabled units cascade into enabled ones
+- For debugging, enable all units temporarily to see the full breakdown
+
+### Mobile Device Compatibility
+- The card uses robust date parsing specifically designed for cross-platform compatibility
+- Tested on iOS, Android, and web browsers
+- If you experience "Timer has expired" issues on mobile, ensure your date strings are in ISO format
 
 ### Custom Colors Not Working
 - Use hex format: `"#FF5733"`

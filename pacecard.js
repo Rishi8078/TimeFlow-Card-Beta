@@ -118,6 +118,12 @@ class PaceCard extends HTMLElement {
     if (!config.target_date) {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
+    
+    // If no creation_date is provided, set it to today (when card is created)
+    if (!config.creation_date && !this._config.creation_date) {
+      config.creation_date = new Date().toISOString();
+    }
+    
     this._config = { ...config };
     this.render();
     this._startTimer();
@@ -212,19 +218,7 @@ class PaceCard extends HTMLElement {
       const creationDateValue = this._getEntityValueOrString(this._config.creation_date);
       creationDate = creationDateValue ? new Date(creationDateValue).getTime() : now;
     } else {
-      // If no creation date is specified, calculate based on time remaining
-      // Progress will be based on how much time has passed in the current day
-      if (this._expired) return 100;
-      
-      const timeRemaining = targetDate - now;
-      const totalTimeToday = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-      
-      // Calculate progress as percentage of day passed
-      const startOfToday = new Date().setHours(0, 0, 0, 0);
-      const elapsed = now - startOfToday;
-      const progress = Math.min(100, Math.max(0, (elapsed / totalTimeToday) * 100));
-      
-      return progress;
+      creationDate = now; // Fallback to now if somehow no creation date
     }
     
     const totalDuration = targetDate - creationDate;

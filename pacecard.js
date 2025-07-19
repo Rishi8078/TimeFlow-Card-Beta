@@ -264,14 +264,16 @@ class PaceCard extends HTMLElement {
   _getSubtitle() {
     if (this._expired) return 'Timer has expired';
     
-    const { days, hours, minutes } = this._timeRemaining;
+    const { days, hours, minutes, seconds } = this._timeRemaining;
     
     if (days > 0) {
-      return `${hours}h ${minutes}m remaining`;
+      return `${days}d ${hours}h ${minutes}m`;
     } else if (hours > 0) {
-      return `${minutes}m remaining`;
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
     } else {
-      return `${minutes}m ${this._timeRemaining.seconds}s`;
+      return `${seconds}s`;
     }
   }
 
@@ -382,40 +384,9 @@ class PaceCard extends HTMLElement {
         .content {
           display: flex;
           align-items: flex-end;
-          justify-content: space-between;
+          justify-content: flex-end;
           margin-top: auto;
           padding-top: 12px;
-        }
-        
-        .main-display {
-          flex: 1;
-        }
-        
-        /* MAIN VALUE - Large number like reference cards */
-        .main-value {
-          font-size: 2.2rem;
-          font-weight: 600;
-          line-height: 0.9;
-          margin: 0 0 2px 0;
-          letter-spacing: -0.02em;
-        }
-        
-        /* MAIN LABEL - Small text under main value */
-        .main-label {
-          font-size: 0.75rem;
-          opacity: 0.7;
-          margin: 0;
-          font-weight: 400;
-          text-transform: lowercase;
-          line-height: 1.2;
-        }
-        
-        .size-small .main-value {
-          font-size: 2rem;
-        }
-        
-        .size-large .main-value {
-          font-size: 3rem;
         }
         
         .expired {
@@ -469,10 +440,6 @@ class PaceCard extends HTMLElement {
         </div>
         
         <div class="content">
-          <div class="main-display">
-            <div class="main-value">${this._getMainDisplay().value}</div>
-            <div class="main-label">${this._getMainDisplay().label}</div>
-          </div>
           <div class="progress-section">
             <progress-circle
               class="progress-circle"

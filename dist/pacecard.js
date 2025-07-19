@@ -439,7 +439,7 @@ class PaceCard extends HTMLElement {
           flex-direction: column;
           justify-content: space-between;
           padding: 20px;
-          border-radius: 16px;
+          border-radius: 26px;
           position: relative;
           overflow: hidden;
           background: ${bgColor};

@@ -335,7 +335,7 @@ class PaceCard extends HTMLElement {
     return { value: '0', label: 'seconds left' };
   }
 
-  _getSubtitle() {
+    _getSubtitle() {
     if (this._expired) return 'Timer has expired';
     
     const { months, days, hours, minutes, seconds } = this._timeRemaining;
@@ -345,41 +345,58 @@ class PaceCard extends HTMLElement {
     
     // Add each time unit based on configuration and if value > 0
     if (show_months && months > 0) {
-      parts.push(`${months}mo`);
+      parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
     }
     
     if (show_days && days > 0) {
-      parts.push(`${days}d`);
+      parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
     }
     
     if (show_hours && hours > 0) {
-      parts.push(`${hours}h`);
+      parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
     }
     
     if (show_minutes && minutes > 0) {
-      parts.push(`${minutes}m`);
+      parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
     }
     
     if (show_seconds && seconds > 0) {
-      parts.push(`${seconds}s`);
+      parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
     }
     
     // If no parts are shown or all values are 0, show the largest enabled unit
     if (parts.length === 0) {
       if (show_months) {
-        parts.push(`${months}mo`);
+        parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
       } else if (show_days) {
-        parts.push(`${days}d`);
+        parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
       } else if (show_hours) {
-        parts.push(`${hours}h`);
+        parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
       } else if (show_minutes) {
-        parts.push(`${minutes}m`);
+        parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
       } else if (show_seconds) {
-        parts.push(`${seconds}s`);
+        parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
       }
     }
     
-    return parts.join(' ') || '0s';
+    // Count enabled units for formatting decision
+    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
+    
+    // Format based on number of enabled units
+    if (enabledUnits <= 2 && parts.length > 0) {
+      // Natural format for 1-2 enabled units: "1 month and 10 days"
+      if (parts.length === 1) {
+        return `${parts[0].value} ${parts[0].unit}`;
+      } else if (parts.length === 2) {
+        return `${parts[0].value} ${parts[0].unit} and ${parts[1].value} ${parts[1].unit}`;
+      }
+    }
+    
+    // Compact format for 3+ enabled units: "1mo 10d 5h"
+    return parts.map(part => {
+      const shortUnit = part.unit.charAt(0); // m, d, h, m, s
+      return `${part.value}${shortUnit}`;
+    }).join(' ') || '0s';
   }
 
   _applyCardMod() {

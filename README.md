@@ -60,17 +60,18 @@ creation_date: "2025-01-01T00:00:00"
 
 ```yaml
 type: custom:pace-card
-title: "Laundry Timer"
-target_date: sensor.washing_machine_end_time    # Entity with datetime value
-creation_date: input_datetime.last_wash_cycle   # Entity with datetime value
-background_color: "#1a1a1a"
-color: "#f3ecec"
+title: Next backup
+target_date: sensor.backup_next_scheduled_automatic_backup
+background_color: "#676F9D"
+color: "#000000"
+progress_color: "#2D3250"
 show_seconds: false
 show_minutes: false
-show_hours: false
-show_days: true
-progress_color: "#62ea64"
-expired_text: "Laundry Done!"
+show_hours: true
+show_days: false
+show_months: false
+expired_text: hi
+creation_date: sensor.backup_last_successful_automatic_backup
 ```
 
 ### Full Configuration Example

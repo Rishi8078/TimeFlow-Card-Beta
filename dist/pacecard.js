@@ -451,16 +451,19 @@ class PaceCard extends HTMLElement {
         
         .card.size-small {
           min-height: 100px;
+          max-height: 150px;
           padding: 16px;
         }
         
         .card.size-medium {
           min-height: 120px;
+          max-height: 200px;
           padding: 20px;
         }
         
         .card.size-large {
           min-height: 140px;
+          max-height: 250px;
           padding: 24px;
         }
         

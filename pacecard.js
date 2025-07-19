@@ -267,12 +267,8 @@ class PaceCard extends HTMLElement {
   }
 
   _applyCardMod() {
-    if (!this._config.card_mod || !this._config.card_mod.style) return;
-    
-    // Apply card-mod styles
-    const style = document.createElement('style');
-    style.textContent = this._config.card_mod.style;
-    this.shadowRoot.appendChild(style);
+    // Card-mod compatibility is handled by adding ha-card class to root element
+    // This allows card-mod to automatically apply styles
   }
 
   render() {
@@ -286,8 +282,7 @@ class PaceCard extends HTMLElement {
       background_color,
       progress_color,
       size = 'medium',
-      expired_text = 'Completed! 🎉',
-      card_mod
+      expired_text = 'Completed! 🎉'
     } = this._config;
 
     const bgColor = background_color || '#1976d2';
@@ -456,7 +451,7 @@ class PaceCard extends HTMLElement {
         }
       </style>
       
-      <div class="card pace-card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
+      <div class="card pace-card ha-card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
         <div class="header">
           <div class="title-section">
             <h2 class="title">${this._expired ? expired_text : title}</h2>

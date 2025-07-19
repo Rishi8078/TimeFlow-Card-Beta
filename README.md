@@ -2,14 +2,15 @@
 
 A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
+![Pace Card Preview](assets/asset.png)
+
 ![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
 
 ## ✨ Features
 
-- ⭕ **Animated Progress Circle**: Beautiful SVG-based circular progress indicator with configurable thickness
+- ⭕ **Animated Progress Circle**: Beautiful SVG-based circular progress indicator
 - ⏰ **Smart Time Display**: Cascading time units with natural language formatting (e.g., "2 months and 5 days" or "3d 4h 12m")
 - 🧠 **Intelligent Unit Management**: Disabled time units cascade into enabled ones for accurate display
-- 📱 **Responsive Design**: Aspect ratio 2:1 with configurable size constraints
 - 🎛️ **Highly Customizable**: Control colors, sizes, time units, and display text
 - 💅 **Modern UI**: Clean design with smooth animations and hover effects
 - 🌐 **Cross-Platform Compatible**: Robust date parsing that works consistently across web and mobile devices
@@ -42,8 +43,16 @@ resources:
 
 ```yaml
 type: custom:pace-card
-title: "New Year Countdown"
-target_date: "2025-01-01T00:00:00"
+title: New Year
+target_date: "2026-01-01T00:00:00"
+show_seconds: false
+show_minutes: false
+show_hours: false
+show_days: true
+show_months: false
+expired_text: happy New Year!
+creation_date: "2025-01-01T00:00:00"
+
 ```
 
 ### Using Entities (Dynamic Values)

@@ -103,6 +103,7 @@ class PaceCard extends HTMLElement {
       title: 'Countdown Timer',
       target_date: '2024-12-31T23:59:59',
       creation_date: null,
+      show_months: false,
       show_days: true,
       show_hours: true,
       show_minutes: true,
@@ -167,15 +168,16 @@ class PaceCard extends HTMLElement {
     const difference = targetDate - now;
 
     if (difference > 0) {
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const months = Math.floor(difference / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
+      const days = Math.floor((difference % (1000 * 60 * 60 * 24 * 30.44)) / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-      this._timeRemaining = { days, hours, minutes, seconds, total: difference };
+      this._timeRemaining = { months, days, hours, minutes, seconds, total: difference };
       this._expired = false;
     } else {
-      this._timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+      this._timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
       this._expired = true;
     }
     
@@ -242,39 +244,74 @@ class PaceCard extends HTMLElement {
   }
 
   _getMainDisplay() {
-    const { show_days, show_hours, show_minutes, show_seconds } = this._config;
+    const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
+    const { months, days, hours, minutes, seconds } = this._timeRemaining;
     
     if (this._expired) {
       return { value: '🎉', label: 'Completed!' };
     }
     
-    if (show_days && this._timeRemaining.days > 0) {
-      return { value: this._timeRemaining.days.toString(), label: 'days left' };
-    } else if (show_hours && this._timeRemaining.hours > 0) {
-      return { value: this._timeRemaining.hours.toString(), label: 'hours left' };
-    } else if (show_minutes && this._timeRemaining.minutes > 0) {
-      return { value: this._timeRemaining.minutes.toString(), label: 'minutes left' };
-    } else if (show_seconds) {
-      return { value: this._timeRemaining.seconds.toString(), label: 'seconds left' };
+    // Show the largest time unit that is enabled and has a value > 0
+    if (show_months && months > 0) {
+      return { value: months.toString(), label: months === 1 ? 'month left' : 'months left' };
+    } else if (show_days && days > 0) {
+      return { value: days.toString(), label: days === 1 ? 'day left' : 'days left' };
+    } else if (show_hours && hours > 0) {
+      return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
+    } else if (show_minutes && minutes > 0) {
+      return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
+    } else if (show_seconds && seconds >= 0) {
+      return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
     }
     
-    return { value: '🎉', label: 'Completed!' };
+    return { value: '0', label: 'seconds left' };
   }
 
   _getSubtitle() {
     if (this._expired) return 'Timer has expired';
     
-    const { days, hours, minutes, seconds } = this._timeRemaining;
+    const { months, days, hours, minutes, seconds } = this._timeRemaining;
+    const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
     
-    if (days > 0) {
-      return `${days}d ${hours}h ${minutes}m`;
-    } else if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    } else {
-      return `${seconds}s`;
+    const parts = [];
+    
+    // Add each time unit based on configuration and if value > 0
+    if (show_months && months > 0) {
+      parts.push(`${months}mo`);
     }
+    
+    if (show_days && days > 0) {
+      parts.push(`${days}d`);
+    }
+    
+    if (show_hours && hours > 0) {
+      parts.push(`${hours}h`);
+    }
+    
+    if (show_minutes && minutes > 0) {
+      parts.push(`${minutes}m`);
+    }
+    
+    if (show_seconds && seconds > 0) {
+      parts.push(`${seconds}s`);
+    }
+    
+    // If no parts are shown or all values are 0, show the largest enabled unit
+    if (parts.length === 0) {
+      if (show_months) {
+        parts.push(`${months}mo`);
+      } else if (show_days) {
+        parts.push(`${days}d`);
+      } else if (show_hours) {
+        parts.push(`${hours}h`);
+      } else if (show_minutes) {
+        parts.push(`${minutes}m`);
+      } else if (show_seconds) {
+        parts.push(`${seconds}s`);
+      }
+    }
+    
+    return parts.join(' ') || '0s';
   }
 
   _applyCardMod() {

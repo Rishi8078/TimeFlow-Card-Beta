@@ -335,7 +335,7 @@ class PaceCard extends HTMLElement {
     return { value: '0', label: 'seconds left' };
   }
 
-  _getSubtitle() {
+    _getSubtitle() {
     if (this._expired) return 'Timer has expired';
     
     const { months, days, hours, minutes, seconds } = this._timeRemaining;
@@ -446,7 +446,7 @@ class PaceCard extends HTMLElement {
           color: ${color};
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
-          aspect-ratio: 16:9;
+          aspect-ratio: 2:1;
         }
         
         .card.size-small {

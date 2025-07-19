@@ -446,7 +446,7 @@ class PaceCard extends HTMLElement {
           color: ${color};
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
-          aspect-ratio: 16:9;
+          aspect-ratio: 2:1;
         }
         
         .card.size-small {

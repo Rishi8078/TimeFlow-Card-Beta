@@ -110,7 +110,6 @@ class PaceCard extends HTMLElement {
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
-      card_style: 'modern',
       size: 'medium' // small, medium, large
     };
   }
@@ -277,7 +276,6 @@ class PaceCard extends HTMLElement {
       color = '#ffffff',
       background_color,
       progress_color,
-      card_style = 'modern',
       size = 'medium',
       expired_text = 'Completed! 🎉'
     } = this._config;
@@ -467,7 +465,7 @@ class PaceCard extends HTMLElement {
               progress="${this._getProgress()}"
               color="${progressColor}"
               size="100"
-              stroke-width="25"
+              stroke-width="17"
             ></progress-circle>
           </div>
         </div>

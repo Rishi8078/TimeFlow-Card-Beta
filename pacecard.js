@@ -209,9 +209,9 @@ class PaceCard extends HTMLElement {
     let creationDate;
     if (this._config.creation_date) {
       const creationDateValue = this._getEntityValueOrString(this._config.creation_date);
-      creationDate = creationDateValue ? new Date(creationDateValue).getTime() : targetDate - (365 * 24 * 60 * 60 * 1000);
+      creationDate = creationDateValue ? new Date(creationDateValue).getTime() : Date.now();
     } else {
-      creationDate = targetDate - (365 * 24 * 60 * 60 * 1000);
+      creationDate = Date.now(); // Use today's date as default
     }
     
     const totalDuration = targetDate - creationDate;

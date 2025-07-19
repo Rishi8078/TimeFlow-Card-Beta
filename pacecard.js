@@ -483,7 +483,7 @@ class PaceCard extends HTMLElement {
           flex-direction: column;
           justify-content: space-between;
           padding: 20px;
-          border-radius: 16px;
+          border-radius: 22px;
           position: relative;
           overflow: hidden;
           background: ${bgColor};
@@ -576,7 +576,7 @@ class PaceCard extends HTMLElement {
         @media (max-width: 480px) {
           .card {
             padding: 16px;
-            border-radius: 12px;
+            border-radius: 22px;
           }
           
           .title {

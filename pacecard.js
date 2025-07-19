@@ -168,54 +168,78 @@ class PaceCard extends HTMLElement {
     const difference = targetDate - now;
 
     if (difference > 0) {
-      // Calculate time units based on what's enabled
+      // Calculate time units based on what's enabled - cascade disabled units into enabled ones
       const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
       
-      let remaining = difference;
+      let totalMilliseconds = difference;
       let months = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
       
-      // Calculate months if enabled
+      // Find the largest enabled unit and calculate everything from there
       if (show_months) {
-        months = Math.floor(remaining / (1000 * 60 * 60 * 24 * 30.44));
-        remaining = remaining % (1000 * 60 * 60 * 24 * 30.44);
-      }
-      
-      // Calculate days if enabled, or add months to days if months disabled
-      if (show_days) {
-        days = Math.floor(remaining / (1000 * 60 * 60 * 24));
-        remaining = remaining % (1000 * 60 * 60 * 24);
-      } else if (!show_months) {
-        // If months disabled, calculate total days
-        days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        remaining = difference % (1000 * 60 * 60 * 24);
-      }
-      
-      // Calculate hours if enabled, or add days to hours if days disabled
-      if (show_hours) {
-        hours = Math.floor(remaining / (1000 * 60 * 60));
-        remaining = remaining % (1000 * 60 * 60);
-      } else if (!show_days && !show_months) {
-        // If days and months disabled, calculate total hours
-        hours = Math.floor(difference / (1000 * 60 * 60));
-        remaining = difference % (1000 * 60 * 60);
-      }
-      
-      // Calculate minutes if enabled, or add hours to minutes if hours disabled
-      if (show_minutes) {
-        minutes = Math.floor(remaining / (1000 * 60));
-        remaining = remaining % (1000 * 60);
-      } else if (!show_hours && !show_days && !show_months) {
-        // If hours, days and months disabled, calculate total minutes
-        minutes = Math.floor(difference / (1000 * 60));
-        remaining = difference % (1000 * 60);
-      }
-      
-      // Calculate seconds if enabled, or add minutes to seconds if minutes disabled
-      if (show_seconds) {
-        seconds = Math.floor(remaining / 1000);
-      } else if (!show_minutes && !show_hours && !show_days && !show_months) {
-        // If all other units disabled, calculate total seconds
-        seconds = Math.floor(difference / 1000);
+        // Normal calculation when months are enabled
+        months = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24 * 30.44));
+        totalMilliseconds = totalMilliseconds % (1000 * 60 * 60 * 24 * 30.44);
+        
+        if (show_days) {
+          days = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
+          totalMilliseconds = totalMilliseconds % (1000 * 60 * 60 * 24);
+        }
+        
+        if (show_hours) {
+          hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+          totalMilliseconds = totalMilliseconds % (1000 * 60 * 60);
+        }
+        
+        if (show_minutes) {
+          minutes = Math.floor(totalMilliseconds / (1000 * 60));
+          totalMilliseconds = totalMilliseconds % (1000 * 60);
+        }
+        
+        if (show_seconds) {
+          seconds = Math.floor(totalMilliseconds / 1000);
+        }
+      } else if (show_days) {
+        // Months disabled - put everything into days and below
+        days = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
+        totalMilliseconds = totalMilliseconds % (1000 * 60 * 60 * 24);
+        
+        if (show_hours) {
+          hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+          totalMilliseconds = totalMilliseconds % (1000 * 60 * 60);
+        }
+        
+        if (show_minutes) {
+          minutes = Math.floor(totalMilliseconds / (1000 * 60));
+          totalMilliseconds = totalMilliseconds % (1000 * 60);
+        }
+        
+        if (show_seconds) {
+          seconds = Math.floor(totalMilliseconds / 1000);
+        }
+      } else if (show_hours) {
+        // Days and months disabled - put everything into hours and below
+        hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+        totalMilliseconds = totalMilliseconds % (1000 * 60 * 60);
+        
+        if (show_minutes) {
+          minutes = Math.floor(totalMilliseconds / (1000 * 60));
+          totalMilliseconds = totalMilliseconds % (1000 * 60);
+        }
+        
+        if (show_seconds) {
+          seconds = Math.floor(totalMilliseconds / 1000);
+        }
+      } else if (show_minutes) {
+        // Only minutes and possibly seconds enabled
+        minutes = Math.floor(totalMilliseconds / (1000 * 60));
+        totalMilliseconds = totalMilliseconds % (1000 * 60);
+        
+        if (show_seconds) {
+          seconds = Math.floor(totalMilliseconds / 1000);
+        }
+      } else if (show_seconds) {
+        // Only seconds enabled
+        seconds = Math.floor(totalMilliseconds / 1000);
       }
 
       this._timeRemaining = { months, days, hours, minutes, seconds, total: difference };

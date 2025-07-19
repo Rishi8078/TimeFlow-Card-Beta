@@ -122,7 +122,16 @@ class PaceCard extends HTMLElement {
     
     // If no creation_date is provided, set it to today (when card is created)
     if (!config.creation_date && !this._config.creation_date) {
-      config.creation_date = new Date().toISOString();
+      // Always use strict ISO format for cross-browser compatibility
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      config.creation_date = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
     
     this._config = { ...config };
@@ -157,6 +166,32 @@ class PaceCard extends HTMLElement {
     }
   }
 
+  // Helper for consistent date parsing across platforms
+  _parseISODate(dateString) {
+    try {
+      // Handle ISO format strings properly (most reliable cross-platform)
+      if (typeof dateString === 'string' && dateString.includes('T')) {
+        // ISO format parsing is most consistent across browsers/devices
+        const [datePart, timePart] = dateString.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        
+        if (timePart && timePart.includes(':')) {
+          const [hour, minute, secondPart] = timePart.split(':');
+          const second = secondPart ? parseInt(secondPart) : 0;
+          return new Date(year, month - 1, day, hour, minute, second).getTime();
+        } else {
+          return new Date(year, month - 1, day).getTime();
+        }
+      } else {
+        // Fallback to regular parsing for other formats
+        return new Date(dateString).getTime();
+      }
+    } catch (e) {
+      console.error('Error parsing date:', e);
+      return new Date(dateString).getTime();
+    }
+  }
+  
   _updateCountdown() {
     if (!this._config.target_date) return;
     
@@ -164,7 +199,9 @@ class PaceCard extends HTMLElement {
     const targetDateValue = this._getEntityValueOrString(this._config.target_date);
     if (!targetDateValue) return;
     
-    const targetDate = new Date(targetDateValue).getTime();
+    // Use the helper method for consistent date parsing
+    const targetDate = this._parseISODate(targetDateValue);
+    
     const difference = targetDate - now;
 
     if (difference > 0) {
@@ -280,13 +317,20 @@ class PaceCard extends HTMLElement {
     const targetDateValue = this._getEntityValueOrString(this._config.target_date);
     if (!targetDateValue) return 0;
     
-    const targetDate = new Date(targetDateValue).getTime();
+    // Use the helper method for consistent date parsing
+    const targetDate = this._parseISODate(targetDateValue);
     const now = Date.now();
     
     let creationDate;
     if (this._config.creation_date) {
       const creationDateValue = this._getEntityValueOrString(this._config.creation_date);
-      creationDate = creationDateValue ? new Date(creationDateValue).getTime() : now;
+      
+      if (creationDateValue) {
+        // Use the helper method for consistent date parsing
+        creationDate = this._parseISODate(creationDateValue);
+      } else {
+        creationDate = now;
+      }
     } else {
       creationDate = now; // Fallback to now if somehow no creation date
     }

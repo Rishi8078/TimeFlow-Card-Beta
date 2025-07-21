@@ -18,9 +18,10 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 ## 🚀 Installation
 
 ### HACS (Recommended)
-1. Open HACS → Frontend → "+" button
-2. Search for "TimeFlow Card" and install
-3. Add to your Lovelace configuration
+1. Open HACS → Frontend → "⋮" (three dots menu) → Custom repositories
+2. Add repository URL: `https://github.com/Rishi8078/TimeFlow-Card`
+3. Select category: "Dashboard"
+4. Click "Add" → Search for Timeflow-card → install
 
 ### Manual
 1. Download `timeflow-card.js` from [releases](https://github.com/Rishi8078/TimeFlow-Card/releases)

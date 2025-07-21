@@ -97,6 +97,21 @@ height: "150px"                       # Card height: '100px', 'auto', etc.
 aspect_ratio: "2/1"                   # Aspect ratio: '1/1', '2/1', '3/1', '1/1.5'
 icon_size: "100px"                    # Progress circle size: '80px', '120px'
 stroke_width: 15                      # Progress circle thickness: 10, 20, etc.
+
+# Styles Configuration (like button-card)
+styles:
+  card:
+    - height: 150px
+    - border-radius: 25px
+  title:
+    - color: yellow
+    - font-size: 1.8rem
+    - text-transform: uppercase
+  subtitle:
+    - color: orange
+    - font-size: 1.2rem
+  progress_circle:
+    - transform: scale(1.1)
 ```
 
 ### Dynamic Sizing Options
@@ -108,6 +123,15 @@ The TimeFlow Card now supports flexible sizing similar to the button-card:
 - **`aspect_ratio`**: Set aspect ratio when height not specified (`'1/1'`, `'2/1'`, `'3/1'`, `'1/1.5'`)
 - **`icon_size`**: Set progress circle size (`'80px'`, `'120px'`, `'150px'`)
 - **`stroke_width`**: Set progress circle thickness (`10`, `15`, `20`)
+
+### Styles Configuration
+
+Like button-card, you can customize individual elements using the `styles` configuration:
+
+- **`card`**: Style the main card container
+- **`title`**: Style the title text
+- **`subtitle`**: Style the subtitle/countdown text
+- **`progress_circle`**: Style the progress circle element
 
 ### Sizing Examples
 
@@ -134,10 +158,6 @@ width: "250px"
 height: "200px"
 icon_size: "100px"
 stroke_width: 20
-```
-background_color: "#1976d2"            # Card background
-progress_color: "#4CAF50"              # Progress circle color
-size: "medium"                         # small, medium, large
 ```
 
 ## ⚙️ Configuration Options
@@ -167,6 +187,15 @@ size: "medium"                         # small, medium, large
 | `aspect_ratio` | string | `"2/1"` | Aspect ratio when height not specified (e.g., `"1/1"`, `"2/1"`, `"3/1"`) |
 | `icon_size` | string | `"100px"` | Progress circle size (e.g., `"80px"`, `"120px"`) |
 | `stroke_width` | number | `15` | Progress circle thickness (e.g., `10`, `20`) |
+
+### Styles Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `styles.card` | array | `[]` | CSS styles for the card container (e.g., `['height: 150px', 'border-radius: 25px']`) |
+| `styles.title` | array | `[]` | CSS styles for the title text (e.g., `['color: yellow', 'font-size: 1.8rem']`) |
+| `styles.subtitle` | array | `[]` | CSS styles for the subtitle/countdown text (e.g., `['color: orange']`) |
+| `styles.progress_circle` | array | `[]` | CSS styles for the progress circle (e.g., `['transform: scale(1.1)']`) |
 
 ## 🔗 Using Home Assistant Entities
 

@@ -116,7 +116,13 @@ class TimeFlowCard extends HTMLElement {
       height: null, // e.g., '150px' or 'auto'
       aspect_ratio: '2/1', // e.g., '1/1', '2/1', '3/1', '1/1.5'
       icon_size: '100px', // e.g., '80px', '20%', '100px'
-      stroke_width: 15 // Progress circle thickness
+      stroke_width: 15, // Progress circle thickness
+      styles: {
+        card: [],
+        title: [],
+        subtitle: [],
+        progress_circle: []
+      }
     };
   }
 
@@ -453,6 +459,34 @@ class TimeFlowCard extends HTMLElement {
     // This allows card-mod to automatically apply styles
   }
 
+  _processStyles(styles, element) {
+    if (!styles || !Array.isArray(styles)) return '';
+    
+    return styles.map(style => {
+      if (typeof style === 'string') {
+        return style;
+      } else if (typeof style === 'object') {
+        return Object.entries(style)
+          .map(([prop, value]) => `${prop}: ${value}`)
+          .join('; ');
+      }
+      return '';
+    }).join('; ');
+  }
+
+  _buildStylesObject() {
+    const { styles = {} } = this._config;
+    
+    const processedStyles = {
+      card: this._processStyles(styles.card),
+      title: this._processStyles(styles.title),
+      subtitle: this._processStyles(styles.subtitle),
+      progress_circle: this._processStyles(styles.progress_circle)
+    };
+
+    return processedStyles;
+  }
+
   render() {
     const {
       title = 'Countdown Timer',
@@ -494,6 +528,9 @@ class TimeFlowCard extends HTMLElement {
       cardStyles.push('min-height: 120px');
     }
 
+    // Build custom styles from config
+    const customStyles = this._buildStylesObject();
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -521,6 +558,7 @@ class TimeFlowCard extends HTMLElement {
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
           ${cardStyles.join(';\n          ')};
+          ${customStyles.card ? customStyles.card : ''}
         }
         
         /* CLEAN HEADER SECTION - Like reference cards */
@@ -546,6 +584,7 @@ class TimeFlowCard extends HTMLElement {
           opacity: 0.9;
           line-height: 1.3;
           letter-spacing: -0.01em;
+          ${customStyles.title ? customStyles.title : ''}
         }
         
         .subtitle {
@@ -554,6 +593,7 @@ class TimeFlowCard extends HTMLElement {
           margin: 0;
           font-weight: 400;
           line-height: 1.2;
+          ${customStyles.subtitle ? customStyles.subtitle : ''}
         }
         
         .progress-section {
@@ -582,6 +622,7 @@ class TimeFlowCard extends HTMLElement {
         
         .progress-circle {
           opacity: 0.9;
+          ${customStyles.progress_circle ? customStyles.progress_circle : ''}
         }
         
         /* Responsive design */
@@ -641,7 +682,7 @@ class TimeFlowCard extends HTMLElement {
               class="progress-circle"
               progress="${this._getProgress()}"
               color="${progressColor}"
-              size="${icon_size}"
+              size="${icon_size.replace('px', '')}"
               stroke-width="${stroke_width}"
             ></progress-circle>
           </div>
@@ -684,7 +725,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '3.1.0';
+    return '3.1.1';
   }
 }
 

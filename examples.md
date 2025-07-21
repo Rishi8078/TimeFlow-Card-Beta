@@ -102,6 +102,70 @@ aspect_ratio: "1/1"
 background_color: "#607D8B"
 ```
 
+### Styles Configuration Examples
+
+#### Custom Styled Card (like button-card)
+```yaml
+type: custom:timeflow-card
+title: "Styled Timer"
+target_date: "2025-12-31T23:59:59"
+background_color: "#2196F3"
+styles:
+  card:
+    - height: 180px
+    - border-radius: 25px
+    - box-shadow: 0 4px 20px rgba(33, 150, 243, 0.3)
+  title:
+    - color: yellow
+    - font-size: 1.8rem
+    - text-transform: uppercase
+    - letter-spacing: 2px
+  subtitle:
+    - color: orange
+    - font-size: 1.2rem
+    - font-weight: bold
+  progress_circle:
+    - transform: scale(1.1)
+    - filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))
+```
+
+#### Compact Mobile Style
+```yaml
+type: custom:timeflow-card
+title: "Mobile Timer"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "3/1"
+icon_size: "60px"
+stroke_width: 8
+styles:
+  card:
+    - padding: 12px
+  title:
+    - font-size: 1.2rem
+  subtitle:
+    - font-size: 0.9rem
+```
+
+#### Dark Theme with Custom Fonts
+```yaml
+type: custom:timeflow-card
+title: "Dark Timer"
+target_date: "2025-12-31T23:59:59"
+background_color: "#1a1a1a"
+color: "#ffffff"
+progress_color: "#00ff88"
+styles:
+  card:
+    - border: 2px solid #333
+  title:
+    - font-family: 'Courier New, monospace'
+    - color: #00ff88
+    - text-shadow: 0 0 10px rgba(0, 255, 136, 0.5)
+  subtitle:
+    - font-family: 'Courier New, monospace'
+    - color: #888
+```
+
 ### Holiday Countdown (Christmas)
 ```yaml
 type: custom:timeflow-card

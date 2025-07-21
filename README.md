@@ -184,29 +184,10 @@ cards:
 - Use ISO format in entity states
 - Check entity availability in Developer Tools
 
-**Mobile problems?**
-- Use ISO 8601 format for cross-platform compatibility
-- Avoid spaces in date strings
-
-**Performance issues?**
-- Avoid very short update intervals (< 1 second)
-- Check browser developer console for errors
-
-## 🌐 Browser Compatibility
-
-- **Chrome/Edge**: Full support ✅
-- **Firefox**: Full support ✅  
-- **Safari**: Full support ✅
-- **Mobile browsers**: Responsive design optimized
-- **Minimum requirements**: ES6+ support (most modern browsers)
 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-**Made with ❤️ for the Home Assistant community**
 
 ## ☕ Support Development
 
@@ -214,6 +195,9 @@ If you find TimeFlow Card useful, consider buying me a coffee! Your support help
 
 <a href="https://coff.ee/rishi8078" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
+---
+
+**Made with ❤️ for the Home Assistant community**
 <!-- Link references -->
 [ha_badge]: https://img.shields.io/badge/Home%20Assistant-Compatible-green
 [ha_link]: https://www.home-assistant.io/

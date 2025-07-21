@@ -32,19 +32,28 @@
 </head>
 <body>
   <div class="container">
-    <h1>TimeFlow Card - Card-mod Integration Test</h1>
+    <h1>TimeFlow Card - Enhanced Styling Test</h1>
     
     <div id="test-results"></div>
     
-    <h3>Test Card (with card-mod styling):</h3>
-    <timeflow-card id="test-card"></timeflow-card>
+    <h3>Test 1: Card-mod styling (should work):</h3>
+    <timeflow-card id="test-card-mod"></timeflow-card>
+    
+    <h3>Test 2: Native styling (should work now):</h3>
+    <timeflow-card id="test-card-native"></timeflow-card>
+    
+    <h3>Test 3: Proportional scaling (small card):</h3>
+    <timeflow-card id="test-card-small" style="width: 200px;"></timeflow-card>
+    
+    <h3>Test 4: Proportional scaling (large card):</h3>
+    <timeflow-card id="test-card-large" style="width: 500px;"></timeflow-card>
     
     <h3>Expected Behavior:</h3>
     <ul>
-      <li>Card should have a gradient background</li>
-      <li>Border should be visible</li>
-      <li>Title should be white with shadow</li>
-      <li>Custom border radius should be applied</li>
+      <li><strong>Card 1:</strong> Blue gradient, custom styling via card-mod</li>
+      <li><strong>Card 2:</strong> Red title, green background via native styles</li>
+      <li><strong>Card 3:</strong> Small card with proportionally sized elements</li>
+      <li><strong>Card 4:</strong> Large card with proportionally sized elements</li>
     </ul>
   </div>
 
@@ -76,7 +85,10 @@
     // Test card-mod integration
     document.addEventListener('DOMContentLoaded', () => {
       const results = document.getElementById('test-results');
-      const testCard = document.getElementById('test-card');
+      const testCardMod = document.getElementById('test-card-mod');
+      const testCardNative = document.getElementById('test-card-native');
+      const testCardSmall = document.getElementById('test-card-small');
+      const testCardLarge = document.getElementById('test-card-large');
       
       function addResult(test, pass, message) {
         const div = document.createElement('div');
@@ -89,8 +101,8 @@
       const cardModExists = customElements.get('card-mod');
       addResult('Card-mod Mock', !!cardModExists, cardModExists ? 'Available' : 'Not found');
       
-      // Test 2: Configure the card with card-mod
-      const config = {
+      // Test 2: Configure cards with different styling approaches
+      const cardModConfig = {
         target_date: "2025-12-31T23:59:59",
         title: "Card-mod Test",
         card_mod: {
@@ -108,25 +120,71 @@
           `
         }
       };
+
+      const nativeStyleConfig = {
+        target_date: "2025-12-31T23:59:59",
+        title: "Native Styles Test",
+        background_color: "#4CAF50",
+        styles: {
+          title: ["color: #FF5722", "font-weight: bold"],
+          subtitle: ["color: #FFC107"],
+          card: ["border: 3px solid #FF9800"]
+        }
+      };
+
+      const smallCardConfig = {
+        target_date: "2025-12-31T23:59:59",
+        title: "Small Card",
+        width: "200px",
+        height: "120px"
+      };
+
+      const largeCardConfig = {
+        target_date: "2025-12-31T23:59:59",
+        title: "Large Card",
+        width: "500px",
+        height: "250px"
+      };
       
       try {
-        testCard.setConfig(config);
-        addResult('Card Configuration', true, 'Successfully configured with card-mod');
+        // Configure all test cards
+        testCardMod.setConfig(cardModConfig);
+        testCardNative.setConfig(nativeStyleConfig);
+        testCardSmall.setConfig(smallCardConfig);
+        testCardLarge.setConfig(largeCardConfig);
         
-        // Test 3: Check if _applyCardMod method exists
-        const hasCardModMethod = typeof testCard._applyCardMod === 'function';
+        addResult('Card Configuration', true, 'All cards configured successfully');
+        
+        // Test 3: Check methods exist
+        const hasCardModMethod = typeof testCardMod._applyCardMod === 'function';
         addResult('Card-mod Method', hasCardModMethod, hasCardModMethod ? 'Method exists' : 'Method missing');
         
-        // Test 4: Check if ha-card element is created
+        const hasNativeStyleMethod = typeof testCardNative._applyNativeStyles === 'function';
+        addResult('Native Style Method', hasNativeStyleMethod, hasNativeStyleMethod ? 'Method exists' : 'Method missing');
+        
+        const hasProportionalMethod = typeof testCardSmall._calculateProportionalSizes === 'function';
+        addResult('Proportional Sizing', hasProportionalMethod, hasProportionalMethod ? 'Method exists' : 'Method missing');
+        
+        // Test 4: Check if elements are created
         setTimeout(() => {
-          const haCard = testCard.shadowRoot.querySelector('ha-card');
-          addResult('ha-card Element', !!haCard, haCard ? 'Created successfully' : 'Not found');
+          const haCards = [testCardMod, testCardNative, testCardSmall, testCardLarge].map(
+            card => card.shadowRoot.querySelector('ha-card')
+          );
+          const allHaveHaCard = haCards.every(card => !!card);
+          addResult('ha-card Elements', allHaveHaCard, allHaveHaCard ? 'All created successfully' : 'Some missing');
           
-          // Test 5: Check if card-mod was applied
+          // Test 5: Check proportional scaling
           setTimeout(() => {
-            const haCard = testCard.shadowRoot.querySelector('ha-card');
-            const hasCardMod = haCard && haCard.shadowRoot && haCard.shadowRoot.querySelector('style');
-            addResult('Card-mod Applied', !!hasCardMod, hasCardMod ? 'Styles applied' : 'No styles found');
+            const smallTitle = testCardSmall.shadowRoot.querySelector('.title');
+            const largeTitle = testCardLarge.shadowRoot.querySelector('.title');
+            
+            if (smallTitle && largeTitle) {
+              const smallFontSize = parseFloat(getComputedStyle(smallTitle).fontSize);
+              const largeFontSize = parseFloat(getComputedStyle(largeTitle).fontSize);
+              const isProportional = largeFontSize > smallFontSize;
+              addResult('Proportional Fonts', isProportional, 
+                isProportional ? `Small: ${smallFontSize}px, Large: ${largeFontSize}px` : 'Not scaling properly');
+            }
           }, 100);
         }, 100);
         

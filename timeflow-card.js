@@ -592,7 +592,7 @@ class TimeFlowCard extends HTMLElement {
     }
   }
 
-  // Calculate dynamic icon size based on card dimensions
+  // Calculate dynamic icon size based on card dimensions - now truly proportional
   _calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
     // Use cached value if available and config hasn't changed
     if (this._cache.dynamicIconSize !== null && !this._hasConfigChanged()) {
@@ -600,54 +600,49 @@ class TimeFlowCard extends HTMLElement {
     }
 
     try {
-      // Parse the configured icon_size (remove 'px' if present)
-      const baseIconSize = typeof icon_size === 'string' ? 
-        parseInt(icon_size.replace('px', '')) : 
-        (typeof icon_size === 'number' ? icon_size : 100);
+      // Default card dimensions if not specified
+      const defaultWidth = 300;
+      const defaultHeight = 150;
 
-      // If we have explicit width and height, use them for calculations
+      let cardWidth = defaultWidth;
+      let cardHeight = defaultHeight;
+
+      // Calculate actual card dimensions
       if (width && height) {
-        const cardWidth = this._parseDimension(width);
-        const cardHeight = this._parseDimension(height);
-        
-        if (cardWidth && cardHeight) {
-          // Scale icon to be roughly 40-50% of the smaller dimension
-          const minDimension = Math.min(cardWidth, cardHeight);
-          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
-          return this._cache.dynamicIconSize;
-        }
+        cardWidth = this._parseDimension(width) || defaultWidth;
+        cardHeight = this._parseDimension(height) || defaultHeight;
+      } else if (width && aspect_ratio) {
+        cardWidth = this._parseDimension(width) || defaultWidth;
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardHeight = cardWidth * (ratioH / ratioW);
+      } else if (height && aspect_ratio) {
+        cardHeight = this._parseDimension(height) || defaultHeight;
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardWidth = cardHeight * (ratioW / ratioH);
+      } else if (aspect_ratio) {
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardHeight = defaultWidth * (ratioH / ratioW);
+        cardWidth = defaultWidth;
       }
 
-      // If we have width and aspect ratio, calculate based on that
-      if (width && aspect_ratio) {
-        const cardWidth = this._parseDimension(width);
-        if (cardWidth) {
-          const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-          const cardHeight = cardWidth * (ratioH / ratioW);
-          const minDimension = Math.min(cardWidth, cardHeight);
-          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
-          return this._cache.dynamicIconSize;
-        }
+      // Icon should be 35-45% of the smaller dimension for optimal proportion
+      const minDimension = Math.min(cardWidth, cardHeight);
+      const proportionalSize = minDimension * 0.4;
+
+      // Respect explicit icon_size if provided, otherwise use proportional
+      if (icon_size && icon_size !== '100px') {
+        const baseIconSize = typeof icon_size === 'string' ? 
+          parseInt(icon_size.replace('px', '')) : 
+          (typeof icon_size === 'number' ? icon_size : proportionalSize);
+        this._cache.dynamicIconSize = Math.max(40, Math.min(baseIconSize, minDimension * 0.6));
+      } else {
+        this._cache.dynamicIconSize = Math.max(40, Math.min(proportionalSize, 120));
       }
 
-      // If we have height, estimate width using aspect ratio
-      if (height && aspect_ratio) {
-        const cardHeight = this._parseDimension(height);
-        if (cardHeight) {
-          const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-          const cardWidth = cardHeight * (ratioW / ratioH);
-          const minDimension = Math.min(cardWidth, cardHeight);
-          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
-          return this._cache.dynamicIconSize;
-        }
-      }
-
-      // Fallback: use the configured icon_size as-is
-      this._cache.dynamicIconSize = baseIconSize;
       return this._cache.dynamicIconSize;
     } catch (error) {
       console.warn('TimeFlow Card: Error calculating dynamic icon size:', error);
-      this._cache.dynamicIconSize = 100; // Safe fallback
+      this._cache.dynamicIconSize = 80; // Safe fallback
       return this._cache.dynamicIconSize;
     }
   }
@@ -667,13 +662,57 @@ class TimeFlowCard extends HTMLElement {
       const ratio = 0.15;
       const calculatedStroke = Math.round(iconSize * ratio);
       
-      // Keep stroke width within reasonable bounds (6-25px)
-      this._cache.dynamicStrokeWidth = Math.max(6, Math.min(calculatedStroke, 25));
+      // Keep stroke width within reasonable bounds (4-20px)
+      this._cache.dynamicStrokeWidth = Math.max(4, Math.min(calculatedStroke, 20));
       return this._cache.dynamicStrokeWidth;
     } catch (error) {
       console.warn('TimeFlow Card: Error calculating dynamic stroke width:', error);
-      this._cache.dynamicStrokeWidth = 15; // Safe fallback
+      this._cache.dynamicStrokeWidth = 12; // Safe fallback
       return this._cache.dynamicStrokeWidth;
+    }
+  }
+
+  // Calculate proportional font sizes based on card dimensions
+  _calculateProportionalSizes(width, height, aspect_ratio) {
+    try {
+      // Default card dimensions if not specified
+      const defaultWidth = 300;
+      const defaultHeight = 150;
+
+      let cardWidth = defaultWidth;
+      let cardHeight = defaultHeight;
+
+      // Calculate actual card dimensions (same logic as icon size)
+      if (width && height) {
+        cardWidth = this._parseDimension(width) || defaultWidth;
+        cardHeight = this._parseDimension(height) || defaultHeight;
+      } else if (width && aspect_ratio) {
+        cardWidth = this._parseDimension(width) || defaultWidth;
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardHeight = cardWidth * (ratioH / ratioW);
+      } else if (height && aspect_ratio) {
+        cardHeight = this._parseDimension(height) || defaultHeight;
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardWidth = cardHeight * (ratioW / ratioH);
+      } else if (aspect_ratio) {
+        const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+        cardHeight = defaultWidth * (ratioH / ratioW);
+        cardWidth = defaultWidth;
+      }
+
+      // Calculate proportional font sizes based on card area
+      const cardArea = cardWidth * cardHeight;
+      const scaleFactor = Math.sqrt(cardArea / (defaultWidth * defaultHeight));
+
+      return {
+        titleSize: Math.max(1.2, Math.min(2.2, 1.6 * scaleFactor)),
+        subtitleSize: Math.max(0.9, Math.min(1.4, 1.1 * scaleFactor)),
+        cardWidth,
+        cardHeight
+      };
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating proportional sizes:', error);
+      return { titleSize: 1.6, subtitleSize: 1.1, cardWidth: 300, cardHeight: 150 };
     }
   }
 
@@ -736,6 +775,14 @@ class TimeFlowCard extends HTMLElement {
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';
 
+    // Calculate proportional sizes based on card dimensions
+    const proportionalSizes = this._calculateProportionalSizes(width, height, aspect_ratio);
+    const dynamicIconSize = this._calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
+    const dynamicStrokeWidth = this._calculateDynamicStrokeWidth(dynamicIconSize, stroke_width);
+
+    // Build custom styles from config
+    const customStyles = this._buildStylesObject();
+
     // Calculate card dimensions dynamically
     const cardStyles = [];
     
@@ -754,13 +801,6 @@ class TimeFlowCard extends HTMLElement {
       // Fallback minimum height
       cardStyles.push('min-height: 120px');
     }
-
-    // Calculate dynamic progress circle size based on card dimensions
-    const dynamicIconSize = this._calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
-    const dynamicStrokeWidth = this._calculateDynamicStrokeWidth(dynamicIconSize, stroke_width);
-
-    // Build custom styles from config
-    const customStyles = this._buildStylesObject();
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -796,7 +836,6 @@ class TimeFlowCard extends HTMLElement {
           justify-content: space-between;
           padding: 20px;
           height: 100%;
-          ${customStyles.card ? customStyles.card : ''}
         }
         
         /* CLEAN HEADER SECTION - Like reference cards */
@@ -814,24 +853,23 @@ class TimeFlowCard extends HTMLElement {
           gap: 2px;
         }
         
-        /* IMPROVED TYPOGRAPHY - Matching reference cards */
+        /* PROPORTIONAL TYPOGRAPHY - Scales with card size */
         .title {
-          font-size: clamp(1.4rem, 4vw, 2rem);
+          font-size: ${proportionalSizes.titleSize}rem;
           font-weight: 500;
           margin: 0;
           opacity: 0.9;
           line-height: 1.3;
           letter-spacing: -0.01em;
-          ${customStyles.title ? customStyles.title : ''}
         }
         
         .subtitle {
-          font-size: clamp(1rem, 3vw, 1.6rem);
+          font-size: ${proportionalSizes.subtitleSize}rem;
           opacity: 0.65;
           margin: 0;
           font-weight: 400;
           line-height: 1.2;
-          ${customStyles.subtitle ? customStyles.subtitle : ''}
+        }
         }
         
         .progress-section {
@@ -860,62 +898,11 @@ class TimeFlowCard extends HTMLElement {
         
         .progress-circle {
           opacity: 0.9;
-          ${customStyles.progress_circle ? customStyles.progress_circle : ''}
-        }
-        
-        /* Responsive design with container queries for better scaling */
-        @container (max-width: 250px) {
-          .card {
-            padding: 12px;
-          }
-          
-          .title {
-            font-size: 1.2rem;
-          }
-          
-          .subtitle {
-            font-size: 0.9rem;
-          }
-        }
-        
-        /* Responsive design */
-        @media (max-width: 480px) {
-          .card {
-            padding: 16px;
-            border-radius: 22px;
-          }
-          
-          .title {
-            font-size: 1.6rem;
-          }
-          
-          .subtitle {
-            font-size: 1.2rem;
-          }
-          
-          :host {
-            --timeflow-card-icon-size: calc(var(--timeflow-card-icon-size) * 0.8);
-          }
-        }
-        
-        /* Extra small screens */
-        @media (max-width: 320px) {
-          .title {
-            font-size: 1.4rem;
-          }
-          
-          .subtitle {
-            font-size: 1rem;
-          }
-          
-          :host {
-            --timeflow-card-icon-size: calc(var(--timeflow-card-icon-size) * 0.7);
-          }
         }
         
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
-          .card {
+          ha-card {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
           }
         }
@@ -956,8 +943,52 @@ class TimeFlowCard extends HTMLElement {
     
     setTimeout(() => {
       this._updateDisplay();
+      this._applyNativeStyles();
       this._applyCardMod();
     }, 0);
+  }
+
+  // Apply native styles from config to DOM elements
+  _applyNativeStyles() {
+    if (!this._domElements || !this._config.styles) return;
+
+    const { styles } = this._config;
+
+    try {
+      // Apply card styles to card-content
+      if (styles.card && this._domElements.cardContent) {
+        const cardStyles = this._processStyles(styles.card);
+        if (cardStyles) {
+          this._domElements.cardContent.style.cssText += '; ' + cardStyles;
+        }
+      }
+
+      // Apply title styles
+      if (styles.title && this._domElements.title) {
+        const titleStyles = this._processStyles(styles.title);
+        if (titleStyles) {
+          this._domElements.title.style.cssText += '; ' + titleStyles;
+        }
+      }
+
+      // Apply subtitle styles
+      if (styles.subtitle && this._domElements.subtitle) {
+        const subtitleStyles = this._processStyles(styles.subtitle);
+        if (subtitleStyles) {
+          this._domElements.subtitle.style.cssText += '; ' + subtitleStyles;
+        }
+      }
+
+      // Apply progress circle styles
+      if (styles.progress_circle && this._domElements.progressCircle) {
+        const progressStyles = this._processStyles(styles.progress_circle);
+        if (progressStyles) {
+          this._domElements.progressCircle.style.cssText += '; ' + progressStyles;
+        }
+      }
+    } catch (error) {
+      console.warn('TimeFlow Card: Error applying native styles:', error);
+    }
   }
 
   // Performance optimization: Update only content that changes
@@ -1022,7 +1053,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '3.4.0';
+    return '3.5.0';
   }
 }
 

@@ -26,7 +26,6 @@ title: "Sarah's Birthday 🎂"
 target_date: "2025-08-20T00:00:00"
 background_color: "#E91E63"
 expired_text: "Happy Birthday! 🎉"
-border_radius: "16px"
 ```
 
 ### Work/Weekend Countdown
@@ -36,7 +35,6 @@ title: "Weekend Countdown"
 target_date: "2025-07-25T17:00:00"
 show_days: false
 background_color: "#FF9800"
-font_size: "1.8rem"
 ```
 
 ### Project Deadline
@@ -46,6 +44,62 @@ title: "Project Due In"
 target_date: "2025-09-30T23:59:59"
 background_color: "#f44336"
 expired_text: "OVERDUE!"
+```
+
+### Dynamic Sizing Examples
+
+#### Square Card
+```yaml
+type: custom:timeflow-card
+title: "Square Timer"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "1/1"
+icon_size: "80px"
+background_color: "#673AB7"
+```
+
+#### Wide Card
+```yaml
+type: custom:timeflow-card
+title: "Wide Dashboard Card"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "3/1"
+icon_size: "120px"
+stroke_width: 20
+background_color: "#009688"
+```
+
+#### Tall Card
+```yaml
+type: custom:timeflow-card
+title: "Tall Card"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "1/1.5"
+icon_size: "100px"
+background_color: "#FF5722"
+```
+
+#### Fixed Dimensions
+```yaml
+type: custom:timeflow-card
+title: "Custom Size"
+target_date: "2025-12-31T23:59:59"
+width: "250px"
+height: "200px"
+icon_size: "90px"
+stroke_width: 18
+background_color: "#795548"
+```
+
+#### Large Progress Circle
+```yaml
+type: custom:timeflow-card
+title: "Big Circle"
+target_date: "2025-12-31T23:59:59"
+icon_size: "150px"
+stroke_width: 25
+aspect_ratio: "1/1"
+background_color: "#607D8B"
 ```
 
 ### Holiday Countdown (Christmas)

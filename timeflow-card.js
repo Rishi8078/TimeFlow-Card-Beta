@@ -111,7 +111,12 @@ class TimeFlowCard extends HTMLElement {
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
-      size: 'medium' // small, medium, large
+      // Dynamic sizing options (like button-card)
+      width: null, // e.g., '200px' or '100%'
+      height: null, // e.g., '150px' or 'auto'
+      aspect_ratio: '2/1', // e.g., '1/1', '2/1', '3/1', '1/1.5'
+      icon_size: '100px', // e.g., '80px', '20%', '100px'
+      stroke_width: 15 // Progress circle thickness
     };
   }
 
@@ -458,24 +463,49 @@ class TimeFlowCard extends HTMLElement {
       color = '#ffffff',
       background_color,
       progress_color,
-      size = 'medium',
+      // Dynamic sizing options (like button-card)
+      width = null,
+      height = null,
+      aspect_ratio = '2/1',
+      icon_size = '100px',
+      stroke_width = 15,
       expired_text = 'Completed! 🎉'
     } = this._config;
 
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';
 
-    const sizeClasses = {
-      small: 'size-small',
-      medium: 'size-medium',
-      large: 'size-large'
-    };
+    // Calculate card dimensions dynamically
+    const cardStyles = [];
+    
+    // Apply width if specified
+    if (width) {
+      cardStyles.push(`width: ${width}`);
+    }
+    
+    // Apply height if specified
+    if (height) {
+      cardStyles.push(`height: ${height}`);
+    } else if (aspect_ratio) {
+      // Use aspect-ratio if height not specified
+      cardStyles.push(`aspect-ratio: ${aspect_ratio}`);
+    } else {
+      // Fallback minimum height
+      cardStyles.push('min-height: 120px');
+    }
 
     this.shadowRoot.innerHTML = `
       <style>
         :host {
           display: block;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+          
+          /* CSS Variables for dynamic theming */
+          --timeflow-card-background-color: ${bgColor};
+          --timeflow-card-text-color: ${color};
+          --timeflow-card-progress-color: ${progressColor};
+          --timeflow-card-icon-size: ${icon_size};
+          --timeflow-card-stroke-width: ${stroke_width};
         }
         
         .card {
@@ -486,29 +516,11 @@ class TimeFlowCard extends HTMLElement {
           border-radius: 22px;
           position: relative;
           overflow: hidden;
-          background: ${bgColor};
-          color: ${color};
+          background: var(--timeflow-card-background-color);
+          color: var(--timeflow-card-text-color);
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
-          aspect-ratio: 2:1;
-        }
-        
-        .card.size-small {
-          min-height: 100px;
-          max-height: 150px;
-          padding: 16px;
-        }
-        
-        .card.size-medium {
-          min-height: 120px;
-          max-height: 200px;
-          padding: 20px;
-        }
-        
-        .card.size-large {
-          min-height: 140px;
-          max-height: 250px;
-          padding: 24px;
+          ${cardStyles.join(';\n          ')};
         }
         
         /* CLEAN HEADER SECTION - Like reference cards */
@@ -580,15 +592,30 @@ class TimeFlowCard extends HTMLElement {
           }
           
           .title {
-            font-size: 1rem;
-          }
-          
-          .main-value {
-            font-size: 2rem;
+            font-size: 1.6rem;
           }
           
           .subtitle {
-            font-size: 0.8rem;
+            font-size: 1.2rem;
+          }
+          
+          :host {
+            --timeflow-card-icon-size: calc(var(--timeflow-card-icon-size) * 0.8);
+          }
+        }
+        
+        /* Extra small screens */
+        @media (max-width: 320px) {
+          .title {
+            font-size: 1.4rem;
+          }
+          
+          .subtitle {
+            font-size: 1rem;
+          }
+          
+          :host {
+            --timeflow-card-icon-size: calc(var(--timeflow-card-icon-size) * 0.7);
           }
         }
         
@@ -600,7 +627,7 @@ class TimeFlowCard extends HTMLElement {
         }
       </style>
       
-      <div class="card timeflow-card ha-card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
+      <div class="card timeflow-card ha-card ${this._expired ? 'expired' : ''}">
         <div class="header">
           <div class="title-section">
             <h2 class="title">${this._expired ? expired_text : title}</h2>
@@ -614,8 +641,8 @@ class TimeFlowCard extends HTMLElement {
               class="progress-circle"
               progress="${this._getProgress()}"
               color="${progressColor}"
-              size="100"
-              stroke-width="15"
+              size="${icon_size}"
+              stroke-width="${stroke_width}"
             ></progress-circle>
           </div>
         </div>
@@ -629,12 +656,35 @@ class TimeFlowCard extends HTMLElement {
   }
 
   getCardSize() {
-    const size = this._config.size || 'medium';
-    return size === 'small' ? 2 : size === 'large' ? 4 : 3;
+    // Dynamic card size based on aspect ratio and dimensions
+    const { aspect_ratio = '2/1', height } = this._config;
+    
+    if (height) {
+      // If explicit height is set, calculate size based on pixels
+      const heightValue = parseInt(height);
+      if (heightValue <= 100) return 1;
+      if (heightValue <= 150) return 2;
+      if (heightValue <= 200) return 3;
+      return 4;
+    }
+    
+    // Calculate based on aspect ratio
+    if (aspect_ratio) {
+      const [width, height] = aspect_ratio.split('/').map(Number);
+      const ratio = height / width;
+      
+      // Taller cards need more rows
+      if (ratio >= 1.5) return 4; // Square-ish or tall
+      if (ratio >= 1) return 3;   // Square
+      if (ratio >= 0.75) return 2; // Slightly wide
+      return 2; // Wide cards
+    }
+    
+    return 3; // Default
   }
 
   static get version() {
-    return '3.0.1';
+    return '3.1.0';
   }
 }
 

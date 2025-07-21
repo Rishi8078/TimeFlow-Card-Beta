@@ -88,6 +88,53 @@ show_hours: true
 show_minutes: true
 show_seconds: true
 color: "#ffffff"                       # Text color
+background_color: "#1976d2"           # Card background color
+progress_color: "#4CAF50"             # Progress circle color
+
+# Dynamic Sizing Options (like button-card)
+width: "300px"                        # Card width: '200px', '100%', etc.
+height: "150px"                       # Card height: '100px', 'auto', etc.
+aspect_ratio: "2/1"                   # Aspect ratio: '1/1', '2/1', '3/1', '1/1.5'
+icon_size: "100px"                    # Progress circle size: '80px', '120px'
+stroke_width: 15                      # Progress circle thickness: 10, 20, etc.
+```
+
+### Dynamic Sizing Options
+
+The TimeFlow Card now supports flexible sizing similar to the button-card:
+
+- **`width`**: Set card width (`'200px'`, `'100%'`, etc.)
+- **`height`**: Set card height (`'150px'`, `'auto'`, etc.)
+- **`aspect_ratio`**: Set aspect ratio when height not specified (`'1/1'`, `'2/1'`, `'3/1'`, `'1/1.5'`)
+- **`icon_size`**: Set progress circle size (`'80px'`, `'120px'`, `'150px'`)
+- **`stroke_width`**: Set progress circle thickness (`10`, `15`, `20`)
+
+### Sizing Examples
+
+```yaml
+# Square card
+type: custom:timeflow-card
+title: "Square Timer"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "1/1"
+icon_size: "80px"
+
+# Wide card
+type: custom:timeflow-card
+title: "Wide Timer"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "3/1"
+icon_size: "120px"
+
+# Fixed dimensions
+type: custom:timeflow-card
+title: "Fixed Size"
+target_date: "2025-12-31T23:59:59"
+width: "250px"
+height: "200px"
+icon_size: "100px"
+stroke_width: 20
+```
 background_color: "#1976d2"            # Card background
 progress_color: "#4CAF50"              # Progress circle color
 size: "medium"                         # small, medium, large
@@ -110,7 +157,16 @@ size: "medium"                         # small, medium, large
 | `color` | string | `"#ffffff"` | Text color (hex format) |
 | `background_color` | string | `"#1976d2"` | Card background color |
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
-| `size` | string | `"medium"` | Card size: `small`, `medium`, or `large` |
+
+### Dynamic Sizing Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `width` | string | `null` | Card width (e.g., `"200px"`, `"100%"`) |
+| `height` | string | `null` | Card height (e.g., `"150px"`, `"auto"`) |
+| `aspect_ratio` | string | `"2/1"` | Aspect ratio when height not specified (e.g., `"1/1"`, `"2/1"`, `"3/1"`) |
+| `icon_size` | string | `"100px"` | Progress circle size (e.g., `"80px"`, `"120px"`) |
+| `stroke_width` | number | `15` | Progress circle thickness (e.g., `10`, `20`) |
 
 ## 🔗 Using Home Assistant Entities
 

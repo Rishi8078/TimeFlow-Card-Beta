@@ -474,7 +474,10 @@ class TimeFlowCard extends HTMLElement {
   }
 
     _getSubtitle() {
-    if (this._expired) return 'Timer has expired';
+    if (this._expired) {
+      const { expired_text = 'Completed! 🎉' } = this._config;
+      return expired_text;
+    }
     
     const { months, days, hours, minutes, seconds } = this._timeRemaining;
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
@@ -912,7 +915,7 @@ class TimeFlowCard extends HTMLElement {
         <div class="card-content">
           <div class="header">
             <div class="title-section">
-              <h2 class="title">${this._expired ? expired_text : title}</h2>
+              <h2 class="title">${title}</h2>
               <p class="subtitle">${this._getSubtitle()}</p>
             </div>
           </div>
@@ -1000,10 +1003,9 @@ class TimeFlowCard extends HTMLElement {
       expired_text = 'Completed! 🎉'
     } = this._config;
 
-    // Update title
-    const titleText = this._expired ? expired_text : title;
-    if (this._domElements.title && this._domElements.title.textContent !== titleText) {
-      this._domElements.title.textContent = titleText;
+    // Update title - always show original title
+    if (this._domElements.title && this._domElements.title.textContent !== title) {
+      this._domElements.title.textContent = title;
     }
 
     // Update subtitle

@@ -212,6 +212,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 If you find TimeFlow Card useful, consider buying me a coffee! Your support helps maintain and improve this project.
 
+<a href="https://coff.ee/rishi8078" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 <!-- Link references -->
 [ha_badge]: https://img.shields.io/badge/Home%20Assistant-Compatible-green
 [ha_link]: https://www.home-assistant.io/

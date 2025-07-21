@@ -99,3 +99,7 @@ typings/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Test files (keep local for development/testing)
+test-*.html
+*.test.html

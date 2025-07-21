@@ -172,7 +172,8 @@ cards:
 **Card not showing?**
 - Check Lovelace resources are added correctly
 - Verify `target_date` format: `"YYYY-MM-DDTHH:mm:ss"`
-- Clear browser cache
+- Clear browser cache (Ctrl+F5 or Cmd+Shift+R)
+- Restart Home Assistant if needed
 
 **Entity issues?**
 - Ensure entity exists and has valid datetime state
@@ -182,6 +183,18 @@ cards:
 **Mobile problems?**
 - Use ISO 8601 format for cross-platform compatibility
 - Avoid spaces in date strings
+
+**Performance issues?**
+- Avoid very short update intervals (< 1 second)
+- Check browser developer console for errors
+
+## 🌐 Browser Compatibility
+
+- **Chrome/Edge**: Full support ✅
+- **Firefox**: Full support ✅  
+- **Safari**: Full support ✅
+- **Mobile browsers**: Responsive design optimized
+- **Minimum requirements**: ES6+ support (most modern browsers)
 
 ## 📄 License
 

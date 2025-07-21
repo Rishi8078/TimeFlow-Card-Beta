@@ -1,6 +1,6 @@
 # TimeFlow Card
 
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
+[![Home Assistant][ha_badge]][ha_link] [![HACS][hacs_badge]][hacs_link] [![GitHub Release][release_badge]][release] [![Buy Me A Coffee][bmac_badge]][bmac]
 
 A beautiful countdown timer card for Home Assistant with animated progress circle and intelligent time formatting.
 
@@ -18,6 +18,10 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 ## 🚀 Installation
 
 ### HACS (Recommended)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rishi8078&repository=Timeflow-card)
+
+**Or manually:**
 1. Open HACS → Frontend → "⋮" (three dots menu) → Custom repositories
 2. Add repository URL: `https://github.com/Rishi8078/TimeFlow-Card`
 3. Select category: "Dashboard"
@@ -32,6 +36,21 @@ resources:
   - url: /local/timeflow-card.js
     type: module
 ```
+## ⚙️ Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `target_date` | string | **Required** | ISO date or entity ID |
+| `title` | string | `"Countdown Timer"` | Card title |
+| `creation_date` | string | `null` | Start date for progress |
+| `expired_text` | string | `"Completed! 🎉"` | Text when expired |
+| `show_*` | boolean | `true` | Show time units (months/days/hours/minutes/seconds) |
+| `width/height` | string | `null` | Card dimensions |
+| `aspect_ratio` | string | `"2/1"` | Card proportions |
+| `color` | string | `"#ffffff"` | Text color |
+| `background_color` | string | `"#1976d2"` | Card background |
+| `progress_color` | string | `"#4CAF50"` | Progress circle color |
+| `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
 
 ## 📝 Configuration Examples
 
@@ -152,22 +171,6 @@ cards:
         - transform: scale(1.0)
 ```
 
-## ⚙️ Configuration Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `target_date` | string | **Required** | ISO date or entity ID |
-| `title` | string | `"Countdown Timer"` | Card title |
-| `creation_date` | string | `null` | Start date for progress |
-| `expired_text` | string | `"Completed! 🎉"` | Text when expired |
-| `show_*` | boolean | `true` | Show time units (months/days/hours/minutes/seconds) |
-| `width/height` | string | `null` | Card dimensions |
-| `aspect_ratio` | string | `"2/1"` | Card proportions |
-| `color` | string | `"#ffffff"` | Text color |
-| `background_color` | string | `"#1976d2"` | Card background |
-| `progress_color` | string | `"#4CAF50"` | Progress circle color |
-| `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
-
 ## 🐛 Troubleshooting
 
 **Card not showing?**
@@ -204,3 +207,17 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **Made with ❤️ for the Home Assistant community**
+
+## ☕ Support Development
+
+If you find TimeFlow Card useful, consider buying me a coffee! Your support helps maintain and improve this project.
+
+<!-- Link references -->
+[ha_badge]: https://img.shields.io/badge/Home%20Assistant-Compatible-green
+[ha_link]: https://www.home-assistant.io/
+[hacs_badge]: https://img.shields.io/badge/HACS-Compatible-orange
+[hacs_link]: https://hacs.xyz/
+[release_badge]: https://img.shields.io/github/v/release/Rishi8078/TimeFlow-Card
+[release]: https://github.com/Rishi8078/TimeFlow-Card/releases
+[bmac_badge]: https://img.shields.io/badge/buy_me_a-coffee-yellow
+[bmac]: https://coff.ee/rishi8078

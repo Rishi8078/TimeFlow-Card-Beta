@@ -131,8 +131,11 @@ class TimeFlowCard extends HTMLElement {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
     
+    // Create a mutable copy of the config
+    const mutableConfig = { ...config };
+    
     // If no creation_date is provided, set it to today (when card is created)
-    if (!config.creation_date && !this._config.creation_date) {
+    if (!mutableConfig.creation_date && !this._config.creation_date) {
       // Always use strict ISO format for cross-browser compatibility
       const now = new Date();
       const year = now.getFullYear();
@@ -142,10 +145,10 @@ class TimeFlowCard extends HTMLElement {
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
       
-      config.creation_date = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      mutableConfig.creation_date = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
     
-    this._config = { ...config };
+    this._config = { ...mutableConfig };
     this.render();
     this._startTimer();
   }
@@ -463,28 +466,43 @@ class TimeFlowCard extends HTMLElement {
     if (!styles || !Array.isArray(styles)) return '';
     
     return styles.map(style => {
-      if (typeof style === 'string') {
-        return style;
-      } else if (typeof style === 'object') {
-        return Object.entries(style)
-          .map(([prop, value]) => `${prop}: ${value}`)
-          .join('; ');
+      try {
+        if (typeof style === 'string') {
+          return style;
+        } else if (typeof style === 'object' && style !== null) {
+          return Object.entries(style)
+            .map(([prop, value]) => `${prop}: ${value}`)
+            .join('; ');
+        }
+        return '';
+      } catch (e) {
+        console.warn('TimeFlow Card: Error processing style:', style, e);
+        return '';
       }
-      return '';
     }).join('; ');
   }
 
   _buildStylesObject() {
     const { styles = {} } = this._config;
     
-    const processedStyles = {
-      card: this._processStyles(styles.card),
-      title: this._processStyles(styles.title),
-      subtitle: this._processStyles(styles.subtitle),
-      progress_circle: this._processStyles(styles.progress_circle)
-    };
+    try {
+      const processedStyles = {
+        card: this._processStyles(styles.card),
+        title: this._processStyles(styles.title),
+        subtitle: this._processStyles(styles.subtitle),
+        progress_circle: this._processStyles(styles.progress_circle)
+      };
 
-    return processedStyles;
+      return processedStyles;
+    } catch (e) {
+      console.warn('TimeFlow Card: Error building styles object:', e);
+      return {
+        card: '',
+        title: '',
+        subtitle: '',
+        progress_circle: ''
+      };
+    }
   }
 
   render() {
@@ -682,7 +700,7 @@ class TimeFlowCard extends HTMLElement {
               class="progress-circle"
               progress="${this._getProgress()}"
               color="${progressColor}"
-              size="${icon_size.replace('px', '')}"
+              size="${typeof icon_size === 'string' ? icon_size.replace('px', '') : icon_size}"
               stroke-width="${stroke_width}"
             ></progress-circle>
           </div>
@@ -725,7 +743,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '3.1.1';
+    return '3.1.2';
   }
 }
 

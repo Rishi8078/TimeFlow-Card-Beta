@@ -163,6 +163,9 @@ class TimeFlowCard extends HTMLElement {
     this._config = { ...mutableConfig };
     this.render();
     this._startTimer();
+    
+    // Re-apply card-mod styles when config changes
+    setTimeout(() => this._applyCardMod(), 0);
   }
 
   set hass(hass) {
@@ -191,10 +194,38 @@ class TimeFlowCard extends HTMLElement {
 
   connectedCallback() {
     this._startTimer();
+    this._applyCardMod();
   }
 
   disconnectedCallback() {
     this._stopTimer();
+  }
+
+  // Card-mod support
+  _applyCardMod() {
+    if (!this._config || !this._config.card_mod) return;
+    
+    // Wait for card-mod to be available and apply styles
+    customElements.whenDefined("card-mod").then(() => {
+      const cardMod = customElements.get("card-mod");
+      if (cardMod && cardMod.applyToElement) {
+        // Get the ha-card element
+        const haCard = this.shadowRoot.querySelector('ha-card');
+        if (haCard) {
+          // Apply card-mod styles to the ha-card element
+          cardMod.applyToElement(
+            haCard,
+            "card",
+            this._config.card_mod,
+            { config: this._config },
+            true, // Use shadow DOM 
+            "type-custom-timeflow-card"
+          );
+        }
+      }
+    }).catch(() => {
+      // Card-mod not available, silently continue
+    });
   }
 
   _startTimer() {
@@ -745,11 +776,10 @@ class TimeFlowCard extends HTMLElement {
           --timeflow-card-stroke-width: ${dynamicStrokeWidth};
         }
         
-        .card {
+        ha-card {
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
-          padding: 20px;
+          padding: 0;
           border-radius: 22px;
           position: relative;
           overflow: hidden;
@@ -758,6 +788,14 @@ class TimeFlowCard extends HTMLElement {
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
           ${cardStyles.join(';\n          ')};
+        }
+        
+        .card-content {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 20px;
+          height: 100%;
           ${customStyles.card ? customStyles.card : ''}
         }
         
@@ -883,31 +921,34 @@ class TimeFlowCard extends HTMLElement {
         }
       </style>
       
-      <div class="card timeflow-card ha-card ${this._expired ? 'expired' : ''}">
-        <div class="header">
-          <div class="title-section">
-            <h2 class="title">${this._expired ? expired_text : title}</h2>
-            <p class="subtitle">${this._getSubtitle()}</p>
+      <ha-card class="timeflow-card ${this._expired ? 'expired' : ''}">
+        <div class="card-content">
+          <div class="header">
+            <div class="title-section">
+              <h2 class="title">${this._expired ? expired_text : title}</h2>
+              <p class="subtitle">${this._getSubtitle()}</p>
+            </div>
+          </div>
+          
+          <div class="content">
+            <div class="progress-section">
+              <progress-circle
+                class="progress-circle"
+                progress="${this._getProgress()}"
+                color="${progressColor}"
+                size="${dynamicIconSize}"
+                stroke-width="${dynamicStrokeWidth}"
+              ></progress-circle>
+            </div>
           </div>
         </div>
-        
-        <div class="content">
-          <div class="progress-section">
-            <progress-circle
-              class="progress-circle"
-              progress="${this._getProgress()}"
-              color="${progressColor}"
-              size="${dynamicIconSize}"
-              stroke-width="${dynamicStrokeWidth}"
-            ></progress-circle>
-          </div>
-        </div>
-      </div>
+      </ha-card>
     `;
 
     // Cache DOM elements for selective updates
     this._domElements = {
-      card: this.shadowRoot.querySelector('.card'),
+      haCard: this.shadowRoot.querySelector('ha-card'),
+      cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
       progressCircle: this.shadowRoot.querySelector('progress-circle')
@@ -947,8 +988,8 @@ class TimeFlowCard extends HTMLElement {
     }
 
     // Update expired state
-    if (this._domElements.card) {
-      this._domElements.card.classList.toggle('expired', this._expired);
+    if (this._domElements.haCard) {
+      this._domElements.haCard.classList.toggle('expired', this._expired);
     }
   }
 
@@ -981,7 +1022,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '3.3.0';
+    return '3.4.0';
   }
 }
 

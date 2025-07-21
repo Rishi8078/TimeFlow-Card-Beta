@@ -13,6 +13,7 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 - Customizable colors, sizes, and time units
 - Entity support for dynamic countdowns
 - Cross-platform date parsing
+- **Card-mod compatibility** for advanced styling
 
 ## 🚀 Installation
 
@@ -38,6 +39,7 @@ resources:
 type: custom:timeflow-card
 title: "New Year 2026"
 target_date: "2026-01-01T00:00:00"
+creation_date: "2025-01-01T00:00:00"
 show_days: true
 show_hours: true
 show_minutes: false
@@ -47,12 +49,17 @@ show_seconds: false
 ### Dynamic Entity Timer
 ```yaml
 type: custom:timeflow-card
-title: "Washing Machine"
-target_date: sensor.washing_machine_end_time
-creation_date: input_datetime.wash_start
-background_color: "#2196F3"
-progress_color: "#4CAF50"
-expired_text: "Wash Complete!"
+title: Next backup
+target_date: sensor.backup_next_scheduled_automatic_backup
+background_color: "#676F9D"
+color: "#000000"
+progress_color: "#2D3250"
+show_seconds: false
+show_minutes: false
+show_hours: true
+show_days: false
+show_months: false
+creation_date: sensor.backup_last_successful_automatic_backup
 ```
 
 ### Customized Styling
@@ -70,17 +77,78 @@ styles:
     - border-radius: 15px
 ```
 
-### Compact Mobile Widget
+### Card-mod Styling
 ```yaml
 type: custom:timeflow-card
-title: "Timer"
-target_date: "2025-12-31T23:59:59"
-width: "150px"
-aspect_ratio: "1/1"
-show_days: true
-show_hours: false
-show_minutes: false
-show_seconds: false
+title: "Project Deadline"
+target_date: "2025-03-15T17:00:00"
+card_mod:
+  style: |
+    ha-card {
+      background: linear-gradient(45deg, #1976d2, #42a5f5);
+      border: 2px solid #0d47a1;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(25, 118, 210, 0.3);
+    }
+    .title {
+      color: white !important;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+```
+
+### Compact Mobile Widget
+```yaml
+type: grid
+columns: 2
+square: false
+cards:
+  - type: custom:timeflow-card
+    title: Bali Trip
+    target_date: "2025-09-12T13:43:50"
+    background_color: "#617065"
+    color: "#0F1118"
+    progress_color: "#889F89"
+    show_seconds: false
+    show_minutes: false
+    show_hours: false
+    show_days: true
+    show_months: false
+    expired_text: hi
+    creation_date: "2025-07-12T13:43:50"
+    aspect_ratio: 2/1
+    width: 155px
+    height: 120px
+    styles:
+      title:
+        - font-size: 1.5rem
+        - text-transform: uppercase
+      subtitle:
+        - font-size: 1.2rem
+      progress_circle:
+        - transform: scale(1.0)
+  - type: custom:timeflow-card
+    title: Next backup
+    target_date: sensor.backup_next_scheduled_automatic_backup
+    background_color: "#676F9D"
+    color: "#000000"
+    progress_color: "#2D3250"
+    show_seconds: false
+    show_minutes: false
+    show_hours: true
+    show_days: false
+    show_months: false
+    creation_date: sensor.backup_last_successful_automatic_backup
+    aspect_ratio: 2/1
+    width: 155px
+    height: 120px
+    styles:
+      title:
+        - font-size: 1.5rem
+        - text-transform: uppercase
+      subtitle:
+        - font-size: 1.2rem
+      progress_circle:
+        - transform: scale(1.0)
 ```
 
 ## ⚙️ Configuration Options
@@ -97,6 +165,7 @@ show_seconds: false
 | `color` | string | `"#ffffff"` | Text color |
 | `background_color` | string | `"#1976d2"` | Card background |
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
+| `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
 
 ## 🐛 Troubleshooting
 

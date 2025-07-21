@@ -505,6 +505,101 @@ class TimeFlowCard extends HTMLElement {
     }
   }
 
+  // Calculate dynamic icon size based on card dimensions
+  _calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
+    try {
+      // Parse the configured icon_size (remove 'px' if present)
+      const baseIconSize = typeof icon_size === 'string' ? 
+        parseInt(icon_size.replace('px', '')) : 
+        (typeof icon_size === 'number' ? icon_size : 100);
+
+      // If we have explicit width and height, use them for calculations
+      if (width && height) {
+        const cardWidth = this._parseDimension(width);
+        const cardHeight = this._parseDimension(height);
+        
+        if (cardWidth && cardHeight) {
+          // Scale icon to be roughly 40-50% of the smaller dimension
+          const minDimension = Math.min(cardWidth, cardHeight);
+          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+        }
+      }
+
+      // If we have width and aspect ratio, calculate based on that
+      if (width && aspect_ratio) {
+        const cardWidth = this._parseDimension(width);
+        if (cardWidth) {
+          const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+          const cardHeight = cardWidth * (ratioH / ratioW);
+          const minDimension = Math.min(cardWidth, cardHeight);
+          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+        }
+      }
+
+      // If we have height, estimate width using aspect ratio
+      if (height && aspect_ratio) {
+        const cardHeight = this._parseDimension(height);
+        if (cardHeight) {
+          const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+          const cardWidth = cardHeight * (ratioW / ratioH);
+          const minDimension = Math.min(cardWidth, cardHeight);
+          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+        }
+      }
+
+      // Fallback: use the configured icon_size as-is
+      return baseIconSize;
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating dynamic icon size:', error);
+      return 100; // Safe fallback
+    }
+  }
+
+  // Calculate dynamic stroke width based on icon size
+  _calculateDynamicStrokeWidth(iconSize, stroke_width) {
+    try {
+      const baseStrokeWidth = typeof stroke_width === 'number' ? stroke_width : 15;
+      
+      // Scale stroke width proportionally to icon size
+      // Base ratio: 15px stroke for 100px icon = 0.15
+      const ratio = 0.15;
+      const calculatedStroke = Math.round(iconSize * ratio);
+      
+      // Keep stroke width within reasonable bounds (6-25px)
+      return Math.max(6, Math.min(calculatedStroke, 25));
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating dynamic stroke width:', error);
+      return 15; // Safe fallback
+    }
+  }
+
+  // Helper to parse dimension strings (e.g., "200px", "100%") to numbers
+  _parseDimension(dimension) {
+    try {
+      if (typeof dimension === 'number') return dimension;
+      if (typeof dimension !== 'string') return null;
+      
+      // Handle percentage values - assume 300px base for calculations
+      if (dimension.includes('%')) {
+        const percent = parseFloat(dimension.replace('%', ''));
+        return isNaN(percent) ? null : (percent / 100) * 300; // 300px as base
+      }
+      
+      // Handle pixel values
+      if (dimension.includes('px')) {
+        const pixels = parseFloat(dimension.replace('px', ''));
+        return isNaN(pixels) ? null : pixels;
+      }
+      
+      // Try to parse as number
+      const parsed = parseFloat(dimension);
+      return isNaN(parsed) ? null : parsed;
+    } catch (error) {
+      console.warn('TimeFlow Card: Error parsing dimension:', dimension, error);
+      return null;
+    }
+  }
+
   render() {
     const {
       title = 'Countdown Timer',
@@ -546,6 +641,10 @@ class TimeFlowCard extends HTMLElement {
       cardStyles.push('min-height: 120px');
     }
 
+    // Calculate dynamic progress circle size based on card dimensions
+    const dynamicIconSize = this._calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
+    const dynamicStrokeWidth = this._calculateDynamicStrokeWidth(dynamicIconSize, stroke_width);
+
     // Build custom styles from config
     const customStyles = this._buildStylesObject();
 
@@ -559,8 +658,8 @@ class TimeFlowCard extends HTMLElement {
           --timeflow-card-background-color: ${bgColor};
           --timeflow-card-text-color: ${color};
           --timeflow-card-progress-color: ${progressColor};
-          --timeflow-card-icon-size: ${icon_size};
-          --timeflow-card-stroke-width: ${stroke_width};
+          --timeflow-card-icon-size: ${dynamicIconSize}px;
+          --timeflow-card-stroke-width: ${dynamicStrokeWidth};
         }
         
         .card {
@@ -596,7 +695,7 @@ class TimeFlowCard extends HTMLElement {
         
         /* IMPROVED TYPOGRAPHY - Matching reference cards */
         .title {
-          font-size: 2rem;
+          font-size: clamp(1.4rem, 4vw, 2rem);
           font-weight: 500;
           margin: 0;
           opacity: 0.9;
@@ -606,7 +705,7 @@ class TimeFlowCard extends HTMLElement {
         }
         
         .subtitle {
-          font-size: 1.6rem;
+          font-size: clamp(1rem, 3vw, 1.6rem);
           opacity: 0.65;
           margin: 0;
           font-weight: 400;
@@ -641,6 +740,21 @@ class TimeFlowCard extends HTMLElement {
         .progress-circle {
           opacity: 0.9;
           ${customStyles.progress_circle ? customStyles.progress_circle : ''}
+        }
+        
+        /* Responsive design with container queries for better scaling */
+        @container (max-width: 250px) {
+          .card {
+            padding: 12px;
+          }
+          
+          .title {
+            font-size: 1.2rem;
+          }
+          
+          .subtitle {
+            font-size: 0.9rem;
+          }
         }
         
         /* Responsive design */
@@ -700,8 +814,8 @@ class TimeFlowCard extends HTMLElement {
               class="progress-circle"
               progress="${this._getProgress()}"
               color="${progressColor}"
-              size="${typeof icon_size === 'string' ? icon_size.replace('px', '') : icon_size}"
-              stroke-width="${stroke_width}"
+              size="${dynamicIconSize}"
+              stroke-width="${dynamicStrokeWidth}"
             ></progress-circle>
           </div>
         </div>

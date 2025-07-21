@@ -116,13 +116,24 @@ styles:
 
 ### Dynamic Sizing Options
 
-The TimeFlow Card now supports flexible sizing similar to the button-card:
+The TimeFlow Card now supports flexible sizing similar to the button-card with **intelligent progress circle scaling**:
 
 - **`width`**: Set card width (`'200px'`, `'100%'`, etc.)
 - **`height`**: Set card height (`'150px'`, `'auto'`, etc.)
 - **`aspect_ratio`**: Set aspect ratio when height not specified (`'1/1'`, `'2/1'`, `'3/1'`, `'1/1.5'`)
-- **`icon_size`**: Set progress circle size (`'80px'`, `'120px'`, `'150px'`)
-- **`stroke_width`**: Set progress circle thickness (`10`, `15`, `20`)
+- **`icon_size`**: Set base progress circle size (`'80px'`, `'120px'`, `'150px'`)
+- **`stroke_width`**: Set base progress circle thickness (`10`, `15`, `20`)
+
+### Automatic Size Scaling
+
+The progress circle automatically scales based on the card size to maintain perfect proportions:
+
+- **Smart Scaling**: Progress circle resizes to roughly 40-45% of the smallest card dimension
+- **Proportional Stroke**: Stroke width adjusts proportionally to the circle size
+- **Responsive Design**: Typography and spacing adapt to card size
+- **Minimum Constraints**: Circle never goes below 40px for usability
+
+This ensures the card always looks balanced regardless of size, from tiny mobile widgets to large desktop displays.
 
 ### Styles Configuration
 
@@ -136,28 +147,46 @@ Like button-card, you can customize individual elements using the `styles` confi
 ### Sizing Examples
 
 ```yaml
-# Square card
+# Tiny mobile widget - circle automatically scales down
+type: custom:timeflow-card
+title: "Timer"
+target_date: "2025-12-31T23:59:59"
+width: "120px"
+height: "80px"
+# Progress circle: ~36px, stroke: ~5px (automatically calculated)
+
+# Square card - perfect proportions
 type: custom:timeflow-card
 title: "Square Timer"
 target_date: "2025-12-31T23:59:59"
 aspect_ratio: "1/1"
-icon_size: "80px"
+width: "200px"
+# Progress circle: ~90px, stroke: ~14px (automatically calculated)
 
-# Wide card
+# Wide card - large and prominent
 type: custom:timeflow-card
 title: "Wide Timer"
 target_date: "2025-12-31T23:59:59"
 aspect_ratio: "3/1"
-icon_size: "120px"
+width: "400px"
+# Progress circle: ~60px, stroke: ~9px (automatically calculated)
 
-# Fixed dimensions
+# Large display card
 type: custom:timeflow-card
-title: "Fixed Size"
+title: "Big Event"
 target_date: "2025-12-31T23:59:59"
-width: "250px"
+width: "500px"
+height: "300px"
+# Progress circle: ~135px, stroke: ~20px (automatically calculated)
+
+# Override automatic scaling if needed
+type: custom:timeflow-card
+title: "Custom Override"
+target_date: "2025-12-31T23:59:59"
+width: "300px"
 height: "200px"
-icon_size: "100px"
-stroke_width: 20
+icon_size: "160px"    # Force larger circle
+stroke_width: 25      # Force thicker stroke
 ```
 
 ## ⚙️ Configuration Options

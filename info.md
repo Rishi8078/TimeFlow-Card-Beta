@@ -1,4 +1,4 @@
-# Pace Card
+# TimeFlow Card
 
 A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
@@ -15,7 +15,7 @@ A beautiful countdown timer card for Home Assistant with an animated progress ci
 
 ## Quick Start
 1. Install through HACS
-2. Add to your dashboard with type: `custom:pace-card`
+2. Add to your dashboard with type: `custom:timeflow-card`
 3. Set your target date in ISO format: `"2025-12-31T23:59:59"`
 4. Customize time units and appearance
 5. Optionally set creation_date for progress tracking

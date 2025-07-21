@@ -1,10 +1,10 @@
-# Pace Card
+# TimeFlow Card
 
 ![Modern Design Example](https://img.shields.io/badge/Style-Modern-blue) ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-green) ![HACS](https://img.shields.io/badge/HACS-Compatible-orange)
 
 A beautiful countdown timer card for Home Assistant with an animated progress circle and intelligent time formatting.
 
-![Pace Card Preview](assets/asset.png)
+![TimeFlow Card Preview](assets/asset.png)
 
 
 ## ✨ Features
@@ -23,18 +23,18 @@ A beautiful countdown timer card for Home Assistant with an animated progress ci
 1. Open HACS in Home Assistant
 2. Go to "Frontend" section
 3. Click the "+" button
-4. Search for "Pace Card"
+4. Search for "TimeFlow Card"
 5. Install the card
 6. Add to your Lovelace configuration
 
 ### Option 2: Manual Installation
-1. Download `pacecard.js` from the [latest release](https://github.com/Rishi8078/Pacecard/releases)
+1. Download `timeflow-card.js` from the [latest release](https://github.com/Rishi8078/TimeFlow-Card/releases)
 2. Copy it to `config/www/` directory
 3. Add to your Lovelace resources:
 
 ```yaml
 resources:
-  - url: /local/pacecard.js
+  - url: /local/timeflow-card.js
     type: module
 ```
 
@@ -43,7 +43,7 @@ resources:
 ### Basic Configuration
 
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: New Year
 target_date: "2026-01-01T00:00:00"
 show_seconds: false
@@ -59,7 +59,7 @@ creation_date: "2025-01-01T00:00:00"
 ### Using Entities (Dynamic Values)
 
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: Next backup
 target_date: sensor.backup_next_scheduled_automatic_backup
 background_color: "#676F9D"
@@ -77,7 +77,7 @@ creation_date: sensor.backup_last_successful_automatic_backup
 ### Full Configuration Example
 
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Event Countdown"
 target_date: "2025-12-31T23:59:59"
 creation_date: "2025-01-01T00:00:00"  # Optional: for progress calculation
@@ -97,7 +97,7 @@ size: "medium"                         # small, medium, large
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `type` | string | **Required** | `custom:pace-card` |
+| `type` | string | **Required** | `custom:timeflow-card` |
 | `title` | string | `"Countdown Timer"` | Card title text |
 | `target_date` | string | **Required** | Target date in ISO format (`YYYY-MM-DDTHH:mm:ss`) or entity ID (e.g., `sensor.target_date`) |
 | `creation_date` | string | `null` | Start date for progress calculation (optional) - can be date string or entity ID |
@@ -123,7 +123,7 @@ The card supports reading values from Home Assistant entities for dynamic countd
 
 ### Example with Entities
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Washing Machine"
 target_date: sensor.washing_machine_end_time
 creation_date: input_datetime.wash_start
@@ -187,7 +187,7 @@ size: "large"    # Min height: 140px, Max height: 250px
 ### Single Unit Display
 When only one time unit is shown, it uses natural language:
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Days Remaining"
 target_date: "2025-12-31T23:59:59"
 show_months: false
@@ -201,7 +201,7 @@ show_seconds: false
 ### Multiple Units Display
 Shows progress circle and detailed countdown:
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Complete Countdown" 
 target_date: "2025-12-31T23:59:59"
 show_months: true
@@ -224,7 +224,7 @@ show_seconds: true
 
 ### Wedding Countdown
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Days Until Wedding"
 target_date: "2025-06-15T14:30:00"
 creation_date: "2024-12-01T00:00:00"
@@ -241,7 +241,7 @@ size: "large"
 
 ### Dynamic Laundry Timer (Using Entities)
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Laundry Timer"
 target_date: sensor.washing_machine_end_time
 creation_date: input_datetime.wash_start
@@ -258,7 +258,7 @@ expired_text: "Laundry Done!"
 
 ### Automation-Triggered Timer
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Backup Complete In"
 target_date: sensor.next_backup_time
 creation_date: sensor.last_backup_time
@@ -274,7 +274,7 @@ expired_text: "Backup Running..."
 
 ### New Year Countdown
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "New Year 2026"
 target_date: "2026-01-01T00:00:00"
 expired_text: "Happy New Year! 🎉"
@@ -290,7 +290,7 @@ show_seconds: true
 
 ### Project Deadline
 ```yaml
-type: custom:pace-card
+type: custom:timeflow-card
 title: "Project Deadline"
 target_date: "2025-03-15T17:00:00"
 creation_date: "2025-01-01T09:00:00"

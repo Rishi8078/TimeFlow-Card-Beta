@@ -85,8 +85,8 @@ class ProgressCircle extends HTMLElement {
   }
 }
 
-// Main Pace Card Component
-class PaceCard extends HTMLElement {
+// Main TimeFlow Card Component
+class TimeFlowCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -99,7 +99,7 @@ class PaceCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      type: 'custom:pace-card',
+      type: 'custom:timeflow-card',
       title: 'Countdown Timer',
       target_date: '2024-12-31T23:59:59',
       creation_date: null,
@@ -600,7 +600,7 @@ class PaceCard extends HTMLElement {
         }
       </style>
       
-      <div class="card pace-card ha-card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
+      <div class="card timeflow-card ha-card ${sizeClasses[size]} ${this._expired ? 'expired' : ''}">
         <div class="header">
           <div class="title-section">
             <h2 class="title">${this._expired ? expired_text : title}</h2>
@@ -640,20 +640,20 @@ class PaceCard extends HTMLElement {
 
 // Register custom elements
 customElements.define('progress-circle', ProgressCircle);
-customElements.define('pace-card', PaceCard);
+customElements.define('timeflow-card', TimeFlowCard);
 
 // Register the card
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'pace-card',
-  name: 'Pace Card',
+  type: 'timeflow-card',
+  name: 'TimeFlow Card',
   description: 'A beautiful countdown timer card with progress circle for Home Assistant',
   preview: true,
-  documentationURL: 'https://github.com/Rishi8078/Pacecard'
+  documentationURL: 'https://github.com/Rishi8078/TimeFlow-Card'
 });
 
 console.info(
-  `%c  PACE-CARD  \n%c  Version ${PaceCard.version}    `,
+  `%c  TIMEFLOW-CARD  \n%c  Version ${TimeFlowCard.version}    `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );

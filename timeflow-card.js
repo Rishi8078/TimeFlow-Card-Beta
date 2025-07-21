@@ -95,6 +95,18 @@ class TimeFlowCard extends HTMLElement {
     this._timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
     this._expired = false;
     this._interval = null;
+    
+    // Performance optimization cache
+    this._cache = {
+      dynamicIconSize: null,
+      dynamicStrokeWidth: null,
+      customStyles: null,
+      lastConfigHash: null,
+      parsedTargetDate: null,
+      parsedCreationDate: null
+    };
+    this._domElements = null; // Cache DOM references
+    this._updateScheduled = false; // Prevent duplicate RAF calls
   }
 
   static getStubConfig() {
@@ -157,6 +169,26 @@ class TimeFlowCard extends HTMLElement {
     this._hass = hass;
   }
 
+  // Performance optimization: detect config changes
+  _hasConfigChanged() {
+    const configHash = JSON.stringify({
+      ...this._config,
+      // Exclude frequently changing values from hash
+      target_date: typeof this._config.target_date === 'string' && this._config.target_date.includes('.') ? 'entity' : this._config.target_date,
+      creation_date: typeof this._config.creation_date === 'string' && this._config.creation_date.includes('.') ? 'entity' : this._config.creation_date
+    });
+    
+    if (this._cache.lastConfigHash !== configHash) {
+      this._cache.lastConfigHash = configHash;
+      // Clear cached values when config changes
+      this._cache.dynamicIconSize = null;
+      this._cache.dynamicStrokeWidth = null;
+      this._cache.customStyles = null;
+      return true;
+    }
+    return false;
+  }
+
   connectedCallback() {
     this._startTimer();
   }
@@ -177,6 +209,17 @@ class TimeFlowCard extends HTMLElement {
     if (this._interval) {
       clearInterval(this._interval);
       this._interval = null;
+    }
+  }
+
+  // Performance optimization: schedule updates with RAF
+  _scheduleUpdate() {
+    if (!this._updateScheduled) {
+      this._updateScheduled = true;
+      requestAnimationFrame(() => {
+        this._updateDisplay();
+        this._updateScheduled = false;
+      });
     }
   }
 
@@ -300,30 +343,36 @@ class TimeFlowCard extends HTMLElement {
       this._expired = true;
     }
     
-    this._updateDisplay();
+    this._scheduleUpdate();
   }
 
   _updateDisplay() {
-    const progressCircle = this.shadowRoot.querySelector('progress-circle');
-    const mainValue = this.shadowRoot.querySelector('.main-value');
-    const mainLabel = this.shadowRoot.querySelector('.main-label');
-    const subtitle = this.shadowRoot.querySelector('.subtitle');
-    const card = this.shadowRoot.querySelector('.card');
-    
-    if (progressCircle) {
-      progressCircle.setAttribute('progress', this._getProgress());
-    }
-    
-    const mainDisplay = this._getMainDisplay();
-    if (mainValue) mainValue.textContent = mainDisplay.value;
-    if (mainLabel) mainLabel.textContent = mainDisplay.label;
-    
-    if (subtitle) {
-      subtitle.textContent = this._getSubtitle();
-    }
-    
-    if (card) {
-      card.classList.toggle('expired', this._expired);
+    // Use cached DOM elements and RAF for better performance
+    if (this._domElements) {
+      this._updateContent();
+    } else {
+      // Fallback to original method if DOM elements not cached
+      const progressCircle = this.shadowRoot.querySelector('progress-circle');
+      const mainValue = this.shadowRoot.querySelector('.main-value');
+      const mainLabel = this.shadowRoot.querySelector('.main-label');
+      const subtitle = this.shadowRoot.querySelector('.subtitle');
+      const card = this.shadowRoot.querySelector('.card');
+      
+      if (progressCircle) {
+        progressCircle.setAttribute('progress', this._getProgress());
+      }
+      
+      const mainDisplay = this._getMainDisplay();
+      if (mainValue) mainValue.textContent = mainDisplay.value;
+      if (mainLabel) mainLabel.textContent = mainDisplay.label;
+      
+      if (subtitle) {
+        subtitle.textContent = this._getSubtitle();
+      }
+      
+      if (card) {
+        card.classList.toggle('expired', this._expired);
+      }
     }
   }
 
@@ -483,6 +532,11 @@ class TimeFlowCard extends HTMLElement {
   }
 
   _buildStylesObject() {
+    // Use cached value if available and config hasn't changed
+    if (this._cache.customStyles !== null && !this._hasConfigChanged()) {
+      return this._cache.customStyles;
+    }
+
     const { styles = {} } = this._config;
     
     try {
@@ -493,20 +547,27 @@ class TimeFlowCard extends HTMLElement {
         progress_circle: this._processStyles(styles.progress_circle)
       };
 
+      this._cache.customStyles = processedStyles;
       return processedStyles;
     } catch (e) {
       console.warn('TimeFlow Card: Error building styles object:', e);
-      return {
+      this._cache.customStyles = {
         card: '',
         title: '',
         subtitle: '',
         progress_circle: ''
       };
+      return this._cache.customStyles;
     }
   }
 
   // Calculate dynamic icon size based on card dimensions
   _calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
+    // Use cached value if available and config hasn't changed
+    if (this._cache.dynamicIconSize !== null && !this._hasConfigChanged()) {
+      return this._cache.dynamicIconSize;
+    }
+
     try {
       // Parse the configured icon_size (remove 'px' if present)
       const baseIconSize = typeof icon_size === 'string' ? 
@@ -521,7 +582,8 @@ class TimeFlowCard extends HTMLElement {
         if (cardWidth && cardHeight) {
           // Scale icon to be roughly 40-50% of the smaller dimension
           const minDimension = Math.min(cardWidth, cardHeight);
-          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          return this._cache.dynamicIconSize;
         }
       }
 
@@ -532,7 +594,8 @@ class TimeFlowCard extends HTMLElement {
           const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
           const cardHeight = cardWidth * (ratioH / ratioW);
           const minDimension = Math.min(cardWidth, cardHeight);
-          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          return this._cache.dynamicIconSize;
         }
       }
 
@@ -543,20 +606,28 @@ class TimeFlowCard extends HTMLElement {
           const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
           const cardWidth = cardHeight * (ratioW / ratioH);
           const minDimension = Math.min(cardWidth, cardHeight);
-          return Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          this._cache.dynamicIconSize = Math.max(40, Math.min(minDimension * 0.45, baseIconSize * 1.5));
+          return this._cache.dynamicIconSize;
         }
       }
 
       // Fallback: use the configured icon_size as-is
-      return baseIconSize;
+      this._cache.dynamicIconSize = baseIconSize;
+      return this._cache.dynamicIconSize;
     } catch (error) {
       console.warn('TimeFlow Card: Error calculating dynamic icon size:', error);
-      return 100; // Safe fallback
+      this._cache.dynamicIconSize = 100; // Safe fallback
+      return this._cache.dynamicIconSize;
     }
   }
 
   // Calculate dynamic stroke width based on icon size
   _calculateDynamicStrokeWidth(iconSize, stroke_width) {
+    // Use cached value if available and config hasn't changed
+    if (this._cache.dynamicStrokeWidth !== null && !this._hasConfigChanged()) {
+      return this._cache.dynamicStrokeWidth;
+    }
+
     try {
       const baseStrokeWidth = typeof stroke_width === 'number' ? stroke_width : 15;
       
@@ -566,10 +637,12 @@ class TimeFlowCard extends HTMLElement {
       const calculatedStroke = Math.round(iconSize * ratio);
       
       // Keep stroke width within reasonable bounds (6-25px)
-      return Math.max(6, Math.min(calculatedStroke, 25));
+      this._cache.dynamicStrokeWidth = Math.max(6, Math.min(calculatedStroke, 25));
+      return this._cache.dynamicStrokeWidth;
     } catch (error) {
       console.warn('TimeFlow Card: Error calculating dynamic stroke width:', error);
-      return 15; // Safe fallback
+      this._cache.dynamicStrokeWidth = 15; // Safe fallback
+      return this._cache.dynamicStrokeWidth;
     }
   }
 
@@ -601,6 +674,16 @@ class TimeFlowCard extends HTMLElement {
   }
 
   render() {
+    // Check if we need to rebuild DOM or just update content
+    if (!this._domElements || this._hasConfigChanged()) {
+      this._initializeDOM();
+    } else {
+      this._updateContent();
+    }
+  }
+
+  // Performance optimization: Initialize DOM structure only when needed
+  _initializeDOM() {
     const {
       title = 'Countdown Timer',
       show_days = true,
@@ -821,11 +904,52 @@ class TimeFlowCard extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Cache DOM elements for selective updates
+    this._domElements = {
+      card: this.shadowRoot.querySelector('.card'),
+      title: this.shadowRoot.querySelector('.title'),
+      subtitle: this.shadowRoot.querySelector('.subtitle'),
+      progressCircle: this.shadowRoot.querySelector('progress-circle')
+    };
     
     setTimeout(() => {
       this._updateDisplay();
       this._applyCardMod();
     }, 0);
+  }
+
+  // Performance optimization: Update only content that changes
+  _updateContent() {
+    if (!this._domElements) return;
+
+    const {
+      title = 'Countdown Timer',
+      expired_text = 'Completed! 🎉'
+    } = this._config;
+
+    // Update title
+    const titleText = this._expired ? expired_text : title;
+    if (this._domElements.title && this._domElements.title.textContent !== titleText) {
+      this._domElements.title.textContent = titleText;
+    }
+
+    // Update subtitle
+    const subtitleText = this._getSubtitle();
+    if (this._domElements.subtitle && this._domElements.subtitle.textContent !== subtitleText) {
+      this._domElements.subtitle.textContent = subtitleText;
+    }
+
+    // Update progress circle
+    const progress = this._getProgress();
+    if (this._domElements.progressCircle) {
+      this._domElements.progressCircle.setAttribute('progress', progress);
+    }
+
+    // Update expired state
+    if (this._domElements.card) {
+      this._domElements.card.classList.toggle('expired', this._expired);
+    }
   }
 
   getCardSize() {
@@ -857,7 +981,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '3.1.2';
+    return '3.3.0';
   }
 }
 

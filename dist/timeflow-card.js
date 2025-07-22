@@ -398,9 +398,11 @@ class TimeFlowCard extends HTMLElement {
 
       this._timeRemaining = { months, days, hours, minutes, seconds, total: difference };
       this._expired = false;
+      console.log('TimeFlow Card: _updateCountdown - timeRemaining set to:', this._timeRemaining);
     } else {
       this._timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
       this._expired = true;
+      console.log('TimeFlow Card: _updateCountdown - expired, timeRemaining set to:', this._timeRemaining);
     }
     
     this._scheduleUpdate();
@@ -646,13 +648,18 @@ class TimeFlowCard extends HTMLElement {
   }
 
     _getSubtitle() {
+    console.log('TimeFlow Card: _getSubtitle called - expired:', this._expired, 'timeRemaining:', this._timeRemaining);
+    
     if (this._expired) {
       const { expired_text = 'Completed! 🎉' } = this._config;
       return expired_text;
     }
     
-    const { months, days, hours, minutes, seconds } = this._timeRemaining;
+    const { months, days, hours, minutes, seconds } = this._timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
+    
+    console.log('TimeFlow Card: _getSubtitle - time values:', { months, days, hours, minutes, seconds });
+    console.log('TimeFlow Card: _getSubtitle - show config:', { show_months, show_days, show_hours, show_minutes, show_seconds });
     
     const parts = [];
     

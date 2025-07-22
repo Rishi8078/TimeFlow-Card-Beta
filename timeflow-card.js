@@ -520,13 +520,16 @@ class TimeFlowCard extends HTMLElement {
         template: template 
       });
       
+      // Handle 'unknown' results from Home Assistant
+      const processedResult = this._processTemplateResult(result);
+      
       // Cache the result
       this._cache.templateResults.set(cacheKey, {
-        result: result,
+        result: processedResult,
         timestamp: Date.now()
       });
       
-      return result;
+      return processedResult;
     } catch (error) {
       // Try fallback with callWS if callApi fails
       try {
@@ -535,18 +538,90 @@ class TimeFlowCard extends HTMLElement {
           template: template
         });
         
+        // Handle 'unknown' results from Home Assistant
+        const processedResult = this._processTemplateResult(fallbackResult);
+        
         // Cache the result
         this._cache.templateResults.set(cacheKey, {
-          result: fallbackResult,
+          result: processedResult,
           timestamp: Date.now()
         });
         
-        return fallbackResult;
+        return processedResult;
       } catch (fallbackError) {
         console.error('TimeFlow Card: Template evaluation failed:', fallbackError);
-        // Return the original template as fallback
-        return template;
+        // Extract fallback value from template if it contains 'or' operator
+        return this._extractFallbackFromTemplate(template);
       }
+    }
+  }
+
+  /**
+   * Processes template results to handle 'unknown' values and extract fallbacks
+   */
+  _processTemplateResult(result) {
+    // If result is 'unknown', try to extract fallback from original template
+    if (result === 'unknown' || result === 'unavailable' || result === null || result === undefined) {
+      return null; // Let the calling function handle the fallback
+    }
+    
+    return result;
+  }
+
+  /**
+   * Extracts fallback value from template expressions with 'or' operator
+   */
+  _extractFallbackFromTemplate(template) {
+    if (!template || typeof template !== 'string') {
+      return template;
+    }
+
+    try {
+      // Remove the outer {{ }} to work with the inner expression
+      const innerTemplate = template.replace(/^\{\{\s*/, '').replace(/\s*\}\}$/, '').trim();
+      
+      // Look for patterns like "states('entity') or 'fallback'"
+      const orPattern = /(.+?)\s+or\s+['"`]([^'"`]+)['"`]/;
+      const orMatch = innerTemplate.match(orPattern);
+      
+      if (orMatch && orMatch[2]) {
+        console.log('TimeFlow Card: Using fallback value from template:', orMatch[2]);
+        return orMatch[2];
+      }
+
+      // Look for chained or patterns like "states('entity1') or states('entity2') or 'fallback'"
+      const chainedOrPattern = /(.+?)\s+or\s+(.+?)\s+or\s+['"`]([^'"`]+)['"`]/;
+      const chainedMatch = innerTemplate.match(chainedOrPattern);
+      
+      if (chainedMatch && chainedMatch[3]) {
+        console.log('TimeFlow Card: Using chained fallback value from template:', chainedMatch[3]);
+        return chainedMatch[3];
+      }
+
+      // Look for conditional patterns like "condition if test else 'fallback'"
+      const elsePattern = /(.+?)\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]/;
+      const elseMatch = innerTemplate.match(elsePattern);
+      
+      if (elseMatch && elseMatch[3]) {
+        console.log('TimeFlow Card: Using else fallback value from template:', elseMatch[3]);
+        return elseMatch[3];
+      }
+
+      // Look for ternary-style patterns like "'value1' if condition else 'value2'"
+      const ternaryPattern = /['"`]([^'"`]+)['"`]\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]/;
+      const ternaryMatch = innerTemplate.match(ternaryPattern);
+      
+      if (ternaryMatch && ternaryMatch[3]) {
+        console.log('TimeFlow Card: Using ternary fallback value from template:', ternaryMatch[3]);
+        return ternaryMatch[3];
+      }
+
+      // If no fallback pattern found, return a helpful message
+      console.warn('TimeFlow Card: No fallback found in template, using generic fallback');
+      return 'Unavailable';
+    } catch (error) {
+      console.warn('TimeFlow Card: Error extracting fallback from template:', error);
+      return 'Template Error';
     }
   }
 
@@ -559,12 +634,24 @@ class TimeFlowCard extends HTMLElement {
     // Handle templates first
     if (this._isTemplate(value)) {
       const result = await this._evaluateTemplate(value);
+      
+      // If template evaluation returns null (due to 'unknown' entity), 
+      // try to extract fallback from the template
+      if (result === null || result === 'unknown' || result === 'unavailable') {
+        const fallback = this._extractFallbackFromTemplate(value);
+        return fallback !== value ? fallback : null; // Avoid infinite loop
+      }
+      
       return result;
     }
     
     // Handle entity references
     if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
       const entity = this._hass.states[value];
+      // Check if entity state is unknown/unavailable
+      if (entity.state === 'unknown' || entity.state === 'unavailable') {
+        return null;
+      }
       return entity.state;
     }
     

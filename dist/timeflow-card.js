@@ -475,6 +475,19 @@ class TimeFlowCard extends HTMLElement {
   // ===== TEMPLATE EVALUATION SYSTEM =====
   
   /**
+   * Escapes HTML special characters to prevent XSS and ensure proper display
+   */
+  _escapeHtml(text) {
+    if (text == null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  
+  /**
    * Detects if a value contains Home Assistant templates
    */
   _isTemplate(value) {
@@ -905,8 +918,14 @@ class TimeFlowCard extends HTMLElement {
       if (resolvedConfig[prop]) {
         console.log(`TimeFlow Card: Resolving property "${prop}":`, resolvedConfig[prop]);
         const originalValue = resolvedConfig[prop];
-        resolvedConfig[prop] = await this._resolveValue(resolvedConfig[prop]);
-        console.log(`TimeFlow Card: Property "${prop}" resolved:`, { original: originalValue, resolved: resolvedConfig[prop] });
+        try {
+          resolvedConfig[prop] = await this._resolveValue(resolvedConfig[prop]);
+          console.log(`TimeFlow Card: Property "${prop}" resolved:`, { original: originalValue, resolved: resolvedConfig[prop] });
+        } catch (error) {
+          console.error(`TimeFlow Card: Failed to resolve property "${prop}":`, error);
+          console.log(`TimeFlow Card: Using fallback for "${prop}":`, originalValue);
+          // Keep original value as fallback
+        }
       }
     }
     
@@ -1085,8 +1104,8 @@ class TimeFlowCard extends HTMLElement {
         <div class="card-content">
           <div class="header">
             <div class="title-section">
-              <h2 class="title">${title}</h2>
-              <p class="subtitle">${subtitleText}</p>
+              <h2 class="title">${this._escapeHtml(title || 'Countdown Timer')}</h2>
+              <p class="subtitle">${this._escapeHtml(subtitleText || '0s')}</p>
             </div>
           </div>
           

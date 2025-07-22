@@ -142,6 +142,8 @@ class TimeFlowCard extends HTMLElement {
   }
 
   setConfig(config) {
+    console.log('TimeFlow Card: setConfig called with:', config);
+    
     if (!config.target_date) {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
@@ -164,6 +166,8 @@ class TimeFlowCard extends HTMLElement {
     }
     
     this._config = { ...mutableConfig };
+    
+    console.log('TimeFlow Card: Final config set to:', this._config);
     
     // Clear template cache when config changes
     this._clearTemplateCache();
@@ -873,6 +877,8 @@ class TimeFlowCard extends HTMLElement {
   }
 
   async render() {
+    console.log('TimeFlow Card: render() called with config:', this._config);
+    
     // Check if we need to rebuild DOM or just update content
     if (!this._domElements || this._hasConfigChanged()) {
       await this._initializeDOM();
@@ -913,6 +919,8 @@ class TimeFlowCard extends HTMLElement {
     // Resolve any template properties first
     const resolvedConfig = await this._resolveTemplateProperties();
     
+    console.log('TimeFlow Card: _initializeDOM resolvedConfig:', resolvedConfig);
+    
     const {
       title = 'Countdown Timer',
       show_days = true,
@@ -930,6 +938,8 @@ class TimeFlowCard extends HTMLElement {
       stroke_width = 15,
       expired_text = 'Completed! 🎉'
     } = resolvedConfig;
+    
+    console.log('TimeFlow Card: _initializeDOM extracted title:', title);
 
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';

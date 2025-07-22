@@ -28,9 +28,9 @@
   "author": "Rishi8078",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Rishi8078/TimeFlow-Card/issues"
+    "url": "https://github.com/Rishi8078/TimeFlow-Card-Beta/issues"
   },
-  "homepage": "https://github.com/Rishi8078/TimeFlow-Card#readme",
+  "homepage": "https://github.com/Rishi8078/TimeFlow-Card-Beta#readme",
   "devDependencies": {
     "eslint": "^8.0.0"
   }

@@ -114,7 +114,7 @@ class TimeFlowCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      type: 'custom:timeflow-card',
+      type: 'custom:timeflow-card-beta',
       title: 'Countdown Timer',
       target_date: '2024-12-31T23:59:59',
       creation_date: null,
@@ -401,7 +401,7 @@ class TimeFlowCard extends HTMLElement {
       await this._updateContent();
     } else {
       // Fallback to original method if DOM elements not cached
-      const progressCircle = this.shadowRoot.querySelector('progress-circle');
+      const progressCircle = this.shadowRoot.querySelector('progress-circle-beta');
       const mainValue = this.shadowRoot.querySelector('.main-value');
       const mainLabel = this.shadowRoot.querySelector('.main-label');
       const subtitle = this.shadowRoot.querySelector('.subtitle');
@@ -1064,13 +1064,13 @@ class TimeFlowCard extends HTMLElement {
           
           <div class="content">
             <div class="progress-section">
-              <progress-circle
+              <progress-circle-beta
                 class="progress-circle"
                 progress="${currentProgress}"
                 color="${progressColor}"
                 size="${dynamicIconSize}"
                 stroke-width="${dynamicStrokeWidth}"
-              ></progress-circle>
+              ></progress-circle-beta>
             </div>
           </div>
         </div>
@@ -1083,7 +1083,7 @@ class TimeFlowCard extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle')
+      progressCircle: this.shadowRoot.querySelector('progress-circle-beta')
     };
     
     setTimeout(() => {
@@ -1205,8 +1205,8 @@ class TimeFlowCard extends HTMLElement {
 }
 
 // Register custom elements
-customElements.define('progress-circle', ProgressCircle);
-customElements.define('timeflow-card', TimeFlowCard);
+customElements.define('progress-circle-beta', ProgressCircle);
+customElements.define('timeflow-card-beta', TimeFlowCard);
 
 // Register the card
 window.customCards = window.customCards || [];

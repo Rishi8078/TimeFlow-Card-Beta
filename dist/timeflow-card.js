@@ -172,6 +172,7 @@ class TimeFlowCard extends HTMLElement {
     // Clear template cache when config changes
     this._clearTemplateCache();
     
+    // OPTION A: Initialize DOM first, then start timer (DOM now calculates countdown synchronously)
     this.render();
     (async () => await this._startTimer())();
     
@@ -663,7 +664,13 @@ class TimeFlowCard extends HTMLElement {
       return expired_text;
     }
     
-    const { months, days, hours, minutes, seconds } = this._timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+    // OPTION A: Safety check for uninitialized countdown
+    if (!this._timeRemaining || this._timeRemaining.total === undefined) {
+      console.log('TimeFlow Card: _getSubtitle - timeRemaining not initialized, returning fallback');
+      return 'Calculating...';
+    }
+    
+    const { months, days, hours, minutes, seconds } = this._timeRemaining;
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
     
     console.log('TimeFlow Card: _getSubtitle - time values:', { months, days, hours, minutes, seconds });
@@ -1015,6 +1022,12 @@ class TimeFlowCard extends HTMLElement {
     // Build custom styles from config
     const customStyles = this._buildStylesObject();
 
+    // OPTION A: Ensure countdown is calculated before initial render
+    if (!this._timeRemaining || this._timeRemaining.total === 0) {
+      console.log('TimeFlow Card: _initializeDOM - Initial countdown calculation needed');
+      await this._updateCountdown();
+    }
+    
     // Pre-calculate values that need async resolution
     const currentProgress = await this._getProgress();
     const subtitleText = this._getSubtitle();

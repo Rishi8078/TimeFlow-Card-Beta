@@ -142,8 +142,6 @@ class TimeFlowCard extends HTMLElement {
   }
 
   setConfig(config) {
-    console.log('TimeFlow Card: setConfig called with:', config);
-    
     if (!config.target_date) {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
@@ -167,12 +165,9 @@ class TimeFlowCard extends HTMLElement {
     
     this._config = { ...mutableConfig };
     
-    console.log('TimeFlow Card: Final config set to:', this._config);
-    
     // Clear template cache when config changes
     this._clearTemplateCache();
     
-    // OPTION A: Initialize DOM first, then start timer (DOM now calculates countdown synchronously)
     this.render();
     (async () => await this._startTimer())();
     
@@ -305,27 +300,16 @@ class TimeFlowCard extends HTMLElement {
   
   async _updateCountdown() {
     try {
-      console.log('TimeFlow Card: _updateCountdown called');
-      if (!this._config.target_date) {
-        console.log('TimeFlow Card: _updateCountdown - no target_date in config');
-        return;
-      }
+      if (!this._config.target_date) return;
       
       const now = new Date().getTime();
       const targetDateValue = await this._resolveValue(this._config.target_date);
-      console.log('TimeFlow Card: _updateCountdown - targetDateValue resolved to:', targetDateValue, 'type:', typeof targetDateValue);
       
-      if (!targetDateValue) {
-        console.log('TimeFlow Card: _updateCountdown - targetDateValue is null/undefined, returning');
-        return;
-      }
+      if (!targetDateValue) return;
       
       // Use the helper method for consistent date parsing
       const targetDate = this._parseISODate(targetDateValue);
-      console.log('TimeFlow Card: _updateCountdown - parsed targetDate:', targetDate, 'original:', targetDateValue);
-      
       const difference = targetDate - now;
-      console.log('TimeFlow Card: _updateCountdown - time difference:', difference, 'ms');
 
     if (difference > 0) {
       // Calculate time units based on what's enabled - cascade disabled units into enabled ones
@@ -404,11 +388,9 @@ class TimeFlowCard extends HTMLElement {
 
       this._timeRemaining = { months, days, hours, minutes, seconds, total: difference };
       this._expired = false;
-      console.log('TimeFlow Card: _updateCountdown - timeRemaining set to:', this._timeRemaining);
     } else {
       this._timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
       this._expired = true;
-      console.log('TimeFlow Card: _updateCountdown - expired, timeRemaining set to:', this._timeRemaining);
     }
     
     this._scheduleUpdate();
@@ -519,7 +501,6 @@ class TimeFlowCard extends HTMLElement {
    */
   async _evaluateTemplate(template) {
     if (!this._hass || !template) {
-      console.log('TimeFlow Card: No hass or template provided:', { hass: !!this._hass, template });
       return template;
     }
 
@@ -529,20 +510,15 @@ class TimeFlowCard extends HTMLElement {
       const cached = this._cache.templateResults.get(cacheKey);
       // Check if cache is still valid (within 5 seconds)
       if (Date.now() - cached.timestamp < 5000) {
-        console.log('TimeFlow Card: Using cached template result:', { template, result: cached.result });
         return cached.result;
       }
     }
 
     try {
-      console.log('TimeFlow Card: Evaluating template:', template);
-      
       // Use callApi method like card-tools and button-card for HA templates
       const result = await this._hass.callApi('POST', 'template', { 
         template: template 
       });
-      
-      console.log('TimeFlow Card: Template evaluation success:', { template, result });
       
       // Cache the result
       this._cache.templateResults.set(cacheKey, {
@@ -552,18 +528,12 @@ class TimeFlowCard extends HTMLElement {
       
       return result;
     } catch (error) {
-      console.warn('TimeFlow Card: Template evaluation failed:', error);
-      console.warn('Template:', template);
-      
       // Try fallback with callWS if callApi fails
       try {
-        console.log('TimeFlow Card: Trying fallback with callWS...');
         const fallbackResult = await this._hass.callWS({
           type: 'render_template',
           template: template
         });
-        
-        console.log('TimeFlow Card: Fallback evaluation success:', { template, result: fallbackResult });
         
         // Cache the result
         this._cache.templateResults.set(cacheKey, {
@@ -573,7 +543,7 @@ class TimeFlowCard extends HTMLElement {
         
         return fallbackResult;
       } catch (fallbackError) {
-        console.error('TimeFlow Card: Both template evaluation methods failed:', fallbackError);
+        console.error('TimeFlow Card: Template evaluation failed:', fallbackError);
         // Return the original template as fallback
         return template;
       }
@@ -586,25 +556,19 @@ class TimeFlowCard extends HTMLElement {
   async _resolveValue(value) {
     if (!value) return null;
     
-    console.log('TimeFlow Card: Resolving value:', value);
-    
     // Handle templates first
     if (this._isTemplate(value)) {
-      console.log('TimeFlow Card: Detected template:', value);
       const result = await this._evaluateTemplate(value);
-      console.log('TimeFlow Card: Template resolved to:', result);
       return result;
     }
     
     // Handle entity references
     if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
       const entity = this._hass.states[value];
-      console.log('TimeFlow Card: Resolved entity:', { entityId: value, state: entity.state });
       return entity.state;
     }
     
     // Return plain string/value
-    console.log('TimeFlow Card: Using plain value:', value);
     return value;
   }
 
@@ -656,25 +620,14 @@ class TimeFlowCard extends HTMLElement {
     return { value: '0', label: 'seconds left' };
   }
 
-    _getSubtitle() {
-    console.log('TimeFlow Card: _getSubtitle called - expired:', this._expired, 'timeRemaining:', this._timeRemaining);
-    
+  _getSubtitle() {
     if (this._expired) {
       const { expired_text = 'Completed! 🎉' } = this._config;
       return expired_text;
     }
     
-    // OPTION A: Safety check for uninitialized countdown
-    if (!this._timeRemaining || this._timeRemaining.total === undefined) {
-      console.log('TimeFlow Card: _getSubtitle - timeRemaining not initialized, returning fallback');
-      return 'Calculating...';
-    }
-    
-    const { months, days, hours, minutes, seconds } = this._timeRemaining;
+    const { months, days, hours, minutes, seconds } = this._timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._config;
-    
-    console.log('TimeFlow Card: _getSubtitle - time values:', { months, days, hours, minutes, seconds });
-    console.log('TimeFlow Card: _getSubtitle - show config:', { show_months, show_days, show_hours, show_minutes, show_seconds });
     
     const parts = [];
     
@@ -941,8 +894,6 @@ class TimeFlowCard extends HTMLElement {
   }
 
   async render() {
-    console.log('TimeFlow Card: render() called with config:', this._config);
-    
     // Check if we need to rebuild DOM or just update content
     if (!this._domElements || this._hasConfigChanged()) {
       await this._initializeDOM();
@@ -957,8 +908,6 @@ class TimeFlowCard extends HTMLElement {
   async _resolveTemplateProperties() {
     const resolvedConfig = { ...this._config };
     
-    console.log('TimeFlow Card: Starting template resolution for config:', this._config);
-    
     // Properties that support templating
     const templateProperties = [
       'title', 'subtitle', 'color', 'background_color', 'progress_color', 
@@ -967,20 +916,15 @@ class TimeFlowCard extends HTMLElement {
     
     for (const prop of templateProperties) {
       if (resolvedConfig[prop]) {
-        console.log(`TimeFlow Card: Resolving property "${prop}":`, resolvedConfig[prop]);
-        const originalValue = resolvedConfig[prop];
         try {
           resolvedConfig[prop] = await this._resolveValue(resolvedConfig[prop]);
-          console.log(`TimeFlow Card: Property "${prop}" resolved:`, { original: originalValue, resolved: resolvedConfig[prop] });
         } catch (error) {
           console.error(`TimeFlow Card: Failed to resolve property "${prop}":`, error);
-          console.log(`TimeFlow Card: Using fallback for "${prop}":`, originalValue);
           // Keep original value as fallback
         }
       }
     }
     
-    console.log('TimeFlow Card: Final resolved config:', resolvedConfig);
     return resolvedConfig;
   }
 
@@ -988,8 +932,6 @@ class TimeFlowCard extends HTMLElement {
   async _initializeDOM() {
     // Resolve any template properties first
     const resolvedConfig = await this._resolveTemplateProperties();
-    
-    console.log('TimeFlow Card: _initializeDOM resolvedConfig:', resolvedConfig);
     
     const {
       title = 'Countdown Timer',
@@ -1008,8 +950,6 @@ class TimeFlowCard extends HTMLElement {
       stroke_width = 15,
       expired_text = 'Completed! 🎉'
     } = resolvedConfig;
-    
-    console.log('TimeFlow Card: _initializeDOM extracted title:', title);
 
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';
@@ -1022,12 +962,6 @@ class TimeFlowCard extends HTMLElement {
     // Build custom styles from config
     const customStyles = this._buildStylesObject();
 
-    // OPTION A: Ensure countdown is calculated before initial render
-    if (!this._timeRemaining || this._timeRemaining.total === 0) {
-      console.log('TimeFlow Card: _initializeDOM - Initial countdown calculation needed');
-      await this._updateCountdown();
-    }
-    
     // Pre-calculate values that need async resolution
     const currentProgress = await this._getProgress();
     const subtitleText = this._getSubtitle();

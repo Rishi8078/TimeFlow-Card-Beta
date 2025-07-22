@@ -126,6 +126,7 @@ class TimeFlowCard extends HTMLElement {
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
+      expired_animation: true, // Enable celebration animation when countdown expires
       // Dynamic sizing options (like button-card)
       width: null, // e.g., '200px' or '100%'
       height: null, // e.g., '150px' or 'auto'
@@ -432,7 +433,8 @@ class TimeFlowCard extends HTMLElement {
       }
       
       if (card) {
-        card.classList.toggle('expired', this._expired);
+        const { expired_animation = true } = this._config;
+        card.classList.toggle('expired', this._expired && expired_animation);
       }
     }
   }
@@ -1057,6 +1059,7 @@ class TimeFlowCard extends HTMLElement {
       color = '#ffffff',
       background_color,
       progress_color,
+      expired_animation = true,
       // Dynamic sizing options (like button-card)
       width = null,
       height = null,
@@ -1185,14 +1188,15 @@ class TimeFlowCard extends HTMLElement {
         }
         
         .expired {
-          animation: celebration 0.8s ease-in-out;
+          ${expired_animation ? 'animation: celebration 0.8s ease-in-out;' : ''}
         }
         
+        ${expired_animation ? `
         @keyframes celebration {
           0% { transform: scale(1); }
           50% { transform: scale(1.05); }
           100% { transform: scale(1); }
-        }
+        }` : ''}
         
         .progress-circle {
           opacity: 0.9;
@@ -1206,7 +1210,7 @@ class TimeFlowCard extends HTMLElement {
         }
       </style>
       
-      <ha-card class="timeflow-card ${this._expired ? 'expired' : ''}">
+      <ha-card class="timeflow-card ${this._expired && expired_animation ? 'expired' : ''}">
         <div class="card-content">
           <div class="header">
             <div class="title-section">
@@ -1320,7 +1324,8 @@ class TimeFlowCard extends HTMLElement {
 
     // Update expired state
     if (this._domElements.haCard) {
-      this._domElements.haCard.classList.toggle('expired', this._expired);
+      const { expired_animation = true } = this._config;
+      this._domElements.haCard.classList.toggle('expired', this._expired && expired_animation);
     }
   }
 

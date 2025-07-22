@@ -173,7 +173,7 @@ class TimeFlowCard extends HTMLElement {
     this._clearTemplateCache();
     
     this.render();
-    this._startTimer();
+    (async () => await this._startTimer())();
     
     // Re-apply card-mod styles when config changes
     setTimeout(() => this._applyCardMod(), 0);
@@ -215,7 +215,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   connectedCallback() {
-    this._startTimer();
+    (async () => await this._startTimer())();
     this._applyCardMod();
   }
 
@@ -250,9 +250,9 @@ class TimeFlowCard extends HTMLElement {
     });
   }
 
-  _startTimer() {
+  async _startTimer() {
     this._stopTimer();
-    this._updateCountdown();
+    await this._updateCountdown(); // Make sure initial countdown calculation completes
     this._interval = setInterval(async () => {
       await this._updateCountdown();
     }, 1000);

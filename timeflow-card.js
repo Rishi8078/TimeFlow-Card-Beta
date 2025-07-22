@@ -307,12 +307,19 @@ class TimeFlowCard extends HTMLElement {
     
     const now = new Date().getTime();
     const targetDateValue = await this._resolveValue(this._config.target_date);
-    if (!targetDateValue) return;
+    console.log('TimeFlow Card: _updateCountdown - targetDateValue resolved to:', targetDateValue, 'type:', typeof targetDateValue);
+    
+    if (!targetDateValue) {
+      console.log('TimeFlow Card: _updateCountdown - targetDateValue is null/undefined, returning');
+      return;
+    }
     
     // Use the helper method for consistent date parsing
     const targetDate = this._parseISODate(targetDateValue);
+    console.log('TimeFlow Card: _updateCountdown - parsed targetDate:', targetDate, 'original:', targetDateValue);
     
     const difference = targetDate - now;
+    console.log('TimeFlow Card: _updateCountdown - time difference:', difference, 'ms');
 
     if (difference > 0) {
       // Calculate time units based on what's enabled - cascade disabled units into enabled ones

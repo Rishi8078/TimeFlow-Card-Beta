@@ -484,6 +484,7 @@ class TimeFlowCard extends HTMLElement {
    */
   async _evaluateTemplate(template) {
     if (!this._hass || !template) {
+      console.log('TimeFlow Card: No hass or template provided:', { hass: !!this._hass, template });
       return template;
     }
 
@@ -493,15 +494,19 @@ class TimeFlowCard extends HTMLElement {
       const cached = this._cache.templateResults.get(cacheKey);
       // Check if cache is still valid (within 5 seconds)
       if (Date.now() - cached.timestamp < 5000) {
+        console.log('TimeFlow Card: Using cached template result:', { template, result: cached.result });
         return cached.result;
       }
     }
 
     try {
+      console.log('TimeFlow Card: Evaluating template:', template);
       const result = await this._hass.callWS({
         type: 'render_template',
         template: template
       });
+      
+      console.log('TimeFlow Card: Template evaluation success:', { template, result });
       
       // Cache the result
       this._cache.templateResults.set(cacheKey, {
@@ -524,18 +529,25 @@ class TimeFlowCard extends HTMLElement {
   async _resolveValue(value) {
     if (!value) return null;
     
+    console.log('TimeFlow Card: Resolving value:', value);
+    
     // Handle templates first
     if (this._isTemplate(value)) {
-      return await this._evaluateTemplate(value);
+      console.log('TimeFlow Card: Detected template:', value);
+      const result = await this._evaluateTemplate(value);
+      console.log('TimeFlow Card: Template resolved to:', result);
+      return result;
     }
     
     // Handle entity references
     if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
       const entity = this._hass.states[value];
+      console.log('TimeFlow Card: Resolved entity:', { entityId: value, state: entity.state });
       return entity.state;
     }
     
     // Return plain string/value
+    console.log('TimeFlow Card: Using plain value:', value);
     return value;
   }
 
@@ -875,6 +887,8 @@ class TimeFlowCard extends HTMLElement {
   async _resolveTemplateProperties() {
     const resolvedConfig = { ...this._config };
     
+    console.log('TimeFlow Card: Starting template resolution for config:', this._config);
+    
     // Properties that support templating
     const templateProperties = [
       'title', 'subtitle', 'color', 'background_color', 'progress_color', 
@@ -883,10 +897,14 @@ class TimeFlowCard extends HTMLElement {
     
     for (const prop of templateProperties) {
       if (resolvedConfig[prop]) {
+        console.log(`TimeFlow Card: Resolving property "${prop}":`, resolvedConfig[prop]);
+        const originalValue = resolvedConfig[prop];
         resolvedConfig[prop] = await this._resolveValue(resolvedConfig[prop]);
+        console.log(`TimeFlow Card: Property "${prop}" resolved:`, { original: originalValue, resolved: resolvedConfig[prop] });
       }
     }
     
+    console.log('TimeFlow Card: Final resolved config:', resolvedConfig);
     return resolvedConfig;
   }
 

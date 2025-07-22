@@ -5,9 +5,34 @@
 **For stable version, use:** [TimeFlow Card](https://github.com/Rishi8078/TimeFlow-Card)
 
 ## 🧪 Current Beta Features
-- Template support for dynamic values
-- Advanced styling options
-- [Feature in development]
+- **🔥 NEW:** Template support for dynamic values (target_date, colors, titles)
+- Template-based timezone handling and calculations
+- Dynamic styling based on entity states
+- Advanced templating for all configuration properties
+
+## 🔗 Template Examples
+
+### Dynamic Target Date (Timezone Handling)
+```yaml
+type: custom:timeflow-card
+target_date: "{{ (states.input_datetime.timer.state | as_timestamp) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}"
+title: "Event Countdown"
+```
+
+### Dynamic Colors Based on State
+```yaml
+type: custom:timeflow-card
+target_date: "2024-12-31T23:59:59"
+primary_color: "{{ 'red' if (as_timestamp(states.input_datetime.deadline.state) - now().timestamp()) < 3600 else 'blue' }}"
+background_color: "{{ 'darkred' if states.binary_sensor.alert.state == 'on' else '#1976d2' }}"
+```
+
+### Dynamic Content
+```yaml
+type: custom:timeflow-card
+target_date: "{{ states.sensor.next_event_date.state }}"
+title: "{{ 'URGENT' if states.binary_sensor.alert.state == 'on' else states.sensor.event_name.state }}"
+```
 
 ## Installation
 Add as custom repository in HACS:
@@ -68,7 +93,25 @@ resources:
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
 | `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
 
-## 📝 Configuration Examples
+## � Template Support (Beta Feature)
+
+The following properties support Home Assistant templates:
+
+| Property | Template Example | Description |
+|----------|-----------------|-------------|
+| `target_date` | `"{{ states.input_datetime.timer.state }}"` | Dynamic target date from entities |
+| `title` | `"{{ states.sensor.event_name.state }}"` | Dynamic title from entity |
+| `color` | `"{{ 'red' if states.binary_sensor.alert.state == 'on' else 'white' }}"` | Conditional text color |
+| `background_color` | `"{{ '#ff0000' if is_state('binary_sensor.urgent', 'on') else '#1976d2' }}"` | Dynamic background |
+| `progress_color` | `"{{ states.input_text.theme_color.state }}"` | Color from entity state |
+
+**Template Syntax:**
+- Use double curly braces: `{{ template_here }}`
+- Access entity states: `states.sensor.name.state`
+- Use conditional logic: `{{ 'value1' if condition else 'value2' }}`
+- Date functions: `as_timestamp()`, `timestamp_custom()`, `now()`
+
+## �📝 Configuration Examples
 
 ### Basic Countdown
 ```yaml

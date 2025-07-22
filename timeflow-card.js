@@ -103,7 +103,10 @@ class TimeFlowCard extends HTMLElement {
       customStyles: null,
       lastConfigHash: null,
       parsedTargetDate: null,
-      parsedCreationDate: null
+      parsedCreationDate: null,
+      templateResults: new Map(), // Template evaluation cache
+      templateWatchers: new Map(), // Template entity dependencies
+      lastEntityStates: new Map() // Track entity state changes for template re-evaluation
     };
     this._domElements = null; // Cache DOM references
     this._updateScheduled = false; // Prevent duplicate RAF calls
@@ -161,6 +164,10 @@ class TimeFlowCard extends HTMLElement {
     }
     
     this._config = { ...mutableConfig };
+    
+    // Clear template cache when config changes
+    this._clearTemplateCache();
+    
     this.render();
     this._startTimer();
     
@@ -169,7 +176,18 @@ class TimeFlowCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const oldHass = this._hass;
     this._hass = hass;
+    
+    // Clear template cache when hass changes or entities update
+    if (hass && oldHass !== hass) {
+      this._clearTemplateCache();
+      
+      // Re-render if we have templates that might have changed
+      if (this._hasTemplatesInConfig()) {
+        this.render();
+      }
+    }
   }
 
   // Performance optimization: detect config changes
@@ -231,8 +249,8 @@ class TimeFlowCard extends HTMLElement {
   _startTimer() {
     this._stopTimer();
     this._updateCountdown();
-    this._interval = setInterval(() => {
-      this._updateCountdown();
+    this._interval = setInterval(async () => {
+      await this._updateCountdown();
     }, 1000);
   }
 
@@ -247,8 +265,8 @@ class TimeFlowCard extends HTMLElement {
   _scheduleUpdate() {
     if (!this._updateScheduled) {
       this._updateScheduled = true;
-      requestAnimationFrame(() => {
-        this._updateDisplay();
+      requestAnimationFrame(async () => {
+        await this._updateDisplay();
         this._updateScheduled = false;
       });
     }
@@ -280,11 +298,11 @@ class TimeFlowCard extends HTMLElement {
     }
   }
   
-  _updateCountdown() {
+  async _updateCountdown() {
     if (!this._config.target_date) return;
     
     const now = new Date().getTime();
-    const targetDateValue = this._getEntityValueOrString(this._config.target_date);
+    const targetDateValue = await this._resolveValue(this._config.target_date);
     if (!targetDateValue) return;
     
     // Use the helper method for consistent date parsing
@@ -377,10 +395,10 @@ class TimeFlowCard extends HTMLElement {
     this._scheduleUpdate();
   }
 
-  _updateDisplay() {
+  async _updateDisplay() {
     // Use cached DOM elements and RAF for better performance
     if (this._domElements) {
-      this._updateContent();
+      await this._updateContent();
     } else {
       // Fallback to original method if DOM elements not cached
       const progressCircle = this.shadowRoot.querySelector('progress-circle');
@@ -390,7 +408,8 @@ class TimeFlowCard extends HTMLElement {
       const card = this.shadowRoot.querySelector('.card');
       
       if (progressCircle) {
-        progressCircle.setAttribute('progress', this._getProgress());
+        const progress = await this._getProgress();
+        progressCircle.setAttribute('progress', progress);
       }
       
       const mainDisplay = this._getMainDisplay();
@@ -407,8 +426,8 @@ class TimeFlowCard extends HTMLElement {
     }
   }
 
-  _getProgress() {
-    const targetDateValue = this._getEntityValueOrString(this._config.target_date);
+  async _getProgress() {
+    const targetDateValue = await this._resolveValue(this._config.target_date);
     if (!targetDateValue) return 0;
     
     // Use the helper method for consistent date parsing
@@ -417,7 +436,7 @@ class TimeFlowCard extends HTMLElement {
     
     let creationDate;
     if (this._config.creation_date) {
-      const creationDateValue = this._getEntityValueOrString(this._config.creation_date);
+      const creationDateValue = await this._resolveValue(this._config.creation_date);
       
       if (creationDateValue) {
         // Use the helper method for consistent date parsing
@@ -447,6 +466,101 @@ class TimeFlowCard extends HTMLElement {
     }
     
     return value;
+  }
+
+  // ===== TEMPLATE EVALUATION SYSTEM =====
+  
+  /**
+   * Detects if a value contains Home Assistant templates
+   */
+  _isTemplate(value) {
+    return typeof value === 'string' && 
+           value.includes('{{') && 
+           value.includes('}}');
+  }
+
+  /**
+   * Evaluates a Home Assistant template
+   */
+  async _evaluateTemplate(template) {
+    if (!this._hass || !template) {
+      return template;
+    }
+
+    // Check cache first
+    const cacheKey = template;
+    if (this._cache.templateResults.has(cacheKey)) {
+      const cached = this._cache.templateResults.get(cacheKey);
+      // Check if cache is still valid (within 5 seconds)
+      if (Date.now() - cached.timestamp < 5000) {
+        return cached.result;
+      }
+    }
+
+    try {
+      const result = await this._hass.callWS({
+        type: 'render_template',
+        template: template
+      });
+      
+      // Cache the result
+      this._cache.templateResults.set(cacheKey, {
+        result: result,
+        timestamp: Date.now()
+      });
+      
+      return result;
+    } catch (error) {
+      console.warn('TimeFlow Card: Template evaluation failed:', error);
+      console.warn('Template:', template);
+      // Return the original template as fallback
+      return template;
+    }
+  }
+
+  /**
+   * Enhanced value resolver that handles entities, templates, and plain strings
+   */
+  async _resolveValue(value) {
+    if (!value) return null;
+    
+    // Handle templates first
+    if (this._isTemplate(value)) {
+      return await this._evaluateTemplate(value);
+    }
+    
+    // Handle entity references
+    if (typeof value === 'string' && value.includes('.') && this._hass && this._hass.states[value]) {
+      const entity = this._hass.states[value];
+      return entity.state;
+    }
+    
+    // Return plain string/value
+    return value;
+  }
+
+  /**
+   * Clears template cache when entities change
+   */
+  _clearTemplateCache() {
+    this._cache.templateResults.clear();
+  }
+
+  /**
+   * Checks if the current config contains any templates
+   */
+  _hasTemplatesInConfig() {
+    if (!this._config) return false;
+    
+    // Check common template-enabled properties
+    const templateProperties = [
+      'target_date', 'creation_date', 'title', 'subtitle',
+      'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color'
+    ];
+    
+    return templateProperties.some(prop => 
+      this._config[prop] && this._isTemplate(this._config[prop])
+    );
   }
 
   _getMainDisplay() {
@@ -746,17 +860,41 @@ class TimeFlowCard extends HTMLElement {
     }
   }
 
-  render() {
+  async render() {
     // Check if we need to rebuild DOM or just update content
     if (!this._domElements || this._hasConfigChanged()) {
-      this._initializeDOM();
+      await this._initializeDOM();
     } else {
-      this._updateContent();
+      await this._updateContent();
     }
   }
 
+  /**
+   * Resolves template-based configuration properties
+   */
+  async _resolveTemplateProperties() {
+    const resolvedConfig = { ...this._config };
+    
+    // Properties that support templating
+    const templateProperties = [
+      'title', 'subtitle', 'color', 'background_color', 'progress_color', 
+      'primary_color', 'secondary_color', 'target_date', 'creation_date'
+    ];
+    
+    for (const prop of templateProperties) {
+      if (resolvedConfig[prop]) {
+        resolvedConfig[prop] = await this._resolveValue(resolvedConfig[prop]);
+      }
+    }
+    
+    return resolvedConfig;
+  }
+
   // Performance optimization: Initialize DOM structure only when needed
-  _initializeDOM() {
+  async _initializeDOM() {
+    // Resolve any template properties first
+    const resolvedConfig = await this._resolveTemplateProperties();
+    
     const {
       title = 'Countdown Timer',
       show_days = true,
@@ -773,7 +911,7 @@ class TimeFlowCard extends HTMLElement {
       icon_size = '100px',
       stroke_width = 15,
       expired_text = 'Completed! 🎉'
-    } = this._config;
+    } = resolvedConfig;
 
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';
@@ -785,6 +923,10 @@ class TimeFlowCard extends HTMLElement {
 
     // Build custom styles from config
     const customStyles = this._buildStylesObject();
+
+    // Pre-calculate values that need async resolution
+    const currentProgress = await this._getProgress();
+    const subtitleText = this._getSubtitle();
 
     // Calculate card dimensions dynamically
     const cardStyles = [];
@@ -916,7 +1058,7 @@ class TimeFlowCard extends HTMLElement {
           <div class="header">
             <div class="title-section">
               <h2 class="title">${title}</h2>
-              <p class="subtitle">${this._getSubtitle()}</p>
+              <p class="subtitle">${subtitleText}</p>
             </div>
           </div>
           
@@ -924,7 +1066,7 @@ class TimeFlowCard extends HTMLElement {
             <div class="progress-section">
               <progress-circle
                 class="progress-circle"
-                progress="${this._getProgress()}"
+                progress="${currentProgress}"
                 color="${progressColor}"
                 size="${dynamicIconSize}"
                 stroke-width="${dynamicStrokeWidth}"
@@ -995,13 +1137,16 @@ class TimeFlowCard extends HTMLElement {
   }
 
   // Performance optimization: Update only content that changes
-  _updateContent() {
+  async _updateContent() {
     if (!this._domElements) return;
+
+    // Resolve any template properties first
+    const resolvedConfig = await this._resolveTemplateProperties();
 
     const {
       title = 'Countdown Timer',
       expired_text = 'Completed! 🎉'
-    } = this._config;
+    } = resolvedConfig;
 
     // Update title - always show original title
     if (this._domElements.title && this._domElements.title.textContent !== title) {
@@ -1015,7 +1160,7 @@ class TimeFlowCard extends HTMLElement {
     }
 
     // Update progress circle
-    const progress = this._getProgress();
+    const progress = await this._getProgress();
     if (this._domElements.progressCircle) {
       this._domElements.progressCircle.setAttribute('progress', progress);
     }

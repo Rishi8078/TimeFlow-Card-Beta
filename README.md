@@ -1,3 +1,19 @@
+# ⚠️ TimeFlow Card (Beta)
+
+**This is the BETA version** of TimeFlow Card for testing new features.
+
+**For stable version, use:** [TimeFlow Card](https://github.com/Rishi8078/TimeFlow-Card)
+
+## 🧪 Current Beta Features
+- Template support for dynamic values
+- Advanced styling options
+- [Feature in development]
+
+## Installation
+Add as custom repository in HACS:
+- URL: `https://github.com/Rishi8078/TimeFlow-Card-Beta`
+- Category: Dashboard
+
 # TimeFlow Card
 
 [![Home Assistant][ha_badge]][ha_link] [![HACS][hacs_badge]][hacs_link] [![GitHub Release][release_badge]][release] [![Buy Me A Coffee][bmac_badge]][bmac]

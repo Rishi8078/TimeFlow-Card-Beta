@@ -103,3 +103,10 @@ Thumbs.db
 # Test files (keep local for development/testing)
 test-*.html
 *.test.html
+
+# Template testing files and debug guides
+*template*test*.yaml
+*fallback*test*.yaml
+*TEMPLATE_TESTING_GUIDE.md
+*FALLBACK_DEBUG_GUIDE.md
+minimal-fallback-test.yaml

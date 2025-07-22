@@ -497,7 +497,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   /**
-   * Evaluates a Home Assistant template
+   * Evaluates a Home Assistant template using the correct API
    */
   async _evaluateTemplate(template) {
     if (!this._hass || !template) {
@@ -518,9 +518,10 @@ class TimeFlowCard extends HTMLElement {
 
     try {
       console.log('TimeFlow Card: Evaluating template:', template);
-      const result = await this._hass.callWS({
-        type: 'render_template',
-        template: template
+      
+      // Use callApi method like card-tools and button-card for HA templates
+      const result = await this._hass.callApi('POST', 'template', { 
+        template: template 
       });
       
       console.log('TimeFlow Card: Template evaluation success:', { template, result });
@@ -535,8 +536,29 @@ class TimeFlowCard extends HTMLElement {
     } catch (error) {
       console.warn('TimeFlow Card: Template evaluation failed:', error);
       console.warn('Template:', template);
-      // Return the original template as fallback
-      return template;
+      
+      // Try fallback with callWS if callApi fails
+      try {
+        console.log('TimeFlow Card: Trying fallback with callWS...');
+        const fallbackResult = await this._hass.callWS({
+          type: 'render_template',
+          template: template
+        });
+        
+        console.log('TimeFlow Card: Fallback evaluation success:', { template, result: fallbackResult });
+        
+        // Cache the result
+        this._cache.templateResults.set(cacheKey, {
+          result: fallbackResult,
+          timestamp: Date.now()
+        });
+        
+        return fallbackResult;
+      } catch (fallbackError) {
+        console.error('TimeFlow Card: Both template evaluation methods failed:', fallbackError);
+        // Return the original template as fallback
+        return template;
+      }
     }
   }
 

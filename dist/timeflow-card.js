@@ -133,11 +133,6 @@ class TimeFlowCard extends HTMLElement {
       aspect_ratio: '2/1', // e.g., '1/1', '2/1', '3/1', '1/1.5'
       icon_size: '100px', // e.g., '80px', '20%', '100px'
       stroke_width: 15, // Progress circle thickness
-      // Grid layout options for sections
-      grid_options: {
-        columns: null, // e.g., 1, 2, 3, 4
-        rows: null // e.g., 1, 2, 3, 4
-      },
       styles: {
         card: [],
         title: [],
@@ -1335,21 +1330,8 @@ class TimeFlowCard extends HTMLElement {
   }
 
   getCardSize() {
-    const config = this._config;
-    
-    // Grid-based sizing for sections (if grid_options specified)
-    if (config.grid_options && 
-        (config.grid_options.columns !== null || config.grid_options.rows !== null)) {
-      
-      // Return grid dimensions directly for HA sections
-      return {
-        columns: config.grid_options.columns || 2, // Default 2 columns
-        rows: config.grid_options.rows || 1        // Default 1 row
-      };
-    }
-    
-    // Legacy dynamic sizing based on aspect ratio and dimensions
-    const { aspect_ratio = '2/1', height } = config;
+    // Dynamic card size based on aspect ratio and dimensions
+    const { aspect_ratio = '2/1', height } = this._config;
     
     if (height) {
       // If explicit height is set, calculate size based on pixels
@@ -1376,7 +1358,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '2.0.3-beta';
+    return '1.1.0';
   }
 }
 

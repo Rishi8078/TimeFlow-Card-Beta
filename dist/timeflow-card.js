@@ -126,12 +126,18 @@ class TimeFlowCard extends HTMLElement {
       color: '#ffffff',
       background_color: '#1976d2',
       progress_color: '#4CAF50',
+      expired_animation: true, // Enable celebration animation when countdown expires
       // Dynamic sizing options (like button-card)
       width: null, // e.g., '200px' or '100%'
       height: null, // e.g., '150px' or 'auto'
       aspect_ratio: '2/1', // e.g., '1/1', '2/1', '3/1', '1/1.5'
       icon_size: '100px', // e.g., '80px', '20%', '100px'
       stroke_width: 15, // Progress circle thickness
+      // Grid layout options for sections
+      grid_options: {
+        columns: null, // e.g., 1, 2, 3, 4
+        rows: null // e.g., 1, 2, 3, 4
+      },
       styles: {
         card: [],
         title: [],
@@ -275,18 +281,25 @@ class TimeFlowCard extends HTMLElement {
   // Helper for consistent date parsing across platforms
   _parseISODate(dateString) {
     try {
-      // Handle ISO format strings properly (most reliable cross-platform)
       if (typeof dateString === 'string' && dateString.includes('T')) {
-        // ISO format parsing is most consistent across browsers/devices
-        const [datePart, timePart] = dateString.split('T');
-        const [year, month, day] = datePart.split('-').map(Number);
+        // Check if the string contains timezone information (Z, +XX:XX, -XX:XX)
+        const hasTimezone = /[+-]\d{2}:\d{2}$|Z$/.test(dateString);
         
-        if (timePart && timePart.includes(':')) {
-          const [hour, minute, secondPart] = timePart.split(':');
-          const second = secondPart ? parseInt(secondPart) : 0;
-          return new Date(year, month - 1, day, hour, minute, second).getTime();
+        if (hasTimezone) {
+          // For ISO strings with timezone info, use native Date parsing to preserve timezone
+          return new Date(dateString).getTime();
         } else {
-          return new Date(year, month - 1, day).getTime();
+          // For timezone-less ISO strings, use manual parsing for cross-platform consistency
+          const [datePart, timePart] = dateString.split('T');
+          const [year, month, day] = datePart.split('-').map(Number);
+          
+          if (timePart && timePart.includes(':')) {
+            const [hour, minute, secondPart] = timePart.split(':');
+            const second = secondPart ? parseInt(secondPart) : 0;
+            return new Date(year, month - 1, day, hour, minute, second).getTime();
+          } else {
+            return new Date(year, month - 1, day).getTime();
+          }
         }
       } else {
         // Fallback to regular parsing for other formats
@@ -425,7 +438,8 @@ class TimeFlowCard extends HTMLElement {
       }
       
       if (card) {
-        card.classList.toggle('expired', this._expired);
+        const { expired_animation = true } = this._config;
+        card.classList.toggle('expired', this._expired && expired_animation);
       }
     }
   }
@@ -663,7 +677,17 @@ class TimeFlowCard extends HTMLElement {
       if (entity.state === 'unknown' || entity.state === 'unavailable') {
         return null;
       }
-      return entity.state;
+      
+      // For entity timestamps, strip timezone info to treat as local time
+      // This provides more intuitive behavior for users
+      let entityValue = entity.state;
+      if (typeof entityValue === 'string' && entityValue.includes('T')) {
+        // Remove timezone information (+XX:XX, -XX:XX, Z) from entity values
+        // This ensures entity timestamps are always treated as local time
+        entityValue = entityValue.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
+      }
+      
+      return entityValue;
     }
     
     // Return plain string/value
@@ -1040,6 +1064,7 @@ class TimeFlowCard extends HTMLElement {
       color = '#ffffff',
       background_color,
       progress_color,
+      expired_animation = true,
       // Dynamic sizing options (like button-card)
       width = null,
       height = null,
@@ -1168,14 +1193,15 @@ class TimeFlowCard extends HTMLElement {
         }
         
         .expired {
-          animation: celebration 0.8s ease-in-out;
+          ${expired_animation ? 'animation: celebration 0.8s ease-in-out;' : ''}
         }
         
+        ${expired_animation ? `
         @keyframes celebration {
           0% { transform: scale(1); }
           50% { transform: scale(1.05); }
           100% { transform: scale(1); }
-        }
+        }` : ''}
         
         .progress-circle {
           opacity: 0.9;
@@ -1189,7 +1215,7 @@ class TimeFlowCard extends HTMLElement {
         }
       </style>
       
-      <ha-card class="timeflow-card ${this._expired ? 'expired' : ''}">
+      <ha-card class="timeflow-card ${this._expired && expired_animation ? 'expired' : ''}">
         <div class="card-content">
           <div class="header">
             <div class="title-section">
@@ -1303,13 +1329,27 @@ class TimeFlowCard extends HTMLElement {
 
     // Update expired state
     if (this._domElements.haCard) {
-      this._domElements.haCard.classList.toggle('expired', this._expired);
+      const { expired_animation = true } = this._config;
+      this._domElements.haCard.classList.toggle('expired', this._expired && expired_animation);
     }
   }
 
   getCardSize() {
-    // Dynamic card size based on aspect ratio and dimensions
-    const { aspect_ratio = '2/1', height } = this._config;
+    const config = this._config;
+    
+    // Grid-based sizing for sections (if grid_options specified)
+    if (config.grid_options && 
+        (config.grid_options.columns !== null || config.grid_options.rows !== null)) {
+      
+      // Return grid dimensions directly for HA sections
+      return {
+        columns: config.grid_options.columns || 2, // Default 2 columns
+        rows: config.grid_options.rows || 1        // Default 1 row
+      };
+    }
+    
+    // Legacy dynamic sizing based on aspect ratio and dimensions
+    const { aspect_ratio = '2/1', height } = config;
     
     if (height) {
       // If explicit height is set, calculate size based on pixels
@@ -1336,7 +1376,7 @@ class TimeFlowCard extends HTMLElement {
   }
 
   static get version() {
-    return '1.1.0';
+    return '2.0.3-beta';
   }
 }
 

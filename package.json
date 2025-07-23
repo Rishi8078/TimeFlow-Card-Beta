@@ -1,7 +1,7 @@
 {
-  "name": "timeflow-card",
+  "name": "timeflow-card-beta",
   "version": "1.2.0",
-  "description": "TimeFlow Card - Modern modular architecture",
+  "description": "TimeFlow Card Beta - Modern modular architecture",
   "main": "timeflow-card-modular.js",
   "scripts": {
     "lint": "eslint *.js",

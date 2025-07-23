@@ -1,4 +1,4 @@
-# TimeFlow Card
+# TimeFlow Card Beta
 
 A beautiful countdown timer card for Home Assistant with animated progress circle, intelligent time formatting, and modern modular architecture.
 
@@ -15,7 +15,7 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 
 ## Quick Start
 1. Install through HACS
-2. Add to your dashboard with type: `custom:timeflow-card`
+2. Add to your dashboard with type: `custom:timeflow-card-beta`
 3. Set your target date in ISO format: `"2025-12-31T23:59:59"`
 4. Use templates for dynamic values: `"{{ states.sensor.event_date.state }}"`
 5. Customize time units and appearance

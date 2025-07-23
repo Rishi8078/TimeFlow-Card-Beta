@@ -61,6 +61,106 @@ class ProgressCircle extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    this._setupKeyboardNavigation();
+  }
+  
+  disconnectedCallback() {
+    this._removeKeyboardNavigation();
+  }
+  
+  _setupKeyboardNavigation() {
+    if (this.shadowRoot) {
+      const svg = this.shadowRoot.querySelector('svg');
+      if (svg) {
+        svg.addEventListener('keydown', this._handleKeydown.bind(this));
+        svg.addEventListener('focus', this._handleFocus.bind(this));
+        svg.addEventListener('blur', this._handleBlur.bind(this));
+      }
+    }
+  }
+  
+  _removeKeyboardNavigation() {
+    if (this.shadowRoot) {
+      const svg = this.shadowRoot.querySelector('svg');
+      if (svg) {
+        svg.removeEventListener('keydown', this._handleKeydown.bind(this));
+        svg.removeEventListener('focus', this._handleFocus.bind(this));
+        svg.removeEventListener('blur', this._handleBlur.bind(this));
+      }
+    }
+  }
+  
+  _handleKeydown(event) {
+    // Handle keyboard navigation
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        // Announce current progress to screen readers
+        this._announceProgress();
+        break;
+      case 'ArrowUp':
+      case 'ArrowRight':
+        event.preventDefault();
+        // Simulate progress increase for demo purposes
+        this._simulateProgressChange(5);
+        break;
+      case 'ArrowDown':
+      case 'ArrowLeft':
+        event.preventDefault();
+        // Simulate progress decrease for demo purposes
+        this._simulateProgressChange(-5);
+        break;
+    }
+  }
+  
+  _handleFocus(event) {
+    // Announce component when focused
+    this._announceProgress();
+  }
+  
+  _handleBlur(event) {
+    // Clear any announcements when focus leaves
+  }
+  
+  _announceProgress() {
+    // Create a live region announcement for screen readers
+    const announcement = `Timer progress: ${Math.round(this.progress)}% complete`;
+    this._createLiveRegionAnnouncement(announcement);
+  }
+  
+  _simulateProgressChange(delta) {
+    // This would typically be controlled by the parent component
+    // For accessibility demo purposes only
+    const newProgress = Math.max(0, Math.min(100, this.progress + delta));
+    this.setAttribute('progress', newProgress);
+    this._announceProgress();
+  }
+  
+  _createLiveRegionAnnouncement(message) {
+    // Create temporary live region for screen reader announcements
+    const liveRegion = document.createElement('div');
+    liveRegion.setAttribute('aria-live', 'polite');
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.style.position = 'absolute';
+    liveRegion.style.left = '-10000px';
+    liveRegion.style.width = '1px';
+    liveRegion.style.height = '1px';
+    liveRegion.style.overflow = 'hidden';
+    
+    document.body.appendChild(liveRegion);
+    liveRegion.textContent = message;
+    
+    // Remove after announcement
+    setTimeout(() => {
+      if (liveRegion.parentNode) {
+        liveRegion.parentNode.removeChild(liveRegion);
+      }
+    }, 1000);
+  }
+
+  connectedCallback() {
+    this.render();
   }
 
   render() {
@@ -73,6 +173,10 @@ class ProgressCircle extends HTMLElement {
     const safeStrokeWidth = Math.max(1, Math.min(50, this.strokeWidth));
     const safeProgress = Math.max(0, Math.min(100, this.progress));
     const safeColor = this._validateColorInput(this.color) ? this.color : '#4CAF50';
+    
+    // Generate unique IDs for accessibility
+    const progressId = `progress-${Math.random().toString(36).substr(2, 9)}`;
+    const titleId = `title-${Math.random().toString(36).substr(2, 9)}`;
     
     this.shadowRoot.innerHTML = `
       <style>
@@ -94,6 +198,12 @@ class ProgressCircle extends HTMLElement {
           stroke-linecap: round;
           transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
+        /* Focus indicator for accessibility */
+        :host(:focus-within) .progress-circle {
+          outline: 2px solid var(--primary-color, #03A9F4);
+          outline-offset: 2px;
+        }
       </style>
       
       <svg
@@ -101,13 +211,21 @@ class ProgressCircle extends HTMLElement {
         width="${safeSize}"
         height="${safeSize}"
         viewBox="0 0 ${safeSize} ${safeSize}"
+        role="img"
+        aria-labelledby="${titleId}"
+        aria-describedby="${progressId}"
+        focusable="true"
+        tabindex="0"
       >
+        <title id="${titleId}">Progress Circle</title>
+        <desc id="${progressId}">Progress: ${Math.round(safeProgress)}% complete</desc>
         <circle
           class="progress-track"
           cx="${safeSize / 2}"
           cy="${safeSize / 2}"
           r="${radius}"
           stroke-width="${safeStrokeWidth}"
+          aria-hidden="true"
         />
         <circle
           class="progress-bar"
@@ -118,6 +236,11 @@ class ProgressCircle extends HTMLElement {
           stroke="${safeColor}"
           stroke-dasharray="${circumference}"
           stroke-dashoffset="${strokeDashoffset}"
+          role="progressbar"
+          aria-valuenow="${Math.round(safeProgress)}"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Timer progress: ${Math.round(safeProgress)}% complete"
         />
       </svg>
     `;
@@ -258,10 +381,12 @@ class TimeFlowCard extends HTMLElement {
   connectedCallback() {
     (async () => await this._startTimer())();
     this._applyCardMod();
+    this._setupCardKeyboardNavigation();
   }
 
   disconnectedCallback() {
     this._stopTimer();
+    this._removeCardKeyboardNavigation();
     
     // Clear all caches to prevent memory leaks
     this._cache.templateResults.clear();
@@ -596,7 +721,7 @@ class TimeFlowCard extends HTMLElement {
     if (!this._updateScheduled) {
       this._updateScheduled = true;
       requestAnimationFrame(async () => {
-        await this._updateDisplay();
+        await this._updateDisplayWithAccessibility();
         this._updateScheduled = false;
       });
     }
@@ -1454,6 +1579,22 @@ class TimeFlowCard extends HTMLElement {
     // Pre-calculate values that need async resolution
     const currentProgress = await this._getProgress();
     const subtitleText = this._getSubtitle();
+    
+    // Generate unique IDs for accessibility
+    const cardId = `timeflow-card-${Math.random().toString(36).substr(2, 9)}`;
+    const titleId = `title-${Math.random().toString(36).substr(2, 9)}`;
+    const subtitleId = `subtitle-${Math.random().toString(36).substr(2, 9)}`;
+    const progressId = `progress-${Math.random().toString(36).substr(2, 9)}`;
+    const liveRegionId = `live-region-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store IDs for later use
+    this._accessibilityIds = {
+      cardId,
+      titleId,
+      subtitleId,
+      progressId,
+      liveRegionId
+    };
 
     // Calculate card dimensions dynamically
     const cardStyles = [];
@@ -1579,25 +1720,83 @@ class TimeFlowCard extends HTMLElement {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
           }
         }
+        
+        /* Accessibility enhancements */
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+        
+        .live-region {
+          position: absolute;
+          left: -10000px;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+        }
+        
+        /* Focus indicators */
+        ha-card:focus-within {
+          outline: 2px solid var(--primary-color, #03A9F4);
+          outline-offset: 2px;
+        }
+        
+        .progress-section:focus-within {
+          border-radius: 50%;
+        }
       </style>
       
-      <ha-card class="timeflow-card ${this._expired && expired_animation ? 'expired' : ''}">
+      <ha-card 
+        class="timeflow-card ${this._expired && expired_animation ? 'expired' : ''}"
+        id="${cardId}"
+        role="timer"
+        aria-labelledby="${titleId}"
+        aria-describedby="${subtitleId} ${progressId}"
+        tabindex="0"
+      >
         <div class="card-content">
-          <div class="header">
-            <div class="title-section">
-              <h2 class="title">${this._escapeHtml(title || 'Countdown Timer')}</h2>
-              <p class="subtitle">${this._escapeHtml(subtitleText || '0s')}</p>
-            </div>
+          <!-- Screen reader only context -->
+          <div class="sr-only">
+            Timer card showing ${this._expired ? 'expired countdown' : 'active countdown'}.
+            ${this._expired ? 'Timer has finished.' : `Time remaining: ${subtitleText}`}
           </div>
           
+          <!-- Live region for dynamic updates -->
+          <div 
+            id="${liveRegionId}"
+            class="live-region"
+            aria-live="polite"
+            aria-atomic="true"
+          ></div>
+          
+          <header class="header">
+            <div class="title-section">
+              <h2 class="title" id="${titleId}">${this._escapeHtml(title || 'Countdown Timer')}</h2>
+              <p class="subtitle" id="${subtitleId}" aria-live="polite">${this._escapeHtml(subtitleText || '0s')}</p>
+            </div>
+          </header>
+          
           <div class="content">
-            <div class="progress-section">
+            <div class="progress-section" role="region" aria-labelledby="${progressId}">
+              <span id="${progressId}" class="sr-only">
+                Progress: ${Math.round(currentProgress)}% complete
+              </span>
               <progress-circle-beta
                 class="progress-circle"
                 progress="${currentProgress}"
                 color="${progressColor}"
                 size="${dynamicIconSize}"
                 stroke-width="${dynamicStrokeWidth}"
+                role="img"
+                aria-label="Timer progress indicator"
+                aria-describedby="${progressId}"
               ></progress-circle-beta>
             </div>
           </div>
@@ -1611,13 +1810,16 @@ class TimeFlowCard extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle-beta')
+      progressCircle: this.shadowRoot.querySelector('progress-circle-beta'),
+      liveRegion: this.shadowRoot.querySelector(`#${liveRegionId}`),
+      progressDescription: this.shadowRoot.querySelector(`#${progressId}`)
     };
     
     setTimeout(() => {
-      this._updateDisplay();
+      this._updateDisplayWithAccessibility();
       this._applyNativeStyles();
       this._applyCardMod();
+      this._setupCardKeyboardNavigation();
     }, 0);
   }
 
@@ -1697,6 +1899,139 @@ class TimeFlowCard extends HTMLElement {
     if (this._domElements.haCard) {
       const { expired_animation = true } = this._config;
       this._domElements.haCard.classList.toggle('expired', this._expired && expired_animation);
+    }
+  }
+
+  // Accessibility: Keyboard Navigation Support
+  _setupCardKeyboardNavigation() {
+    if (this.shadowRoot && this._domElements) {
+      const haCard = this._domElements.haCard;
+      if (haCard) {
+        haCard.addEventListener('keydown', this._handleCardKeydown.bind(this));
+        haCard.addEventListener('focus', this._handleCardFocus.bind(this));
+        haCard.addEventListener('blur', this._handleCardBlur.bind(this));
+      }
+    }
+  }
+  
+  _removeCardKeyboardNavigation() {
+    if (this.shadowRoot && this._domElements) {
+      const haCard = this._domElements.haCard;
+      if (haCard) {
+        haCard.removeEventListener('keydown', this._handleCardKeydown.bind(this));
+        haCard.removeEventListener('focus', this._handleCardFocus.bind(this));
+        haCard.removeEventListener('blur', this._handleCardBlur.bind(this));
+      }
+    }
+  }
+  
+  _handleCardKeydown(event) {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this._announceCardStatus();
+        break;
+      case 'Tab':
+        // Allow natural tab navigation
+        break;
+      case 'r':
+      case 'R':
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          this._refreshCard();
+        }
+        break;
+      case 'i':
+      case 'I':
+        event.preventDefault();
+        this._announceCardInfo();
+        break;
+    }
+  }
+  
+  _handleCardFocus(event) {
+    // Announce card when focused
+    setTimeout(() => {
+      this._announceCardStatus();
+    }, 100);
+  }
+  
+  _handleCardBlur(event) {
+    // Could implement any cleanup when focus leaves the card
+  }
+  
+  _announceCardStatus() {
+    const title = this._config.title || 'Countdown Timer';
+    const subtitle = this._getSubtitle();
+    const progress = Math.round(this._getProgress());
+    const status = this._expired ? 'expired' : 'active';
+    
+    const announcement = `${title}. ${status} timer. ${subtitle}. Progress: ${progress}% complete.`;
+    this._updateLiveRegion(announcement);
+  }
+  
+  _announceCardInfo() {
+    const { target_date, creation_date } = this._config;
+    const targetInfo = typeof target_date === 'string' ? 
+      `Target date: ${new Date(target_date).toLocaleDateString()}` : 
+      `Target entity: ${target_date}`;
+    
+    const creationInfo = creation_date ? 
+      `Started: ${new Date(creation_date).toLocaleDateString()}` : 
+      'No start date set';
+    
+    const announcement = `Timer information. ${targetInfo}. ${creationInfo}.`;
+    this._updateLiveRegion(announcement);
+  }
+  
+  _refreshCard() {
+    // Force refresh of the card
+    this._clearTemplateCache();
+    this.render();
+    this._updateLiveRegion('Card refreshed');
+  }
+  
+  _updateLiveRegion(message) {
+    if (this._domElements && this._domElements.liveRegion) {
+      // Clear and update live region
+      this._domElements.liveRegion.textContent = '';
+      setTimeout(() => {
+        this._domElements.liveRegion.textContent = message;
+      }, 10);
+      
+      // Clear after announcement
+      setTimeout(() => {
+        if (this._domElements && this._domElements.liveRegion) {
+          this._domElements.liveRegion.textContent = '';
+        }
+      }, 3000);
+    }
+  }
+  
+  // Enhanced progress updates for accessibility
+  async _updateDisplayWithAccessibility() {
+    await this._updateDisplay();
+    
+    // Update screen reader content
+    if (this._domElements) {
+      const progress = Math.round(await this._getProgress());
+      const subtitle = this._getSubtitle();
+      
+      // Update progress description
+      if (this._domElements.progressDescription) {
+        this._domElements.progressDescription.textContent = `Progress: ${progress}% complete`;
+      }
+      
+      // Update progress circle attributes
+      if (this._domElements.progressCircle) {
+        this._domElements.progressCircle.setAttribute('aria-label', `Timer progress: ${progress}% complete`);
+      }
+      
+      // Update subtitle aria-live region
+      if (this._domElements.subtitle) {
+        this._domElements.subtitle.textContent = this._escapeHtml(subtitle || '0s');
+      }
     }
   }
 

@@ -1,60 +1,22 @@
-# ⚠️ TimeFlow Card (Beta)
-
-**This is the BETA version** of TimeFlow Card for testing new features.
-
-**For stable version, use:** [TimeFlow Card](https://github.com/Rishi8078/TimeFlow-Card)
-
-## 🧪 Current Beta Features
-- **🔥 NEW:** Template support for dynamic values (target_date, colors, titles)
-- Template-based timezone handling and calculations
-- Dynamic styling based on entity states
-- Advanced templating for all configuration properties
-
-## 🔗 Template Examples
-
-### Dynamic Target Date (Timezone Handling)
-```yaml
-type: custom:timeflow-card-beta
-target_date: "{{ (states.input_datetime.timer.state | as_timestamp) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}"
-title: "Event Countdown"
-```
-
-### Dynamic Colors Based on State
-```yaml
-type: custom:timeflow-card-beta
-target_date: "2024-12-31T23:59:59"
-primary_color: "{{ 'red' if (as_timestamp(states.input_datetime.deadline.state) - now().timestamp()) < 3600 else 'blue' }}"
-background_color: "{{ 'darkred' if states.binary_sensor.alert.state == 'on' else '#1976d2' }}"
-```
-
-### Dynamic Content
-```yaml
-type: custom:timeflow-card-beta
-target_date: "{{ states.sensor.next_event_date.state }}"
-title: "{{ 'URGENT' if states.binary_sensor.alert.state == 'on' else states.sensor.event_name.state }}"
-```
-
-## Installation
-Add as custom repository in HACS:
-- URL: `https://github.com/Rishi8078/TimeFlow-Card-Beta`
-- Category: Dashboard
-
 # TimeFlow Card
 
 [![Home Assistant][ha_badge]][ha_link] [![HACS][hacs_badge]][hacs_link] [![GitHub Release][release_badge]][release] [![Buy Me A Coffee][bmac_badge]][bmac]
 
-A beautiful countdown timer card for Home Assistant with animated progress circle and intelligent time formatting.
+A beautiful countdown timer card for Home Assistant with animated progress circle, intelligent time formatting, and modern modular architecture.
 
 ![TimeFlow Card Preview](assets/preview.png)
 
 ## ✨ Features
 
-- Animated SVG progress circle with dynamic scaling
-- Smart time display with natural language formatting
-- Customizable colors, sizes, and time units
-- Entity support for dynamic countdowns
-- Cross-platform date parsing
-- **Card-mod compatibility** for advanced styling
+- **🏗️ Modular Architecture**: Clean, maintainable code with focused components
+- **🎨 Template Support**: Dynamic values for all configuration properties
+- **⚡ Performance Optimized**: Efficient rendering with caching and smart updates
+- **🎯 Smart Time Display**: Natural language formatting with unit cascading
+- **🔄 Animated Progress**: SVG progress circle with dynamic scaling
+- **🎨 Customizable Styling**: Colors, sizes, time units, and Card-mod support
+- **📱 Responsive Design**: Automatic sizing and mobile-friendly layouts
+- **♿ Accessibility**: Screen reader support and keyboard navigation
+- **🌐 Cross-Platform**: Robust date parsing across all browsers
 
 ## 🚀 Installation
 
@@ -69,12 +31,12 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 4. Click "Add" → Search for Timeflow-card → install
 
 ### Manual
-1. Download `timeflow-card.js` from [releases](https://github.com/Rishi8078/TimeFlow-Card/releases)
+1. Download `timeflow-card-modular.js` from [releases](https://github.com/Rishi8078/TimeFlow-Card-Beta/releases)
 2. Copy to `config/www/` directory
 3. Add to resources:
 ```yaml
 resources:
-  - url: /local/timeflow-card.js
+  - url: /local/timeflow-card-modular.js
     type: module
 ```
 ## ⚙️ Configuration Options
@@ -93,7 +55,7 @@ resources:
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
 | `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
 
-## � Template Support (Beta Feature)
+## 🎨 Template Support
 
 The following properties support Home Assistant templates:
 
@@ -115,7 +77,7 @@ The following properties support Home Assistant templates:
 
 ### Basic Countdown
 ```yaml
-type: custom:timeflow-card-beta
+type: custom:timeflow-card
 title: "New Year 2026"
 target_date: "2026-01-01T00:00:00"
 creation_date: "2025-01-01T00:00:00"
@@ -127,7 +89,7 @@ show_seconds: false
 
 ### Dynamic Entity Timer
 ```yaml
-type: custom:timeflow-card-beta
+type: custom:timeflow-card
 title: Next backup
 target_date: sensor.backup_next_scheduled_automatic_backup
 background_color: "#676F9D"
@@ -143,7 +105,7 @@ creation_date: sensor.backup_last_successful_automatic_backup
 
 ### Customized Styling
 ```yaml
-type: custom:timeflow-card-beta
+type: custom:timeflow-card
 title: "Project Deadline"
 target_date: "2025-03-15T17:00:00"
 width: "300px"
@@ -158,7 +120,7 @@ styles:
 
 ### Card-mod Styling
 ```yaml
-type: custom:timeflow-card-beta
+type: custom:timeflow-card
 title: "Project Deadline"
 target_date: "2025-03-15T17:00:00"
 card_mod:
@@ -181,7 +143,7 @@ type: grid
 columns: 2
 square: false
 cards:
-  - type: custom:timeflow-card-beta
+  - type: custom:timeflow-card
     title: Bali Trip
     target_date: "2025-09-12T13:43:50"
     background_color: "#617065"
@@ -205,7 +167,7 @@ cards:
         - font-size: 1.2rem
       progress_circle:
         - transform: scale(1.0)
-  - type: custom:timeflow-card-beta
+  - type: custom:timeflow-card
     title: Next backup
     target_date: sensor.backup_next_scheduled_automatic_backup
     background_color: "#676F9D"

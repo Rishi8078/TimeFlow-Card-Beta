@@ -6,13 +6,13 @@ import { TimeFlowCard } from './components/TimeFlowCard.js';
 import { ProgressCircle } from './components/ProgressCircle.js';
 
 // Register custom elements
-customElements.define('progress-circle', ProgressCircle);
-customElements.define('timeflow-card', TimeFlowCard);
+customElements.define('progress-circle-beta', ProgressCircle);
+customElements.define('timeflow-card-beta', TimeFlowCard);
 
 // Register the card with Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'timeflow-card',
+  type: 'timeflow-card-beta',
   name: 'TimeFlow Card',
   description: 'A beautiful countdown timer card with progress circle for Home Assistant',
   preview: true,

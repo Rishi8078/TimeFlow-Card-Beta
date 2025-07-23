@@ -126,11 +126,11 @@ class IntegrationTester {
       vm.runInContext(bundleContent, context);
 
       // Test component registration
-      const timeflowRegistered = context.customElements['timeflow-card'];
+      const timeflowRegistered = context.customElements['timeflow-card-beta'];
       this.addResult('Component Availability: TimeFlow Card', !!timeflowRegistered,
         timeflowRegistered ? 'TimeFlow Card registered' : 'TimeFlow Card not registered');
 
-      const progressRegistered = context.customElements['progress-circle'];
+      const progressRegistered = context.customElements['progress-circle-beta'];
       this.addResult('Component Availability: Progress Circle', !!progressRegistered,
         progressRegistered ? 'Progress Circle registered' : 'Progress Circle not registered');
 
@@ -202,8 +202,8 @@ class IntegrationTester {
         document: {
           createElement: function(tagName) {
             const element = new context.HTMLElement();
-            if (tagName === 'timeflow-card' && context.customElements['timeflow-card']) {
-              return new context.customElements['timeflow-card']();
+            if (tagName === 'timeflow-card-beta' && context.customElements['timeflow-card-beta']) {
+              return new context.customElements['timeflow-card-beta']();
             }
             return element;
           }
@@ -220,14 +220,14 @@ class IntegrationTester {
 
       // Test instantiation
       try {
-        const TimeFlowCardClass = context.customElements['timeflow-card'];
+        const TimeFlowCardClass = context.customElements['timeflow-card-beta'];
         if (TimeFlowCardClass) {
           const card = new TimeFlowCardClass();
           this.addResult('Basic Instantiation: Card creation', true, 'Card instance created');
 
           // Test configuration
           const testConfig = {
-            type: 'timeflow-card',
+            type: 'timeflow-card-beta',
             target_date: '2024-12-31T23:59:59',
             title: 'Test Timer'
           };
@@ -242,7 +242,7 @@ class IntegrationTester {
           // Test static methods
           try {
             const stubConfig = TimeFlowCardClass.getStubConfig();
-            const hasValidStub = stubConfig && stubConfig.type === 'timeflow-card';
+            const hasValidStub = stubConfig && stubConfig.type === 'timeflow-card-beta';
             this.addResult('Basic Instantiation: Stub config', hasValidStub, 
               hasValidStub ? 'Valid stub configuration' : 'Invalid stub configuration');
           } catch (stubError) {

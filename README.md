@@ -77,7 +77,7 @@ The following properties support Home Assistant templates:
 
 ### Basic Countdown
 ```yaml
-type: custom:timeflow-card
+type: custom:timeflow-card-beta
 title: "New Year 2026"
 target_date: "2026-01-01T00:00:00"
 creation_date: "2025-01-01T00:00:00"
@@ -89,7 +89,7 @@ show_seconds: false
 
 ### Dynamic Entity Timer
 ```yaml
-type: custom:timeflow-card
+type: custom:timeflow-card-beta
 title: Next backup
 target_date: sensor.backup_next_scheduled_automatic_backup
 background_color: "#676F9D"
@@ -105,7 +105,7 @@ creation_date: sensor.backup_last_successful_automatic_backup
 
 ### Customized Styling
 ```yaml
-type: custom:timeflow-card
+type: custom:timeflow-card-beta
 title: "Project Deadline"
 target_date: "2025-03-15T17:00:00"
 width: "300px"
@@ -120,7 +120,7 @@ styles:
 
 ### Card-mod Styling
 ```yaml
-type: custom:timeflow-card
+type: custom:timeflow-card-beta
 title: "Project Deadline"
 target_date: "2025-03-15T17:00:00"
 card_mod:
@@ -143,7 +143,7 @@ type: grid
 columns: 2
 square: false
 cards:
-  - type: custom:timeflow-card
+  - type: custom:timeflow-card-beta
     title: Bali Trip
     target_date: "2025-09-12T13:43:50"
     background_color: "#617065"
@@ -167,7 +167,7 @@ cards:
         - font-size: 1.2rem
       progress_circle:
         - transform: scale(1.0)
-  - type: custom:timeflow-card
+  - type: custom:timeflow-card-beta
     title: Next backup
     target_date: sensor.backup_next_scheduled_automatic_backup
     background_color: "#676F9D"

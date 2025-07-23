@@ -41,7 +41,7 @@ export class TimeFlowCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      type: 'timeflow-card',
+      type: 'timeflow-card-beta',
       target_date: '2024-12-31T23:59:59',
       title: 'New Year Countdown',
       show_days: true,

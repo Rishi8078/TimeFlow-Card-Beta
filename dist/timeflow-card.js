@@ -218,6 +218,27 @@ class TimeFlowCard extends HTMLElement {
 
   disconnectedCallback() {
     this._stopTimer();
+    
+    // Clear all caches to prevent memory leaks
+    this._cache.templateResults.clear();
+    this._cache.templateWatchers.clear();
+    this._cache.lastEntityStates.clear();
+    
+    // Clear cached DOM references
+    this._domElements = null;
+    
+    // Cancel any pending animation frames
+    if (this._updateScheduled) {
+      this._updateScheduled = false;
+    }
+    
+    // Reset other cached values
+    this._cache.dynamicIconSize = null;
+    this._cache.dynamicStrokeWidth = null;
+    this._cache.customStyles = null;
+    this._cache.lastConfigHash = null;
+    this._cache.parsedTargetDate = null;
+    this._cache.parsedCreationDate = null;
   }
 
   // Card-mod support

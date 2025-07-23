@@ -16,14 +16,47 @@ class ProgressCircle extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
       if (name === 'stroke-width') {
-        this.strokeWidth = Number(newValue);
+        const strokeWidth = Number(newValue);
+        this.strokeWidth = this._validateProgressInput(strokeWidth, 1, 50, 6);
       } else if (name === 'progress') {
-        this.progress = Number(newValue);
-      } else {
-        this[name] = newValue;
+        const progress = Number(newValue);
+        this.progress = this._validateProgressInput(progress, 0, 100, 0);
+      } else if (name === 'size') {
+        const size = Number(newValue);
+        this.size = this._validateProgressInput(size, 20, 500, 90);
+      } else if (name === 'color') {
+        this.color = this._validateColorInput(newValue) ? newValue : '#4CAF50';
       }
       this.render();
     }
+  }
+  
+  /**
+   * Validates and sanitizes numeric inputs for progress circle
+   */
+  _validateProgressInput(value, min, max, fallback) {
+    const num = Number(value);
+    if (isNaN(num) || num < min || num > max) {
+      console.warn(`ProgressCircle: Invalid value ${value}, using fallback ${fallback}`);
+      return fallback;
+    }
+    return num;
+  }
+  
+  /**
+   * Validates color input for progress circle
+   */
+  _validateColorInput(color) {
+    if (!color || typeof color !== 'string') return false;
+    
+    // Basic color validation
+    const colorPatterns = [
+      /^#([0-9A-F]{3}){1,2}$/i,  // Hex
+      /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/i,  // RGB/RGBA
+      /^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[\d.]+\s*)?\)$/i  // HSL/HSLA
+    ];
+    
+    return colorPatterns.some(pattern => pattern.test(color));
   }
 
   connectedCallback() {
@@ -34,6 +67,12 @@ class ProgressCircle extends HTMLElement {
     const radius = (this.size - this.strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (this.progress / 100) * circumference;
+    
+    // Sanitize values before rendering
+    const safeSize = Math.max(20, Math.min(500, this.size));
+    const safeStrokeWidth = Math.max(1, Math.min(50, this.strokeWidth));
+    const safeProgress = Math.max(0, Math.min(100, this.progress));
+    const safeColor = this._validateColorInput(this.color) ? this.color : '#4CAF50';
     
     this.shadowRoot.innerHTML = `
       <style>
@@ -59,24 +98,24 @@ class ProgressCircle extends HTMLElement {
       
       <svg
         class="progress-circle"
-        width="${this.size}"
-        height="${this.size}"
-        viewBox="0 0 ${this.size} ${this.size}"
+        width="${safeSize}"
+        height="${safeSize}"
+        viewBox="0 0 ${safeSize} ${safeSize}"
       >
         <circle
           class="progress-track"
-          cx="${this.size / 2}"
-          cy="${this.size / 2}"
+          cx="${safeSize / 2}"
+          cy="${safeSize / 2}"
           r="${radius}"
-          stroke-width="${this.strokeWidth}"
+          stroke-width="${safeStrokeWidth}"
         />
         <circle
           class="progress-bar"
-          cx="${this.size / 2}"
-          cy="${this.size / 2}"
+          cx="${safeSize / 2}"
+          cy="${safeSize / 2}"
           r="${radius}"
-          stroke-width="${this.strokeWidth}"
-          stroke="${this.color}"
+          stroke-width="${safeStrokeWidth}"
+          stroke="${safeColor}"
           stroke-dasharray="${circumference}"
           stroke-dashoffset="${strokeDashoffset}"
         />
@@ -148,6 +187,9 @@ class TimeFlowCard extends HTMLElement {
     if (!config.target_date) {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
+    
+    // Validate configuration inputs
+    this._validateConfig(config);
     
     // Create a mutable copy of the config
     const mutableConfig = { ...config };
@@ -244,6 +286,267 @@ class TimeFlowCard extends HTMLElement {
     
     // Clear error state
     this._errorState = null;
+  }
+
+  /**
+   * Comprehensive input validation for configuration
+   */
+  _validateConfig(config) {
+    const errors = [];
+    
+    // Validate target_date
+    if (config.target_date) {
+      if (!this._isValidDateInput(config.target_date)) {
+        errors.push('target_date must be a valid date string, entity ID, or template');
+      }
+    }
+    
+    // Validate creation_date if provided
+    if (config.creation_date && !this._isValidDateInput(config.creation_date)) {
+      errors.push('creation_date must be a valid date string, entity ID, or template');
+    }
+    
+    // Validate colors
+    const colorFields = ['color', 'background_color', 'progress_color'];
+    colorFields.forEach(field => {
+      if (config[field] && !this._isValidColorInput(config[field])) {
+        errors.push(`${field} must be a valid color value, entity ID, or template`);
+      }
+    });
+    
+    // Validate dimensions
+    const dimensionFields = ['width', 'height', 'icon_size'];
+    dimensionFields.forEach(field => {
+      if (config[field] && !this._isValidDimensionInput(config[field])) {
+        errors.push(`${field} must be a valid dimension (e.g., "200px", "50%"), entity ID, or template`);
+      }
+    });
+    
+    // Validate aspect_ratio
+    if (config.aspect_ratio && !this._isValidAspectRatioInput(config.aspect_ratio)) {
+      errors.push('aspect_ratio must be in format "width/height" (e.g., "2/1", "1.5/1"), entity ID, or template');
+    }
+    
+    // Validate stroke_width
+    if (config.stroke_width !== undefined && !this._isValidNumberInput(config.stroke_width, 1, 50)) {
+      errors.push('stroke_width must be a number between 1 and 50, entity ID, or template');
+    }
+    
+    // Validate boolean fields
+    const booleanFields = ['show_months', 'show_days', 'show_hours', 'show_minutes', 'show_seconds', 'expired_animation'];
+    booleanFields.forEach(field => {
+      if (config[field] !== undefined && !this._isValidBooleanInput(config[field])) {
+        errors.push(`${field} must be true or false`);
+      }
+    });
+    
+    // Validate text fields for XSS prevention
+    const textFields = ['title', 'subtitle', 'expired_text'];
+    textFields.forEach(field => {
+      if (config[field] && !this._isValidTextInput(config[field])) {
+        errors.push(`${field} contains potentially unsafe content`);
+      }
+    });
+    
+    // Validate styles object
+    if (config.styles && !this._isValidStylesInput(config.styles)) {
+      errors.push('styles must be an object with valid CSS properties');
+    }
+    
+    // Throw error if validation fails
+    if (errors.length > 0) {
+      throw new Error(`Configuration validation failed: ${errors.join('; ')}`);
+    }
+  }
+  
+  /**
+   * Validates date input (string, entity, or template)
+   */
+  _isValidDateInput(value) {
+    if (!value) return false;
+    
+    // Allow templates
+    if (this._isTemplate(value)) return true;
+    
+    // Allow entity IDs
+    if (typeof value === 'string' && value.includes('.')) return true;
+    
+    // Validate date string format
+    if (typeof value === 'string') {
+      // Check for common date formats
+      const dateFormats = [
+        /^\d{4}-\d{2}-\d{2}$/,                           // YYYY-MM-DD
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,        // YYYY-MM-DDTHH:MM:SS
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/,       // YYYY-MM-DDTHH:MM:SSZ
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/  // YYYY-MM-DDTHH:MM:SS±HH:MM
+      ];
+      
+      return dateFormats.some(format => format.test(value)) || !isNaN(new Date(value).getTime());
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Validates color input (color value, entity, or template)
+   */
+  _isValidColorInput(value) {
+    if (!value) return false;
+    
+    // Allow templates and entities
+    if (this._isTemplate(value) || (typeof value === 'string' && value.includes('.'))) return true;
+    
+    if (typeof value !== 'string') return false;
+    
+    // Check hex colors
+    if (/^#([0-9A-F]{3}){1,2}$/i.test(value)) return true;
+    
+    // Check rgb/rgba
+    if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/i.test(value)) return true;
+    
+    // Check hsl/hsla
+    if (/^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[\d.]+\s*)?\)$/i.test(value)) return true;
+    
+    // Check CSS color names (expanded list)
+    const cssColors = [
+      'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'black', 'white', 'gray', 'grey',
+      'cyan', 'magenta', 'lime', 'maroon', 'navy', 'olive', 'teal', 'silver', 'gold', 'indigo', 'violet',
+      'transparent', 'currentColor', 'inherit', 'initial', 'unset'
+    ];
+    
+    return cssColors.includes(value.toLowerCase());
+  }
+  
+  /**
+   * Validates dimension input (dimension value, entity, or template)
+   */
+  _isValidDimensionInput(value) {
+    if (!value) return false;
+    
+    // Allow templates and entities
+    if (this._isTemplate(value) || (typeof value === 'string' && value.includes('.'))) return true;
+    
+    // Allow numbers
+    if (typeof value === 'number') return value >= 0 && value <= 10000;
+    
+    if (typeof value !== 'string') return false;
+    
+    // Check pixel values (0-10000px)
+    const pxMatch = value.match(/^(\d+(?:\.\d+)?)px$/i);
+    if (pxMatch) {
+      const px = parseFloat(pxMatch[1]);
+      return px >= 0 && px <= 10000;
+    }
+    
+    // Check percentage values (0-1000%)
+    const percentMatch = value.match(/^(\d+(?:\.\d+)?)%$/i);
+    if (percentMatch) {
+      const percent = parseFloat(percentMatch[1]);
+      return percent >= 0 && percent <= 1000;
+    }
+    
+    // Check other valid CSS units
+    const validUnits = ['em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ch', 'ex'];
+    for (const unit of validUnits) {
+      const regex = new RegExp(`^(\\d+(?:\\.\\d+)?)${unit}$`, 'i');
+      const match = value.match(regex);
+      if (match) {
+        const val = parseFloat(match[1]);
+        return val >= 0 && val <= 100; // Reasonable bounds for these units
+      }
+    }
+    
+    // Check for 'auto', 'fit-content', etc.
+    const validKeywords = ['auto', 'fit-content', 'min-content', 'max-content'];
+    return validKeywords.includes(value.toLowerCase());
+  }
+  
+  /**
+   * Validates aspect ratio input
+   */
+  _isValidAspectRatioInput(value) {
+    if (!value) return false;
+    
+    // Allow templates and entities
+    if (this._isTemplate(value) || (typeof value === 'string' && value.includes('.'))) return true;
+    
+    if (typeof value !== 'string') return false;
+    
+    // Check aspect ratio format: number/number
+    const aspectMatch = value.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+    if (aspectMatch) {
+      const width = parseFloat(aspectMatch[1]);
+      const height = parseFloat(aspectMatch[2]);
+      return width > 0 && height > 0 && width <= 20 && height <= 20; // Reasonable bounds
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Validates number input with optional bounds
+   */
+  _isValidNumberInput(value, min = -Infinity, max = Infinity) {
+    if (value === undefined || value === null) return false;
+    
+    // Allow templates and entities
+    if (typeof value === 'string') {
+      if (this._isTemplate(value) || value.includes('.')) return true;
+      // Try to parse string numbers
+      const parsed = parseFloat(value);
+      return !isNaN(parsed) && parsed >= min && parsed <= max;
+    }
+    
+    return typeof value === 'number' && !isNaN(value) && value >= min && value <= max;
+  }
+  
+  /**
+   * Validates boolean input
+   */
+  _isValidBooleanInput(value) {
+    return typeof value === 'boolean';
+  }
+  
+  /**
+   * Validates text input for XSS prevention
+   */
+  _isValidTextInput(value) {
+    if (!value) return true;
+    
+    // Allow templates and entities
+    if (this._isTemplate(value) || (typeof value === 'string' && value.includes('.'))) return true;
+    
+    if (typeof value !== 'string') return false;
+    
+    // Check for potentially dangerous content
+    const dangerousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /on\w+\s*=/i, // Event handlers like onclick=
+      /<iframe/i,
+      /<object/i,
+      /<embed/i,
+      /<form/i
+    ];
+    
+    return !dangerousPatterns.some(pattern => pattern.test(value));
+  }
+  
+  /**
+   * Validates styles object structure
+   */
+  _isValidStylesInput(styles) {
+    if (!styles || typeof styles !== 'object') return false;
+    
+    const validStyleKeys = ['card', 'title', 'subtitle', 'progress_circle'];
+    
+    // Check that all keys are valid
+    const styleKeys = Object.keys(styles);
+    if (!styleKeys.every(key => validStyleKeys.includes(key))) return false;
+    
+    // Check that all values are arrays
+    return styleKeys.every(key => Array.isArray(styles[key]));
   }
 
   // Card-mod support

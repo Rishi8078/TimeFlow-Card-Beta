@@ -148,9 +148,6 @@ class TimeFlowCard extends HTMLElement {
       throw new Error('You need to define a target_date (can be a date string or entity ID)');
     }
     
-    // Validate configuration
-    this._validateConfig(config);
-    
     // Create a mutable copy of the config
     const mutableConfig = { ...config };
     
@@ -248,102 +245,6 @@ class TimeFlowCard extends HTMLElement {
     this._errorState = null;
   }
 
-  // Validate configuration and show user-friendly errors
-  _validateConfig(config) {
-    const errors = [];
-    
-    // Validate aspect ratio format
-    if (config.aspect_ratio && typeof config.aspect_ratio === 'string') {
-      const aspectMatch = config.aspect_ratio.match(/^\d+(\.\d+)?\/\d+(\.\d+)?$/);
-      if (!aspectMatch) {
-        errors.push('aspect_ratio must be in format "width/height" (e.g., "2/1", "1.5/1")');
-      }
-    }
-    
-    // Validate color formats
-    const colorFields = ['color', 'background_color', 'progress_color'];
-    colorFields.forEach(field => {
-      if (config[field] && typeof config[field] === 'string' && !this._isTemplate(config[field])) {
-        if (!this._isValidColor(config[field])) {
-          errors.push(`${field} must be a valid color (hex, rgb, or CSS color name)`);
-        }
-      }
-    });
-    
-    // Validate dimensions
-    const dimensionFields = ['width', 'height', 'icon_size'];
-    dimensionFields.forEach(field => {
-      if (config[field] && typeof config[field] === 'string' && !this._isTemplate(config[field])) {
-        if (!this._isValidDimension(config[field])) {
-          errors.push(`${field} must be a valid dimension (e.g., "200px", "50%", or a number)`);
-        }
-      }
-    });
-    
-    if (errors.length > 0) {
-      this._showUserError(`Configuration errors: ${errors.join('; ')}`, false);
-    }
-  }
-  
-  // Validate color format
-  _isValidColor(color) {
-    // Check hex colors
-    if (/^#([0-9A-F]{3}){1,2}$/i.test(color)) return true;
-    
-    // Check rgb/rgba
-    if (/^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/i.test(color)) return true;
-    
-    // Check hsl/hsla
-    if (/^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*(,\s*[\d.]+\s*)?\)$/i.test(color)) return true;
-    
-    // Check CSS color names (basic set)
-    const cssColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'black', 'white', 'gray', 'grey'];
-    if (cssColors.includes(color.toLowerCase())) return true;
-    
-    return false;
-  }
-  
-  // Validate dimension format
-  _isValidDimension(dimension) {
-    // Check pixel values
-    if (/^\d+(\.\d+)?px$/i.test(dimension)) return true;
-    
-    // Check percentage values
-    if (/^\d+(\.\d+)?%$/i.test(dimension)) return true;
-    
-    // Check plain numbers
-    if (/^\d+(\.\d+)?$/i.test(dimension)) return true;
-    
-    return false;
-  }
-  
-  // Show user-visible error with Home Assistant styling
-  _showUserError(message, isTemporary = true) {
-    this._errorState = { 
-      message, 
-      timestamp: Date.now(),
-      isTemporary 
-    };
-    
-    // Re-render to show error
-    this.render();
-    
-    if (isTemporary) {
-      setTimeout(() => {
-        this._errorState = null;
-        this.render();
-      }, 8000);
-    }
-  }
-  
-  // Clear error state
-  _clearError() {
-    if (this._errorState) {
-      this._errorState = null;
-      this.render();
-    }
-  }
-
   // Card-mod support
   _applyCardMod() {
     if (!this._config || !this._config.card_mod) return;
@@ -438,7 +339,7 @@ class TimeFlowCard extends HTMLElement {
       const targetDateValue = await this._resolveValue(this._config.target_date);
       
       if (!targetDateValue) {
-        this._showUserError('Target date could not be resolved. Check your entity or date format.', true);
+        console.warn('TimeFlow Card: Target date could not be resolved. Check your entity or date format.');
         return;
       }
       
@@ -446,7 +347,7 @@ class TimeFlowCard extends HTMLElement {
       const targetDate = this._parseISODate(targetDateValue);
       
       if (isNaN(targetDate)) {
-        this._showUserError(`Invalid target date format: ${targetDateValue}`, true);
+        console.warn('TimeFlow Card: Invalid target date format:', targetDateValue);
         return;
       }
       
@@ -537,7 +438,6 @@ class TimeFlowCard extends HTMLElement {
     this._scheduleUpdate();
     } catch (error) {
       console.error('TimeFlow Card: Error in _updateCountdown:', error);
-      this._showUserError(`Countdown update failed: ${error.message}`, true);
     }
   }
 
@@ -716,7 +616,6 @@ class TimeFlowCard extends HTMLElement {
         return fallbackResult;
       } catch (fallbackError) {
         console.error('TimeFlow Card: Template evaluation failed:', fallbackError);
-        this._showUserError(`Template evaluation failed: ${fallbackError.message}`, true);
         // Extract fallback value from template if it contains 'or' operator
         return this._extractFallbackFromTemplate(template);
       }
@@ -1182,12 +1081,6 @@ class TimeFlowCard extends HTMLElement {
 
   // Performance optimization: Initialize DOM structure only when needed
   async _initializeDOM() {
-    // If there's an error state, render error instead
-    if (this._errorState) {
-      this._renderErrorState();
-      return;
-    }
-    
     // Resolve any template properties first
     const resolvedConfig = await this._resolveTemplateProperties();
     
@@ -1389,85 +1282,6 @@ class TimeFlowCard extends HTMLElement {
       this._applyNativeStyles();
       this._applyCardMod();
     }, 0);
-  }
-
-  // Render error state with Home Assistant styling
-  _renderErrorState() {
-    if (!this._errorState) return;
-    
-    const { message, isTemporary } = this._errorState;
-    
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: block;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-        }
-        
-        .error-card {
-          display: flex;
-          flex-direction: column;
-          padding: 16px;
-          border-radius: 12px;
-          background: var(--error-color, #f44336);
-          color: white;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          border: 1px solid var(--error-color, #f44336);
-          min-height: 80px;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-        }
-        
-        .error-icon {
-          width: 24px;
-          height: 24px;
-          margin-bottom: 8px;
-          opacity: 0.9;
-        }
-        
-        .error-message {
-          font-size: 0.9rem;
-          line-height: 1.4;
-          margin: 0;
-          opacity: 0.95;
-        }
-        
-        .error-dismiss {
-          margin-top: 12px;
-          padding: 4px 12px;
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          border-radius: 6px;
-          color: white;
-          font-size: 0.8rem;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        
-        .error-dismiss:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-          .error-card {
-            background: var(--error-color, #d32f2f);
-            border-color: var(--error-color, #d32f2f);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-          }
-        }
-      </style>
-      
-      <div class="error-card">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-        </svg>
-        <p class="error-message">${this._escapeHtml(message)}</p>
-        ${!isTemporary ? '<button class="error-dismiss" onclick="this.getRootNode().host._clearError()">Dismiss</button>' : ''}
-      </div>
-    `;
   }
 
   // Apply native styles from config to DOM elements

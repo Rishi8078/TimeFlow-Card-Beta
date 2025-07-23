@@ -108,6 +108,7 @@ class TimeFlowCard extends HTMLElement {
       templateWatchers: new Map(), // Template entity dependencies
       lastEntityStates: new Map() // Track entity state changes for template re-evaluation
     };
+    this._templateCacheLimit = 50; // Maximum number of cached templates
     this._domElements = null; // Cache DOM references
     this._updateScheduled = false; // Prevent duplicate RAF calls
     this._errorState = null; // Track error state for user feedback
@@ -573,6 +574,10 @@ class TimeFlowCard extends HTMLElement {
             result: fallback,
             timestamp: Date.now()
           });
+          
+          // Enforce cache size limits
+          this._enforceTemplateCacheLimit();
+          
           return fallback;
         }
       }
@@ -582,6 +587,9 @@ class TimeFlowCard extends HTMLElement {
         result: result,
         timestamp: Date.now()
       });
+      
+      // Enforce cache size limits
+      this._enforceTemplateCacheLimit();
       
       return result;
     } catch (error) {
@@ -603,6 +611,10 @@ class TimeFlowCard extends HTMLElement {
               result: fallback,
               timestamp: Date.now()
             });
+            
+            // Enforce cache size limits
+            this._enforceTemplateCacheLimit();
+            
             return fallback;
           }
         }
@@ -612,6 +624,9 @@ class TimeFlowCard extends HTMLElement {
           result: fallbackResult,
           timestamp: Date.now()
         });
+        
+        // Enforce cache size limits
+        this._enforceTemplateCacheLimit();
         
         return fallbackResult;
       } catch (fallbackError) {
@@ -728,6 +743,25 @@ class TimeFlowCard extends HTMLElement {
    */
   _clearTemplateCache() {
     this._cache.templateResults.clear();
+  }
+
+  /**
+   * Enforces template cache size limits to prevent memory growth
+   */
+  _enforceTemplateCacheLimit() {
+    if (this._cache.templateResults.size <= this._templateCacheLimit) {
+      return;
+    }
+
+    // Convert to array and sort by timestamp (oldest first)
+    const cacheEntries = Array.from(this._cache.templateResults.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+    // Remove oldest entries until we're under the limit
+    const entriesToRemove = cacheEntries.length - this._templateCacheLimit;
+    for (let i = 0; i < entriesToRemove; i++) {
+      this._cache.templateResults.delete(cacheEntries[i][0]);
+    }
   }
 
   /**

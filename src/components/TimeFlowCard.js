@@ -19,7 +19,6 @@ export class TimeFlowCard extends HTMLElement {
     this._interval = null;
     this._updateScheduled = false;
     this._domElements = null;
-    this._originalStyles = null;
     
     // Initialize modular services
     this.templateService = new TemplateService();
@@ -127,7 +126,6 @@ export class TimeFlowCard extends HTMLElement {
     
     // Clear cached DOM references
     this._domElements = null;
-    this._originalStyles = null;
     
     // Cancel any pending animation frames
     if (this._updateScheduled) {
@@ -346,6 +344,7 @@ export class TimeFlowCard extends HTMLElement {
   async _initializeDOM() {
     // Resolve any template properties first
     const resolvedConfig = await this._resolveTemplateProperties();
+    const processedStyles = this.styleManager.buildStylesObject(this._config);
     
     const {
       title = 'Countdown Timer',
@@ -520,13 +519,13 @@ export class TimeFlowCard extends HTMLElement {
         aria-describedby="${ids.subtitleId} ${ids.progressId}"
         tabindex="0"
       >
-        <div class="card-content">
+        <div class="card-content" style="${processedStyles.card || ''}">
           ${this.accessibilityManager.generateAccessibilityHTML(ids, this.countdownService.isExpired(), subtitleText, currentProgress)}
           
           <header class="header">
             <div class="title-section">
-              <h2 class="title" id="${ids.titleId}">${this.templateService.escapeHtml(title || 'Countdown Timer')}</h2>
-              <p class="subtitle" id="${ids.subtitleId}" aria-live="polite">${this.templateService.escapeHtml(subtitleText || '0s')}</p>
+              <h2 class="title" id="${ids.titleId}" style="${processedStyles.title || ''}">${this.templateService.escapeHtml(title || 'Countdown Timer')}</h2>
+              <p class="subtitle" id="${ids.subtitleId}" aria-live="polite" style="${processedStyles.subtitle || ''}">${this.templateService.escapeHtml(subtitleText || '0s')}</p>
             </div>
           </header>
           
@@ -541,6 +540,7 @@ export class TimeFlowCard extends HTMLElement {
                 role="img"
                 aria-label="Timer progress indicator"
                 aria-describedby="${ids.progressId}"
+                style="${processedStyles.progress_circle || ''}"
               ></progress-circle>
             </div>
           </div>
@@ -559,61 +559,22 @@ export class TimeFlowCard extends HTMLElement {
       progressDescription: this.shadowRoot.querySelector(`#${ids.progressId}`)
     };
     
-    setTimeout(() => {
-      this._updateDisplayWithAccessibility();
-      this._applyNativeStyles();
-      this._applyCardMod();
-      this._setupKeyboardNavigation();
-    }, 0);
-  }
-
-  /**
-   * Apply native styles from config to DOM elements
-   */
-  _applyNativeStyles() {
-    if (!this._domElements || !this._config.styles) return;
-
-    const processedStyles = this.styleManager.buildStylesObject(this._config);
-
-    try {
-      // Store original styles to preserve them
-      if (!this._originalStyles) {
-        this._originalStyles = {
-          cardContent: this._domElements.cardContent.style.cssText,
-          title: this._domElements.title.style.cssText,
-          subtitle: this._domElements.subtitle.style.cssText,
-          progressCircle: this._domElements.progressCircle.style.cssText
-        };
-      }
-
-      // Apply card styles to card-content
-      if (processedStyles.card && this._domElements.cardContent) {
-        this._domElements.cardContent.style.cssText = this._originalStyles.cardContent + '; ' + processedStyles.card;
-      }
-
-      // Apply title styles
-      if (processedStyles.title && this._domElements.title) {
-        this._domElements.title.style.cssText = this._originalStyles.title + '; ' + processedStyles.title;
-      }
-
-      // Apply subtitle styles
-      if (processedStyles.subtitle && this._domElements.subtitle) {
-        this._domElements.subtitle.style.cssText = this._originalStyles.subtitle + '; ' + processedStyles.subtitle;
-      }
-
-      // Apply progress circle styles
-      if (processedStyles.progress_circle && this._domElements.progressCircle) {
-        this._domElements.progressCircle.style.cssText = this._originalStyles.progressCircle + '; ' + processedStyles.progress_circle;
-      }
-    } catch (error) {
-      console.warn('TimeFlow Card: Error applying native styles:', error);
-    }
+    // Initial content update without applying native styles again
+    await this._updateContent(true);
+    this._applyCardMod();
+    this._setupKeyboardNavigation();
+    this.accessibilityManager.setContext(
+      this._config,
+      this.countdownService,
+      () => this._refreshCard()
+    );
   }
 
   /**
    * Performance optimization: Update only content that changes
+   * @param {boolean} isInitializing - Whether this is the first render
    */
-  async _updateContent() {
+  async _updateContent(isInitializing = false) {
     if (!this._domElements) return;
 
     // Resolve any template properties first

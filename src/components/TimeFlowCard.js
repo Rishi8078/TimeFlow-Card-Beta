@@ -65,7 +65,7 @@ export class TimeFlowCard extends HTMLElement {
       this._clearPerformanceCache();
       
       // Re-apply card-mod styles when config changes
-      setTimeout(() => this._applyCardMod(), 0);
+      this._applyCardMod();
     } catch (error) {
       this._errorState = error.message;
       console.error('TimeFlow Card: Configuration error:', error);

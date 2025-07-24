@@ -342,12 +342,97 @@ export class TimeFlowCard extends HTMLElement {
    * Performance optimization: Initialize DOM structure only when needed
    */
   async _initializeDOM() {
-    // Resolve any template properties first
+    // Generate the card's HTML structure and styles
+    const cardHTML = await this._buildCardHTML();
+    this.shadowRoot.innerHTML = cardHTML;
+
+    // Cache DOM elements for selective updates
+    this._domElements = {
+      haCard: this.shadowRoot.querySelector('ha-card'),
+      cardContent: this.shadowRoot.querySelector('.card-content'),
+      title: this.shadowRoot.querySelector('.title'),
+      subtitle: this.shadowRoot.querySelector('.subtitle'),
+      progressCircle: this.shadowRoot.querySelector('progress-circle'),
+      liveRegion: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().liveRegionId}`),
+      progressDescription: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().progressId}`)
+    };
+    
+    // Initial content update without applying native styles again
+    await this._updateContent(true);
+    this._applyCardMod();
+    this._setupKeyboardNavigation();
+    this.accessibilityManager.setContext(
+      this._config,
+      this.countdownService,
+      () => this._refreshCard()
+    );
+  }
+
+  /**
+   * Builds the complete HTML for the card, including styles.
+   * @returns {Promise<string>} - The HTML string for the card.
+   */
+  async _buildCardHTML() {
     const resolvedConfig = await this._resolveTemplateProperties();
     const processedStyles = this.styleManager.buildStylesObject(this._config);
     
     const {
       title = 'Countdown Timer',
+      expired_animation = true,
+    } = resolvedConfig;
+
+    const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
+    const subtitleText = this.countdownService.getSubtitle(this._config);
+    const ids = this.accessibilityManager.generateAccessibilityIds();
+    const styleTag = this._buildStyleTag(resolvedConfig);
+
+    return `
+      ${styleTag}
+      <ha-card 
+        class="timeflow-card ${this.countdownService.isExpired() && expired_animation ? 'expired' : ''}"
+        id="${ids.cardId}"
+        role="timer"
+        aria-labelledby="${ids.titleId}"
+        aria-describedby="${ids.subtitleId} ${ids.progressId}"
+        tabindex="0"
+      >
+        <div class="card-content" style="${processedStyles.card || ''}">
+          ${this.accessibilityManager.generateAccessibilityHTML(ids, this.countdownService.isExpired(), subtitleText, currentProgress)}
+          
+          <header class="header">
+            <div class="title-section">
+              <h2 class="title" id="${ids.titleId}" style="${processedStyles.title || ''}">${this.templateService.escapeHtml(title)}</h2>
+              <p class="subtitle" id="${ids.subtitleId}" aria-live="polite" style="${processedStyles.subtitle || ''}">${this.templateService.escapeHtml(subtitleText)}</p>
+            </div>
+          </header>
+          
+          <div class="content">
+            <div class="progress-section" role="region" aria-labelledby="${ids.progressId}">
+              <progress-circle
+                class="progress-circle"
+                progress="${currentProgress}"
+                color="${resolvedConfig.progress_color || '#4CAF50'}"
+                size="${this.styleManager.calculateDynamicIconSize(resolvedConfig.width, resolvedConfig.height, resolvedConfig.aspect_ratio, resolvedConfig.icon_size)}"
+                stroke-width="${this.styleManager.calculateDynamicStrokeWidth(this.styleManager.calculateDynamicIconSize(resolvedConfig.width, resolvedConfig.height, resolvedConfig.aspect_ratio, resolvedConfig.icon_size), resolvedConfig.stroke_width)}"
+                role="img"
+                aria-label="Timer progress indicator"
+                aria-describedby="${ids.progressId}"
+                style="${processedStyles.progress_circle || ''}"
+              ></progress-circle>
+            </div>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Builds the <style> tag for the card's shadow DOM.
+   * @param {Object} resolvedConfig - The resolved configuration.
+   * @returns {string} - The <style> tag HTML string.
+   */
+  _buildStyleTag(resolvedConfig) {
+    const {
       color = '#ffffff',
       background_color,
       progress_color,
@@ -361,23 +446,12 @@ export class TimeFlowCard extends HTMLElement {
 
     const bgColor = background_color || '#1976d2';
     const progressColor = progress_color || '#4CAF50';
-
-    // Calculate proportional sizes using style manager
     const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, aspect_ratio);
     const dynamicIconSize = this.styleManager.calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
     const dynamicStrokeWidth = this.styleManager.calculateDynamicStrokeWidth(dynamicIconSize, stroke_width);
-
-    // Pre-calculate values that need async resolution
-    const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
-    const subtitleText = this.countdownService.getSubtitle(this._config);
-    
-    // Generate accessibility IDs
-    const ids = this.accessibilityManager.generateAccessibilityIds();
-
-    // Calculate card dimensions dynamically
     const cardStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
 
-    this.shadowRoot.innerHTML = `
+    return `
       <style>
         :host {
           display: block;
@@ -499,66 +573,8 @@ export class TimeFlowCard extends HTMLElement {
           height: 1px;
           overflow: hidden;
         }
-
       </style>
-      
-      <ha-card 
-        class="timeflow-card ${this.countdownService.isExpired() && expired_animation ? 'expired' : ''}"
-        id="${ids.cardId}"
-        role="timer"
-        aria-labelledby="${ids.titleId}"
-        aria-describedby="${ids.subtitleId} ${ids.progressId}"
-        tabindex="0"
-      >
-        <div class="card-content" style="${processedStyles.card || ''}">
-          ${this.accessibilityManager.generateAccessibilityHTML(ids, this.countdownService.isExpired(), subtitleText, currentProgress)}
-          
-          <header class="header">
-            <div class="title-section">
-              <h2 class="title" id="${ids.titleId}" style="${processedStyles.title || ''}">${this.templateService.escapeHtml(title || 'Countdown Timer')}</h2>
-              <p class="subtitle" id="${ids.subtitleId}" aria-live="polite" style="${processedStyles.subtitle || ''}">${this.templateService.escapeHtml(subtitleText || '0s')}</p>
-            </div>
-          </header>
-          
-          <div class="content">
-            <div class="progress-section" role="region" aria-labelledby="${ids.progressId}">
-              <progress-circle
-                class="progress-circle"
-                progress="${currentProgress}"
-                color="${progressColor}"
-                size="${dynamicIconSize}"
-                stroke-width="${dynamicStrokeWidth}"
-                role="img"
-                aria-label="Timer progress indicator"
-                aria-describedby="${ids.progressId}"
-                style="${processedStyles.progress_circle || ''}"
-              ></progress-circle>
-            </div>
-          </div>
-        </div>
-      </ha-card>
     `;
-
-    // Cache DOM elements for selective updates
-    this._domElements = {
-      haCard: this.shadowRoot.querySelector('ha-card'),
-      cardContent: this.shadowRoot.querySelector('.card-content'),
-      title: this.shadowRoot.querySelector('.title'),
-      subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle'),
-      liveRegion: this.shadowRoot.querySelector(`#${ids.liveRegionId}`),
-      progressDescription: this.shadowRoot.querySelector(`#${ids.progressId}`)
-    };
-    
-    // Initial content update without applying native styles again
-    await this._updateContent(true);
-    this._applyCardMod();
-    this._setupKeyboardNavigation();
-    this.accessibilityManager.setContext(
-      this._config,
-      this.countdownService,
-      () => this._refreshCard()
-    );
   }
 
   /**

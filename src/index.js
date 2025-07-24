@@ -5,9 +5,19 @@
 import { TimeFlowCard } from './components/TimeFlowCard.js';
 import { ProgressCircle } from './components/ProgressCircle.js';
 
-// Register custom elements
-customElements.define('progress-circle-beta', ProgressCircle);
-customElements.define('timeflow-card-beta', TimeFlowCard);
+// Register custom elements with duplicate protection
+if (!customElements.get('progress-circle-beta')) {
+  customElements.define('progress-circle-beta', ProgressCircle);
+  console.debug('TimeFlow Card Beta: Registered progress-circle-beta component');
+} else {
+  console.debug('TimeFlow Card Beta: progress-circle-beta component already registered');
+}
+if (!customElements.get('timeflow-card-beta')) {
+  customElements.define('timeflow-card-beta', TimeFlowCard);
+  console.debug('TimeFlow Card Beta: Registered timeflow-card-beta component');
+} else {
+  console.debug('TimeFlow Card Beta: timeflow-card-beta component already registered');
+}
 
 // Register the card with Home Assistant
 window.customCards = window.customCards || [];

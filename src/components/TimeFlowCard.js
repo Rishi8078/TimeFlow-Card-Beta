@@ -296,10 +296,11 @@ export class TimeFlowCard extends HTMLElement {
       return;
     }
 
-    // Check if we need to rebuild DOM or just update content
+    // Only build the DOM structure once (on first render or config change)
     if (!this._domElements || this._hasConfigChanged()) {
       await this._initializeDOM();
     } else {
+      // Only update content/attributes, never replace innerHTML
       await this._updateContent();
     }
   }
@@ -340,6 +341,8 @@ export class TimeFlowCard extends HTMLElement {
 
   /**
    * Performance optimization: Initialize DOM structure only when needed
+   * This method should only be called on first render or config change.
+   * After that, only _updateContent should be used to update the card.
    */
   async _initializeDOM() {
     // Generate the card's HTML structure and styles
@@ -356,7 +359,6 @@ export class TimeFlowCard extends HTMLElement {
       liveRegion: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().liveRegionId}`),
       progressDescription: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().progressId}`)
     };
-    
     // Initial content update without applying native styles again
     await this._updateContent(true);
     this._applyCardMod();
@@ -579,6 +581,8 @@ export class TimeFlowCard extends HTMLElement {
 
   /**
    * Performance optimization: Update only content that changes
+   * This method should never replace innerHTML or rebuild the DOM.
+   * It only updates the content/attributes of cached DOM elements.
    * @param {boolean} isInitializing - Whether this is the first render
    */
   async _updateContent(isInitializing = false) {
@@ -588,7 +592,7 @@ export class TimeFlowCard extends HTMLElement {
     const resolvedConfig = await this._resolveTemplateProperties();
     const { title = 'Countdown Timer' } = resolvedConfig;
 
-    // Update title - always show original title
+    // Update title
     if (this._domElements.title && this._domElements.title.textContent !== title) {
       this._domElements.title.textContent = title;
     }

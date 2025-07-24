@@ -20,21 +20,23 @@ export class ProgressCircle extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
-      switch (name) {
-        case 'progress':
-          this._progress = Math.max(0, Math.min(100, parseFloat(newValue) || 0));
-          break;
-        case 'color':
-          this._color = newValue || '#4CAF50';
-          break;
-        case 'size':
-          this._size = parseInt(newValue) || 100;
-          break;
-        case 'stroke-width':
-          this._strokeWidth = parseInt(newValue) || 15;
-          break;
+      if (name === 'progress') {
+        this._progress = Math.max(0, Math.min(100, parseFloat(newValue) || 0));
+        this._updateCircle();
+      } else {
+        switch (name) {
+          case 'color':
+            this._color = newValue || '#4CAF50';
+            break;
+          case 'size':
+            this._size = parseInt(newValue) || 100;
+            break;
+          case 'stroke-width':
+            this._strokeWidth = parseInt(newValue) || 15;
+            break;
+        }
+        this.render();
       }
-      this.render();
     }
   }
 
@@ -267,6 +269,25 @@ export class ProgressCircle extends HTMLElement {
         </text>
       </svg>
     `;
+  }
+
+  /**
+   * Updates only the circle stroke offset and accessibility attributes without full re-render
+   */
+  _updateCircle() {
+   const radius = (this._size - this._strokeWidth) / 2;
+   const circumference = 2 * Math.PI * radius;
+   const offset = circumference - (this._progress / 100) * circumference;
+   const progressBar = this.shadowRoot.querySelector('.progress-bar');
+   if (progressBar) {
+     progressBar.style.transition = 'stroke-dashoffset 0.3s ease';
+     progressBar.style.strokeDashoffset = offset;
+   }
+   const circleEl = this.shadowRoot.querySelector('.progress-circle');
+   if (circleEl) {
+     circleEl.setAttribute('aria-valuenow', Math.round(this._progress));
+     circleEl.setAttribute('aria-label', `Progress: ${Math.round(this._progress)}%`);
+   }
   }
 
   /**

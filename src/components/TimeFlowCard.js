@@ -499,16 +499,7 @@ export class TimeFlowCard extends HTMLElement {
           height: 1px;
           overflow: hidden;
         }
-        
-        /* Focus indicators */
-        ha-card:focus-within {
-          outline: 2px solid var(--primary-color, #03A9F4);
-          outline-offset: 2px;
-        }
-        
-        .progress-section:focus-within {
-          border-radius: 50%;
-        }
+
       </style>
       
       <ha-card 

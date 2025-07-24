@@ -174,6 +174,14 @@ export class ProgressCircle extends HTMLElement {
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (this._progress / 100) * circumference;
 
+    // Validate calculations to prevent SVG errors
+    if (isNaN(this._size) || isNaN(radius) || isNaN(circumference) || isNaN(strokeDashoffset)) {
+      console.warn('TimeFlow Card: Invalid SVG calculations, using fallback values');
+      this._size = 100;
+      this._strokeWidth = 15;
+      return this.render(); // Re-render with safe values
+    }
+
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -278,6 +286,13 @@ export class ProgressCircle extends HTMLElement {
    const radius = (this._size - this._strokeWidth) / 2;
    const circumference = 2 * Math.PI * radius;
    const offset = circumference - (this._progress / 100) * circumference;
+   
+   // Validate calculations to prevent NaN errors
+   if (isNaN(radius) || isNaN(circumference) || isNaN(offset)) {
+     console.warn('TimeFlow Card: Invalid circle calculations, skipping update');
+     return;
+   }
+   
    const progressBar = this.shadowRoot.querySelector('.progress-bar');
    if (progressBar) {
      progressBar.style.transition = 'stroke-dashoffset 0.3s ease';
@@ -287,6 +302,12 @@ export class ProgressCircle extends HTMLElement {
    if (circleEl) {
      circleEl.setAttribute('aria-valuenow', Math.round(this._progress));
      circleEl.setAttribute('aria-label', `Progress: ${Math.round(this._progress)}%`);
+   }
+   
+   // Update progress text
+   const progressText = this.shadowRoot.querySelector('.progress-text');
+   if (progressText) {
+     progressText.textContent = `${Math.round(this._progress)}%`;
    }
   }
 

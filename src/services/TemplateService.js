@@ -30,6 +30,11 @@ export class TemplateService {
     }
 
     try {
+      // Validate template format before making API call
+      if (!this.isValidTemplate(template)) {
+        throw new Error('Invalid template format');
+      }
+
       // Use callApi method like card-tools and button-card for HA templates
       const result = await hass.callApi('POST', 'template', { 
         template: template 
@@ -64,47 +69,19 @@ export class TemplateService {
       
       return result;
     } catch (error) {
-      // Try fallback with callWS if callApi fails
-      try {
-        const fallbackResult = await hass.callWS({
-          type: 'render_template',
-          template: template
-        });
-        
-        // Check if the template evaluation succeeded but returned 'unknown'
-        if (fallbackResult === 'unknown' || fallbackResult === 'unavailable' || 
-            fallbackResult === '' || fallbackResult === null) {
-          // Try to extract fallback from the template itself
-          const fallback = this.extractFallbackFromTemplate(template);
-          if (fallback && fallback !== template) {
-            // Cache the fallback result
-            this.templateResults.set(cacheKey, {
-              result: fallback,
-              timestamp: Date.now()
-            });
-            
-            // Enforce cache size limits
-            this.enforceTemplateCacheLimit();
-            
-            return fallback;
-          }
-        }
-        
-        // Cache the result
-        this.templateResults.set(cacheKey, {
-          result: fallbackResult,
-          timestamp: Date.now()
-        });
-        
-        // Enforce cache size limits
-        this.enforceTemplateCacheLimit();
-        
-        return fallbackResult;
-      } catch (fallbackError) {
-        console.error('TimeFlow Card: Template evaluation failed:', fallbackError);
-        // Extract fallback value from template if it contains 'or' operator
-        return this.extractFallbackFromTemplate(template);
-      }
+      console.warn('TimeFlow Card: Template evaluation failed, using fallback:', error.message);
+      
+      // Immediately return fallback instead of trying callWS
+      const fallback = this.extractFallbackFromTemplate(template);
+      
+      // Cache the fallback to prevent repeated failed calls
+      this.templateResults.set(cacheKey, {
+        result: fallback,
+        timestamp: Date.now()
+      });
+      
+      this.enforceTemplateCacheLimit();
+      return fallback;
     }
   }
 
@@ -171,6 +148,29 @@ export class TemplateService {
     return typeof value === 'string' && 
            value.includes('{{') && 
            value.includes('}}');
+  }
+
+  /**
+   * Validates template format to prevent bad API calls
+   * @param {string} template - Template string to validate
+   * @returns {boolean} - Whether template is valid
+   */
+  isValidTemplate(template) {
+    if (!template || typeof template !== 'string') return false;
+    
+    // Check for basic template format
+    if (!template.includes('{{') || !template.includes('}}')) return false;
+    
+    // Check for balanced braces
+    const openBraces = (template.match(/\{\{/g) || []).length;
+    const closeBraces = (template.match(/\}\}/g) || []).length;
+    if (openBraces !== closeBraces) return false;
+    
+    // Check for empty template
+    const content = template.replace(/\{\{\s*/, '').replace(/\s*\}\}/, '').trim();
+    if (!content) return false;
+    
+    return true;
   }
 
   /**

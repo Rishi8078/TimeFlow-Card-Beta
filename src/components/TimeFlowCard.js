@@ -147,6 +147,9 @@ export class TimeFlowCard extends HTMLElement {
     this._cache.templateWatchers.clear();
     this._cache.parsedTargetDate = null;
     this._cache.parsedCreationDate = null;
+    this._cache.resolvedProperties = null;
+    this._cache.resolvedPropertiesKey = null;
+    this._cache.resolvedPropertiesTimestamp = 0;
   }
 
   /**
@@ -256,16 +259,35 @@ export class TimeFlowCard extends HTMLElement {
       'primary_color', 'secondary_color', 'target_date', 'creation_date'
     ];
     
+    // Create a cache key for this resolution
+    const cacheKey = JSON.stringify(templateProperties.map(prop => this._config[prop]).filter(Boolean));
+    
+    // Check if we have cached results that are still valid
+    if (this._cache.resolvedProperties && 
+        this._cache.resolvedPropertiesKey === cacheKey &&
+        Date.now() - this._cache.resolvedPropertiesTimestamp < 2000) {
+      return this._cache.resolvedProperties;
+    }
+    
     for (const prop of templateProperties) {
       if (resolvedConfig[prop]) {
         try {
-          resolvedConfig[prop] = await this.templateService.resolveValue(resolvedConfig[prop], this._hass);
+          const resolved = await this.templateService.resolveValue(resolvedConfig[prop], this._hass);
+          // Only update if resolution was successful and different
+          if (resolved !== null && resolved !== undefined && resolved !== 'Unavailable') {
+            resolvedConfig[prop] = resolved;
+          }
         } catch (error) {
           console.error(`TimeFlow Card: Failed to resolve property "${prop}":`, error);
           // Keep original value as fallback
         }
       }
     }
+    
+    // Cache the resolved properties
+    this._cache.resolvedProperties = resolvedConfig;
+    this._cache.resolvedPropertiesKey = cacheKey;
+    this._cache.resolvedPropertiesTimestamp = Date.now();
     
     return resolvedConfig;
   }

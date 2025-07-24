@@ -97,23 +97,37 @@ export class StyleManager {
       let cardWidth = defaultWidth;
       let cardHeight = defaultHeight;
 
-      // Calculate actual card dimensions
+      // Calculate actual card dimensions with NaN protection
       if (width && height) {
-        cardWidth = this.parseDimension(width) || defaultWidth;
-        cardHeight = this.parseDimension(height) || defaultHeight;
+        const parsedWidth = this.parseDimension(width);
+        const parsedHeight = this.parseDimension(height);
+        cardWidth = (parsedWidth && !isNaN(parsedWidth)) ? parsedWidth : defaultWidth;
+        cardHeight = (parsedHeight && !isNaN(parsedHeight)) ? parsedHeight : defaultHeight;
       } else if (width && aspect_ratio) {
-        cardWidth = this.parseDimension(width) || defaultWidth;
+        const parsedWidth = this.parseDimension(width);
+        cardWidth = (parsedWidth && !isNaN(parsedWidth)) ? parsedWidth : defaultWidth;
         const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-        cardHeight = cardWidth * (ratioH / ratioW);
+        if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
+          cardHeight = cardWidth * (ratioH / ratioW);
+        }
       } else if (height && aspect_ratio) {
-        cardHeight = this.parseDimension(height) || defaultHeight;
+        const parsedHeight = this.parseDimension(height);
+        cardHeight = (parsedHeight && !isNaN(parsedHeight)) ? parsedHeight : defaultHeight;
         const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-        cardWidth = cardHeight * (ratioW / ratioH);
+        if (!isNaN(ratioW) && !isNaN(ratioH) && ratioH > 0) {
+          cardWidth = cardHeight * (ratioW / ratioH);
+        }
       } else if (aspect_ratio) {
         const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-        cardHeight = defaultWidth * (ratioH / ratioW);
-        cardWidth = defaultWidth;
+        if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
+          cardHeight = defaultWidth * (ratioH / ratioW);
+          cardWidth = defaultWidth;
+        }
       }
+
+      // Ensure valid dimensions
+      if (!cardWidth || isNaN(cardWidth) || cardWidth <= 0) cardWidth = defaultWidth;
+      if (!cardHeight || isNaN(cardHeight) || cardHeight <= 0) cardHeight = defaultHeight;
 
       // Icon should be 35-45% of the smaller dimension for optimal proportion
       const minDimension = Math.min(cardWidth, cardHeight);
@@ -124,7 +138,7 @@ export class StyleManager {
         const baseIconSize = typeof icon_size === 'string' ? 
           parseInt(icon_size.replace('px', '')) : 
           (typeof icon_size === 'number' ? icon_size : proportionalSize);
-        this.cache.dynamicIconSize = Math.max(40, Math.min(baseIconSize, minDimension * 0.6));
+        this.cache.dynamicIconSize = (!isNaN(baseIconSize)) ? Math.max(40, Math.min(baseIconSize, minDimension * 0.6)) : 80;
       } else {
         this.cache.dynamicIconSize = Math.max(40, Math.min(proportionalSize, 120));
       }

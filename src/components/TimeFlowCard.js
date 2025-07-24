@@ -19,6 +19,7 @@ export class TimeFlowCard extends HTMLElement {
     this._interval = null;
     this._updateScheduled = false;
     this._domElements = null;
+    this._originalStyles = null;
     
     // Initialize modular services
     this.templateService = new TemplateService();
@@ -126,6 +127,7 @@ export class TimeFlowCard extends HTMLElement {
     
     // Clear cached DOM references
     this._domElements = null;
+    this._originalStyles = null;
     
     // Cancel any pending animation frames
     if (this._updateScheduled) {
@@ -552,24 +554,34 @@ export class TimeFlowCard extends HTMLElement {
     const processedStyles = this.styleManager.buildStylesObject(this._config);
 
     try {
+      // Store original styles to preserve them
+      if (!this._originalStyles) {
+        this._originalStyles = {
+          cardContent: this._domElements.cardContent.style.cssText,
+          title: this._domElements.title.style.cssText,
+          subtitle: this._domElements.subtitle.style.cssText,
+          progressCircle: this._domElements.progressCircle.style.cssText
+        };
+      }
+
       // Apply card styles to card-content
       if (processedStyles.card && this._domElements.cardContent) {
-        this._domElements.cardContent.style.cssText = processedStyles.card;
+        this._domElements.cardContent.style.cssText = this._originalStyles.cardContent + '; ' + processedStyles.card;
       }
 
       // Apply title styles
       if (processedStyles.title && this._domElements.title) {
-        this._domElements.title.style.cssText = processedStyles.title;
+        this._domElements.title.style.cssText = this._originalStyles.title + '; ' + processedStyles.title;
       }
 
       // Apply subtitle styles
       if (processedStyles.subtitle && this._domElements.subtitle) {
-        this._domElements.subtitle.style.cssText = processedStyles.subtitle;
+        this._domElements.subtitle.style.cssText = this._originalStyles.subtitle + '; ' + processedStyles.subtitle;
       }
 
       // Apply progress circle styles
       if (processedStyles.progress_circle && this._domElements.progressCircle) {
-        this._domElements.progressCircle.style.cssText = processedStyles.progress_circle;
+        this._domElements.progressCircle.style.cssText = this._originalStyles.progressCircle + '; ' + processedStyles.progress_circle;
       }
     } catch (error) {
       console.warn('TimeFlow Card: Error applying native styles:', error);

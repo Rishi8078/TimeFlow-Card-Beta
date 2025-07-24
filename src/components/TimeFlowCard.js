@@ -554,22 +554,22 @@ export class TimeFlowCard extends HTMLElement {
     try {
       // Apply card styles to card-content
       if (processedStyles.card && this._domElements.cardContent) {
-        this._domElements.cardContent.style.cssText += '; ' + processedStyles.card;
+        this._domElements.cardContent.style.cssText = processedStyles.card;
       }
 
       // Apply title styles
       if (processedStyles.title && this._domElements.title) {
-        this._domElements.title.style.cssText += '; ' + processedStyles.title;
+        this._domElements.title.style.cssText = processedStyles.title;
       }
 
       // Apply subtitle styles
       if (processedStyles.subtitle && this._domElements.subtitle) {
-        this._domElements.subtitle.style.cssText += '; ' + processedStyles.subtitle;
+        this._domElements.subtitle.style.cssText = processedStyles.subtitle;
       }
 
       // Apply progress circle styles
       if (processedStyles.progress_circle && this._domElements.progressCircle) {
-        this._domElements.progressCircle.style.cssText += '; ' + processedStyles.progress_circle;
+        this._domElements.progressCircle.style.cssText = processedStyles.progress_circle;
       }
     } catch (error) {
       console.warn('TimeFlow Card: Error applying native styles:', error);

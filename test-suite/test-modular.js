@@ -186,10 +186,25 @@ class ModularBuildTester {
       this.addResult('Bundle Content: Card registration', hasCardRegistration,
         hasCardRegistration ? 'Card registration found' : 'Missing card registration');
 
-      // Test that imports have been resolved (no import statements should remain)
-      const hasUnresolvedImports = content.includes('import ') && content.includes('from ');
-      this.addResult('Bundle Content: Import resolution', !hasUnresolvedImports,
-        hasUnresolvedImports ? 'Unresolved imports found' : 'All imports resolved');
+      // Test that internal imports have been resolved, but external imports are preserved
+      const importMatches = content.match(/import .* from ['"][^'"]*['"];?/g) || [];
+      const internalImports = importMatches.filter(imp => 
+        imp.includes("'./") || imp.includes('"./') || 
+        imp.includes("'../") || imp.includes('"../')
+      );
+      const externalImports = importMatches.filter(imp => 
+        imp.includes("'lit") || imp.includes('"lit')
+      );
+      
+      const hasUnresolvedInternalImports = internalImports.length > 0;
+      const hasValidExternalImports = externalImports.length > 0;
+      
+      this.addResult('Bundle Content: Import resolution', !hasUnresolvedInternalImports,
+        hasUnresolvedInternalImports 
+          ? `Unresolved internal imports found: ${internalImports.length}` 
+          : hasValidExternalImports 
+            ? `All internal imports resolved, external Lit imports preserved: ${externalImports.length}`
+            : 'All internal imports resolved');
 
       // Test for version information
       const hasVersion = content.includes('TimeFlowCardBeta.version') || content.includes('Version 1.2.0');

@@ -1,7 +1,7 @@
 {
   "name": "timeflow-card-beta",
-  "version": "1.2.0",
-  "description": "TimeFlow Card Beta - Modern modular architecture",
+  "version": "2.0.0",
+  "description": "TimeFlow Card Beta - Modern Lit 3.x architecture",
   "main": "timeflow-card-modular.js",
   "scripts": {
     "lint": "eslint *.js",
@@ -39,5 +39,8 @@
   "homepage": "https://github.com/Rishi8078/TimeFlow-Card-Beta#readme",
   "devDependencies": {
     "eslint": "^8.0.0"
+  },
+  "dependencies": {
+    "lit": "^3.3.1"
   }
 }

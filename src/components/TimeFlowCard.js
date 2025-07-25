@@ -2,6 +2,8 @@
  * TimeFlowCardBeta - Main card component with modular architecture
  * Orchestrates all modules and provides clean separation of concerns
  */
+import { LitElement, html, css, nothing } from 'lit';
+import { property, state } from 'lit/decorators.js';
 import { DateParser } from '../utils/DateParser.js';
 import { ConfigValidator } from '../utils/ConfigValidator.js';
 import { TemplateService } from '../services/TemplateService.js';
@@ -9,15 +11,130 @@ import { CountdownService } from '../services/CountdownService.js';
 import { StyleManager } from '../utils/StyleManager.js';
 import { ProgressCircleBeta } from '../components/ProgressCircle.js';
 
-export class TimeFlowCardBeta extends HTMLElement {
+export class TimeFlowCardBeta extends LitElement {
+  // Define static styles
+  static styles = css`
+    :host {
+      display: block;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    ha-card {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      border-radius: 22px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      border: none;
+    }
+    
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      height: 100%;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0;
+    }
+    
+    .title-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .title {
+      font-weight: 500;
+      margin: 0;
+      opacity: 0.9;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+    
+    .subtitle {
+      opacity: 0.65;
+      margin: 0;
+      font-weight: 400;
+      line-height: 1.2;
+    }
+    
+    .progress-section {
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    
+    .content {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      margin-top: auto;
+      padding-top: 12px;
+    }
+    
+    .expired {
+      animation: celebration 0.8s ease-in-out;
+    }
+    
+    @keyframes celebration {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .progress-circle-beta {
+      opacity: 0.9;
+    }
+    
+    .error {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f44336;
+      color: white;
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    .error-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .error-message {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      ha-card {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+    }
+  `;
+  // Lit reactive properties
+  @property({ type: Object }) hass = {};
+  @state() _config = {};
+  @state() _errorState = null;
+  @state() _currentProgress = 0;
+  @state() _subtitleText = '';
+  @state() _isExpired = false;
+  @state() _resolvedConfig = {};
+
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
-    this._config = {};
-    this._hass = null;
     this._interval = null;
     this._updateScheduled = false;
-    this._domElements = null;
     
     // Initialize modular services
     this.templateService = new TemplateService();
@@ -32,9 +149,6 @@ export class TimeFlowCardBeta extends HTMLElement {
       parsedTargetDate: null,
       parsedCreationDate: null
     };
-    
-    // Error handling
-    this._errorState = null;
   }
 
   static getStubConfig() {
@@ -62,32 +176,34 @@ export class TimeFlowCardBeta extends HTMLElement {
       this.styleManager.clearCache();
       this._clearPerformanceCache();
       
-      // Re-apply card-mod styles when config changes
-      this._applyCardMod();
+      // Trigger re-render
+      this.requestUpdate();
     } catch (error) {
       this._errorState = error.message;
       console.error('TimeFlow Card: Configuration error:', error);
-      this._renderError();
+      this.requestUpdate();
     }
   }
 
-  set hass(hass) {
-    const oldHass = this._hass;
-    this._hass = hass;
-    
-    // Clear template cache when hass changes or entities update
-    if (hass && oldHass !== hass) {
-      this.templateService.clearTemplateCache();
-      this._hasEntitiesChanged(oldHass, hass);
-    }
-  }
-
-  connectedCallback() {
+  // Lit lifecycle methods
+  firstUpdated() {
     this._applyCardMod();
-    (async () => await this._startTimer())();
+    this._startTimer();
+  }
+
+  updated(changedProperties) {
+    if (changedProperties.has('hass')) {
+      const oldHass = changedProperties.get('hass');
+      // Clear template cache when hass changes or entities update
+      if (this.hass && oldHass !== this.hass) {
+        this.templateService.clearTemplateCache();
+        this._hasEntitiesChanged(oldHass, this.hass);
+      }
+    }
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
     this._stopTimer();
     this._cleanup();
   }
@@ -201,21 +317,70 @@ export class TimeFlowCardBeta extends HTMLElement {
   }
 
   /**
-   * Performance optimization: schedule updates with RAF
+   * Builds dynamic styles based on resolved configuration
+   */
+  _buildDynamicStyles(resolvedConfig) {
+    const {
+      color = '#ffffff',
+      background_color,
+      progress_color,
+      width = null,
+      height = null,
+      aspect_ratio = '2/1',
+      icon_size = '100px',
+      stroke_width = 15,
+    } = resolvedConfig;
+
+    const bgColor = background_color || '#1976d2';
+    const progressColor = progress_color || '#4CAF50';
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, aspect_ratio);
+    const dynamicIconSize = this.styleManager.calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
+    const cardStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
+
+    return {
+      card: `
+        background: ${bgColor};
+        color: ${color};
+        ${cardStyles.join('; ')};
+        --timeflow-card-beta-background-color: ${bgColor};
+        --timeflow-card-beta-text-color: ${color};
+        --timeflow-card-beta-progress-color: ${progressColor};
+        --timeflow-card-beta-icon-size: ${dynamicIconSize}px;
+        --timeflow-card-beta-stroke-width: ${this.styleManager.calculateDynamicStrokeWidth(dynamicIconSize, stroke_width)};
+      `,
+      title: `
+        font-size: ${proportionalSizes.titleSize}rem;
+      `,
+      subtitle: `
+        font-size: ${proportionalSizes.subtitleSize}rem;
+      `
+    };
+  }
+
+  /**
+   * Performance optimization: schedule updates with RAF for Lit
    */
   _scheduleUpdate() {
     if (!this._updateScheduled) {
       this._updateScheduled = true;
-      requestAnimationFrame(async () => {
+      requestAnimationFrame(() => {
         this._updateScheduled = false;
-        await this.render();
+        this.requestUpdate();
       });
     }
   }
 
   async _updateCountdown() {
     try {
-      await this.countdownService.updateCountdown(this._config, this._hass);
+      await this.countdownService.updateCountdown(this._config, this.hass);
+      
+      // Update reactive state
+      const resolvedConfig = await this._resolveTemplateProperties();
+      this._currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
+      this._subtitleText = this.countdownService.getSubtitle(this._config);
+      this._isExpired = this.countdownService.isExpired();
+      this._resolvedConfig = resolvedConfig;
+      
       this._scheduleUpdate();
     } catch (error) {
       console.error('TimeFlow Card: Error in updateCountdown:', error);
@@ -247,7 +412,7 @@ export class TimeFlowCardBeta extends HTMLElement {
     for (const prop of templateProperties) {
       if (resolvedConfig[prop]) {
         try {
-          const resolved = await this.templateService.resolveValue(resolvedConfig[prop], this._hass);
+          const resolved = await this.templateService.resolveValue(resolvedConfig[prop], this.hass);
           // Only update if resolution was successful and different
           if (resolved !== null && resolved !== undefined && resolved !== 'Unavailable') {
             resolvedConfig[prop] = resolved;
@@ -267,46 +432,20 @@ export class TimeFlowCardBeta extends HTMLElement {
     return resolvedConfig;
   }
 
-  async render() {
+  // Main Lit render method
+  render() {
     if (this._errorState) {
-      this._renderError();
-      return;
+      return this._renderError();
     }
 
-    // Only build the DOM structure once (on first render or config change)
-    if (!this._domElements || this._hasConfigChanged()) {
-      await this._initializeDOM();
-    } else {
-      // Use selective updates to prevent flickering
-      await this._updateContentOnly();
-    }
+    return this._renderCard();
   }
 
   /**
-   * Renders error state
+   * Renders error state using Lit templates
    */
   _renderError() {
-    this.shadowRoot.innerHTML = `
-      <style>
-        .error {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          background: #f44336;
-          color: white;
-          border-radius: 8px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
-        .error-title {
-          font-weight: bold;
-          margin-bottom: 8px;
-        }
-        .error-message {
-          font-size: 0.9em;
-          opacity: 0.9;
-        }
-      </style>
+    return html`
       <ha-card class="error">
         <div>
           <div class="error-title">TimeFlow Card Configuration Error</div>
@@ -314,6 +453,70 @@ export class TimeFlowCardBeta extends HTMLElement {
         </div>
       </ha-card>
     `;
+  }
+
+  /**
+   * Renders the main card using Lit templates
+   */
+  _renderCard() {
+    const resolvedConfig = this._resolvedConfig || this._config;
+    const {
+      title = 'Countdown Timer',
+      expired_animation = true,
+    } = resolvedConfig;
+
+    const processedStyles = this.styleManager.buildStylesObject(this._config);
+    const dynamicStyles = this._buildDynamicStyles(resolvedConfig);
+
+    return html`
+      <ha-card 
+        class="timeflow-card-beta ${this._isExpired && expired_animation ? 'expired' : ''}"
+        style="${dynamicStyles.card}"
+      >
+        <div class="card-content" style="${processedStyles.card || ''}">
+          <header class="header">
+            <div class="title-section">
+              <h2 class="title" style="${processedStyles.title || ''}; ${dynamicStyles.title}">
+                ${this.templateService.escapeHtml(title)}
+              </h2>
+              <p class="subtitle" style="${processedStyles.subtitle || ''}; ${dynamicStyles.subtitle}">
+                ${this.templateService.escapeHtml(this._subtitleText)}
+              </p>
+            </div>
+          </header>
+          
+          <div class="content">
+            <div class="progress-section">
+              <progress-circle-beta
+                class="progress-circle-beta"
+                progress="${this._currentProgress}"
+                color="${resolvedConfig.progress_color || '#4CAF50'}"
+                size="${this.styleManager.calculateDynamicIconSize(resolvedConfig.width, resolvedConfig.height, resolvedConfig.aspect_ratio, resolvedConfig.icon_size)}"
+                stroke-width="${this.styleManager.calculateDynamicStrokeWidth(this.styleManager.calculateDynamicIconSize(resolvedConfig.width, resolvedConfig.height, resolvedConfig.aspect_ratio, resolvedConfig.icon_size), resolvedConfig.stroke_width)}"
+                style="${processedStyles.progress_circle || ''}"
+              ></progress-circle-beta>
+            </div>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Card-mod support
+   */
+  _applyCardMod() {
+    if (!this._config || !this._config.card_mod) return;
+    
+    // Wait for card-mod to be available and apply styles
+    customElements.whenDefined("card-mod").then(() => {
+      const cardMod = customElements.get("card-mod");
+      if (cardMod && cardMod.applyToElement) {
+        cardMod.applyToElement(this, this._config.card_mod, {});
+      }
+    }).catch(() => {
+      // Card-mod not available, silently continue
+    });
   }
 
   /**
@@ -353,7 +556,7 @@ export class TimeFlowCardBeta extends HTMLElement {
       expired_animation = true,
     } = resolvedConfig;
 
-    const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
+    const currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
     const subtitleText = this.countdownService.getSubtitle(this._config);
     const styleTag = this._buildStyleTag(resolvedConfig);
 
@@ -548,7 +751,7 @@ export class TimeFlowCardBeta extends HTMLElement {
     }
 
     // Update progress circle only if progress changed
-    const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
+    const currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
     const progressEl = this._domElements.ProgressCircleBeta;
     if (progressEl) {
       const currentProgressAttr = progressEl.getAttribute('progress');
@@ -609,6 +812,6 @@ export class TimeFlowCardBeta extends HTMLElement {
   }
 
   static get version() {
-    return '1.2.0';
+    return '2.0.0';
   }
 }

@@ -2,7 +2,7 @@
  * TimeFlow Card - Entry point for modular architecture
  * Registers components and exposes the card to Home Assistant
  */
-import { TimeFlowCard } from './components/TimeFlowCard.js';
+import { TimeFlowCardBeta } from './components/TimeFlowCard.js';
 import { ProgressCircleBeta } from './components/ProgressCircle.js';
 
 // Register custom elements with duplicate protection

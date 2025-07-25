@@ -83,8 +83,8 @@ export class TimeFlowCardBeta extends HTMLElement {
   }
 
   connectedCallback() {
-    (async () => await this._startTimer())();
     this._applyCardMod();
+    (async () => await this._startTimer())();
   }
 
   disconnectedCallback() {

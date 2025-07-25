@@ -10,17 +10,26 @@ export class DateParser {
    */
   static parseISODate(dateString) {
     try {
+      console.log('TimeFlow Debug: Parsing date string:', dateString);
+      
       // Fast path: Use native parsing for most cases
       const nativeResult = new Date(dateString);
       if (!isNaN(nativeResult.getTime()) && this.isValidDateResult(nativeResult, dateString)) {
+        console.log('TimeFlow Debug: Native parsing succeeded:', nativeResult.getTime());
         return nativeResult.getTime();
       }
       
+      console.log('TimeFlow Debug: Native parsing failed, trying robust parsing');
+      
       // Enhanced path: Use robust parsing for edge cases
-      return this.parseISODateRobust(dateString);
+      const robustResult = this.parseISODateRobust(dateString);
+      console.log('TimeFlow Debug: Robust parsing result:', robustResult);
+      return robustResult;
     } catch (e) {
       console.warn('TimeFlow Card: Date parsing error, using fallback:', e);
-      return this.parseISODateFallback(dateString);
+      const fallbackResult = this.parseISODateFallback(dateString);
+      console.log('TimeFlow Debug: Fallback parsing result:', fallbackResult);
+      return fallbackResult;
     }
   }
 
@@ -88,9 +97,13 @@ export class DateParser {
    */
   static parseWithIntl(dateString) {
     try {
-      // First try to parse normally to get a base date
-      const baseDate = new Date(dateString);
+      // Normalize the date string first
+      const normalizedDate = this.normalizeDateString(dateString);
+      
+      // First try to parse the normalized date
+      const baseDate = new Date(normalizedDate);
       if (isNaN(baseDate.getTime())) {
+        console.warn('TimeFlow Card: Base date parsing failed for:', dateString, 'normalized to:', normalizedDate);
         throw new Error('Base date parsing failed');
       }
       
@@ -170,6 +183,32 @@ export class DateParser {
       // Fallback to regular parsing for other formats
       return new Date(dateString).getTime();
     }
+  }
+
+  /**
+   * Normalizes date strings to improve parsing success
+   * @param {string} dateString - Original date string
+   * @returns {string} - Normalized date string
+   */
+  static normalizeDateString(dateString) {
+    if (!dateString || typeof dateString !== 'string') {
+      return dateString;
+    }
+
+    // Remove extra whitespace
+    let normalized = dateString.trim();
+
+    // Handle common date format variations
+    // Convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DDTHH:MM:SS
+    normalized = normalized.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/, '$1T$2');
+
+    // Ensure ISO format has timezone if it has time but no timezone
+    if (normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') && !normalized.includes('-', 10)) {
+      // Add Z to indicate UTC if no timezone is specified
+      normalized = normalized + 'Z';
+    }
+
+    return normalized;
   }
 
   /**

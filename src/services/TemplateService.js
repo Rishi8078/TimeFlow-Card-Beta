@@ -35,6 +35,12 @@ export class TemplateService {
         throw new Error('Invalid template format');
       }
 
+      // Check if hass.callApi exists and is a function
+      if (!hass.callApi || typeof hass.callApi !== 'function') {
+        console.warn('TimeFlow Card: hass.callApi not available, using fallback for template:', template);
+        return this.getFallbackValue(template);
+      }
+
       // Use callApi method like card-tools and button-card for HA templates
       const result = await hass.callApi('POST', 'template', { 
         template: template 
@@ -83,6 +89,27 @@ export class TemplateService {
       this.enforceTemplateCacheLimit();
       return fallback;
     }
+  }
+
+  /**
+   * Gets a reasonable fallback value for templates when hass.callApi is not available
+   * @param {string} template - Template string
+   * @returns {string} - Fallback value
+   */
+  getFallbackValue(template) {
+    // First try to extract fallback from the template itself
+    const templateFallback = this.extractFallbackFromTemplate(template);
+    if (templateFallback && templateFallback !== template) {
+      return templateFallback;
+    }
+
+    // Return the template as-is if it's not a Jinja template
+    if (!template.includes('{{') && !template.includes('{%')) {
+      return template;
+    }
+
+    // For templates without explicit fallbacks, return a safe default
+    return 'Unavailable';
   }
 
   /**

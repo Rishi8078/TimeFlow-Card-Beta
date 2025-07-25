@@ -195,6 +195,17 @@ export class TimeFlowCardBeta extends LitElement {
     try {
       // Initialize basic properties
       console.log('TimeFlow Debug: Initializing reactive state with config:', this._config);
+      
+      // Handle missing hass gracefully
+      if (!this.hass) {
+        console.warn('TimeFlow Debug: No hass object available, using defaults');
+        this._subtitleText = 'Countdown Timer';
+        this._currentProgress = 0;
+        this._isExpired = false;
+        this._resolvedConfig = this._config;
+        return;
+      }
+      
       this._subtitleText = this.countdownService.getSubtitle(this._config);
       this._currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
       this._isExpired = this.countdownService.isExpired();
@@ -209,10 +220,10 @@ export class TimeFlowCardBeta extends LitElement {
     } catch (error) {
       console.warn('TimeFlow Card: Error initializing reactive state:', error);
       // Set sensible defaults
-      this._subtitleText = '';
+      this._subtitleText = 'Loading...';
       this._currentProgress = 0;
       this._isExpired = false;
-      this._resolvedConfig = this._config;
+      this._resolvedConfig = this._config || {};
     }
   }
 

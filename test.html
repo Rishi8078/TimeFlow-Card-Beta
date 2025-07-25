@@ -61,10 +61,11 @@
         
         <div class="info">
             <strong>📋 Test Configuration:</strong><br>
-            • Target Date: New Year 2025<br>
+            • Target Date: Current time + 1 hour<br>
             • Shows days, hours, minutes, seconds<br>
             • Green progress circle<br>
-            • Blue background theme
+            • Blue background theme<br>
+            • Mock Home Assistant environment
         </div>
     </div>
 
@@ -88,6 +89,10 @@
                     states: {},
                     callApi: async (method, endpoint, data) => {
                         console.log('Mock API call:', method, endpoint, data);
+                        // Return reasonable fallback for template evaluation
+                        if (endpoint === 'template') {
+                            return 'Test Value';
+                        }
                         return 'Unavailable';
                     },
                     user: { name: 'Test User' }
@@ -96,14 +101,22 @@
                 // Set hass property
                 card.hass = mockHass;
                 
-                // Configure the card with a simple test configuration
+                // Configure the card with a simple test configuration using current date + 1 hour
+                const futureDate = new Date();
+                futureDate.setHours(futureDate.getHours() + 1);
+                const targetDate = futureDate.toISOString();
+                
                 const testConfig = {
                     type: 'timeflow-card-beta',
-                    target_date: '2025-12-31T23:59:59',
-                    title: 'Test Countdown',
+                    target_date: targetDate,
+                    title: 'Test Countdown (1 Hour)',
                     background_color: '#1976d2',
                     progress_color: '#4CAF50',
-                    color: '#ffffff'
+                    color: '#ffffff',
+                    show_days: true,
+                    show_hours: true,
+                    show_minutes: true,
+                    show_seconds: true
                 };
                 
                 console.log('🔧 Setting configuration:', testConfig);

@@ -1,6 +1,6 @@
 /**
  * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: 2025-07-25T21:33:57.368Z
+ * Generated: 2025-07-25T21:44:02.689Z
  * 
  * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
@@ -211,17 +211,26 @@ class DateParser {
    */
   static parseISODate(dateString) {
     try {
+      console.log('TimeFlow Debug: Parsing date string:', dateString);
+      
       // Fast path: Use native parsing for most cases
       const nativeResult = new Date(dateString);
       if (!isNaN(nativeResult.getTime()) && this.isValidDateResult(nativeResult, dateString)) {
+        console.log('TimeFlow Debug: Native parsing succeeded:', nativeResult.getTime());
         return nativeResult.getTime();
       }
       
+      console.log('TimeFlow Debug: Native parsing failed, trying robust parsing');
+      
       // Enhanced path: Use robust parsing for edge cases
-      return this.parseISODateRobust(dateString);
+      const robustResult = this.parseISODateRobust(dateString);
+      console.log('TimeFlow Debug: Robust parsing result:', robustResult);
+      return robustResult;
     } catch (e) {
       console.warn('TimeFlow Card: Date parsing error, using fallback:', e);
-      return this.parseISODateFallback(dateString);
+      const fallbackResult = this.parseISODateFallback(dateString);
+      console.log('TimeFlow Debug: Fallback parsing result:', fallbackResult);
+      return fallbackResult;
     }
   }
 
@@ -289,9 +298,13 @@ class DateParser {
    */
   static parseWithIntl(dateString) {
     try {
-      // First try to parse normally to get a base date
-      const baseDate = new Date(dateString);
+      // Normalize the date string first
+      const normalizedDate = this.normalizeDateString(dateString);
+      
+      // First try to parse the normalized date
+      const baseDate = new Date(normalizedDate);
       if (isNaN(baseDate.getTime())) {
+        console.warn('TimeFlow Card: Base date parsing failed for:', dateString, 'normalized to:', normalizedDate);
         throw new Error('Base date parsing failed');
       }
       
@@ -371,6 +384,32 @@ class DateParser {
       // Fallback to regular parsing for other formats
       return new Date(dateString).getTime();
     }
+  }
+
+  /**
+   * Normalizes date strings to improve parsing success
+   * @param {string} dateString - Original date string
+   * @returns {string} - Normalized date string
+   */
+  static normalizeDateString(dateString) {
+    if (!dateString || typeof dateString !== 'string') {
+      return dateString;
+    }
+
+    // Remove extra whitespace
+    let normalized = dateString.trim();
+
+    // Handle common date format variations
+    // Convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DDTHH:MM:SS
+    normalized = normalized.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/, '$1T$2');
+
+    // Ensure ISO format has timezone if it has time but no timezone
+    if (normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') && !normalized.includes('-', 10)) {
+      // Add Z to indicate UTC if no timezone is specified
+      normalized = normalized + 'Z';
+    }
+
+    return normalized;
   }
 
   /**
@@ -767,6 +806,12 @@ class TemplateService {
         throw new Error('Invalid template format');
       }
 
+      // Check if hass.callApi exists and is a function
+      if (!hass.callApi || typeof hass.callApi !== 'function') {
+        console.warn('TimeFlow Card: hass.callApi not available, using fallback for template:', template);
+        return this.getFallbackValue(template);
+      }
+
       // Use callApi method like card-tools and button-card for HA templates
       const result = await hass.callApi('POST', 'template', { 
         template: template 
@@ -815,6 +860,27 @@ class TemplateService {
       this.enforceTemplateCacheLimit();
       return fallback;
     }
+  }
+
+  /**
+   * Gets a reasonable fallback value for templates when hass.callApi is not available
+   * @param {string} template - Template string
+   * @returns {string} - Fallback value
+   */
+  getFallbackValue(template) {
+    // First try to extract fallback from the template itself
+    const templateFallback = this.extractFallbackFromTemplate(template);
+    if (templateFallback && templateFallback !== template) {
+      return templateFallback;
+    }
+
+    // Return the template as-is if it's not a Jinja template
+    if (!template.includes('{{') && !template.includes('{%')) {
+      return template;
+    }
+
+    // For templates without explicit fallbacks, return a safe default
+    return 'Unavailable';
   }
 
   /**
@@ -1965,6 +2031,17 @@ class TimeFlowCardBeta extends LitElement {
     try {
       // Initialize basic properties
       console.log('TimeFlow Debug: Initializing reactive state with config:', this._config);
+      
+      // Handle missing hass gracefully
+      if (!this.hass) {
+        console.warn('TimeFlow Debug: No hass object available, using defaults');
+        this._subtitleText = 'Countdown Timer';
+        this._currentProgress = 0;
+        this._isExpired = false;
+        this._resolvedConfig = this._config;
+        return;
+      }
+      
       this._subtitleText = this.countdownService.getSubtitle(this._config);
       this._currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
       this._isExpired = this.countdownService.isExpired();
@@ -1979,10 +2056,10 @@ class TimeFlowCardBeta extends LitElement {
     } catch (error) {
       console.warn('TimeFlow Card: Error initializing reactive state:', error);
       // Set sensible defaults
-      this._subtitleText = '';
+      this._subtitleText = 'Loading...';
       this._currentProgress = 0;
       this._isExpired = false;
-      this._resolvedConfig = this._config;
+      this._resolvedConfig = this._config || {};
     }
   }
 

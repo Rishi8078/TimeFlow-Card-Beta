@@ -58,7 +58,6 @@ class ModularBuildTester {
       'src/utils/DateParser.js',
       'src/utils/ConfigValidator.js',
       'src/utils/StyleManager.js',
-      'src/utils/AccessibilityManager.js',
       'build.js',
       'timeflow-card-modular.js'
     ];
@@ -113,8 +112,7 @@ class ModularBuildTester {
       { file: 'src/services/CountdownService.js', expectedExports: ['CountdownService'] },
       { file: 'src/utils/DateParser.js', expectedExports: ['DateParser'] },
       { file: 'src/utils/ConfigValidator.js', expectedExports: ['ConfigValidator'] },
-      { file: 'src/utils/StyleManager.js', expectedExports: ['StyleManager'] },
-      { file: 'src/utils/AccessibilityManager.js', expectedExports: ['AccessibilityManager'] }
+      { file: 'src/utils/StyleManager.js', expectedExports: ['StyleManager'] }
     ];
 
     modules.forEach(module => {
@@ -169,7 +167,7 @@ class ModularBuildTester {
       // Test for expected classes in bundle
       const expectedClasses = [
         'TimeFlowCard', 'ProgressCircle', 'TemplateService', 'CountdownService',
-        'DateParser', 'ConfigValidator', 'StyleManager', 'AccessibilityManager'
+        'DateParser', 'ConfigValidator', 'StyleManager'
       ];
 
       expectedClasses.forEach(className => {

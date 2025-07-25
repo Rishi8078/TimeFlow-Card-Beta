@@ -101,11 +101,6 @@ export class ProgressCircle extends HTMLElement {
           opacity: 0.8;
         }
         
-        /* Hover effects */
-        .progress-circle-beta:hover .progress-bar {
-          stroke-width: ${this._strokeWidth + 2};
-        }
-        
         /* Animation for progress changes */
         @keyframes progress-pulse {
           0% { opacity: 0.8; }

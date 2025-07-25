@@ -99,6 +99,10 @@ class LitElement extends HTMLElement {
     this.requestUpdate();
   }
 
+  disconnectedCallback() {
+    // Override in subclasses for cleanup
+  }
+
   attributeChangedCallback(name, oldValue, newValue) {
     // Convert kebab-case to camelCase
     const propName = name.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());

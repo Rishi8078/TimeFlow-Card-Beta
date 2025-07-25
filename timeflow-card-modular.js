@@ -1,6 +1,6 @@
 /**
  * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: 2025-07-25T21:00:37.238Z
+ * Generated: 2025-07-25T21:07:13.225Z
  * 
  * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
@@ -96,6 +96,10 @@ class LitElement extends HTMLElement {
 
   connectedCallback() {
     this.requestUpdate();
+  }
+
+  disconnectedCallback() {
+    // Override in subclasses for cleanup
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

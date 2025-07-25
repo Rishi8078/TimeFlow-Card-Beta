@@ -96,31 +96,41 @@
                 // Set hass property
                 card.hass = mockHass;
                 
-                // Configure the card
+                // Configure the card with a simple test configuration
                 const testConfig = {
                     type: 'timeflow-card-beta',
                     target_date: '2025-12-31T23:59:59',
-                    title: 'New Year Countdown',
+                    title: 'Test Countdown',
                     background_color: '#1976d2',
                     progress_color: '#4CAF50',
-                    color: '#ffffff',
-                    show_days: true,
-                    show_hours: true,
-                    show_minutes: true,
-                    show_seconds: true,
-                    width: '350px',
-                    height: '200px'
+                    color: '#ffffff'
                 };
                 
+                console.log('🔧 Setting configuration:', testConfig);
+                
                 try {
+                    console.log('🔧 Calling setConfig...');
                     card.setConfig(testConfig);
                     console.log('✅ Card configured successfully');
                     
+                    // Verify the configuration was set
+                    console.log('🔍 Card _config after setConfig:', card._config);
+                    console.log('🔍 Card hass property:', card.hass);
+                    
                     // Test progress circle functionality by setting properties directly
                     setTimeout(() => {
+                        console.log('🔍 Checking card shadow DOM...');
+                        console.log('🔍 Shadow root:', card.shadowRoot);
+                        console.log('🔍 Shadow root HTML:', card.shadowRoot?.innerHTML);
+                        
                         const progressCircle = card.shadowRoot?.querySelector('progress-circle-beta');
                         if (progressCircle) {
-                            console.log('🔍 Testing progress circle properties...');
+                            console.log('🔍 Found progress circle:', progressCircle);
+                            console.log('🔍 Progress circle properties:', {
+                                progress: progressCircle.progress,
+                                color: progressCircle.color,
+                                size: progressCircle.size
+                            });
                             
                             // Test setting properties directly
                             progressCircle.progress = 75;
@@ -132,6 +142,8 @@
                                 color: progressCircle.color,
                                 size: progressCircle.size
                             });
+                        } else {
+                            console.warn('❌ Progress circle not found in shadow DOM');
                         }
                         
                         const hasContent = card.shadowRoot && card.shadowRoot.innerHTML.length > 0;
@@ -145,7 +157,7 @@
                         } else {
                             throw new Error('Card shadow DOM is empty');
                         }
-                    }, 1500);
+                    }, 2000);
                     
                 } catch (error) {
                     console.error('❌ Card configuration failed:', error);

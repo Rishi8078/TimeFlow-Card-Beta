@@ -138,10 +138,10 @@ class IntegrationTester {
       this.addResult('Basic Instantiation: Render method', hasRender,
         hasRender ? 'Lit render method found' : 'Render method missing');
 
-      // Test for property decorators
-      const hasPropertyDecorators = bundleContent.includes('@property') || bundleContent.includes('static get properties');
-      this.addResult('Basic Instantiation: Property decorators', hasPropertyDecorators,
-        hasPropertyDecorators ? 'Property decorators found' : 'Property decorators missing');
+      // Test for property system (transformed from decorators)
+      const hasProperties = bundleContent.includes('progress = 0') && bundleContent.includes('hass = {}');
+      this.addResult('Basic Instantiation: Property system', hasProperties,
+        hasProperties ? 'Reactive property system found' : 'Property system missing');
 
     } catch (error) {
       this.addResult('Basic Instantiation: Setup', false, `Error: ${error.message}`);

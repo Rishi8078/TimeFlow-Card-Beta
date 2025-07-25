@@ -237,6 +237,17 @@ function bundleFiles() {
     // Remove all import statements since we're bundling everything
     content = content.replace(/import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"][^'"]+['"];?\s*/g, '');
     
+    // Transform @property decorators to simple property assignments
+    // This handles: @property({ type: Type, attribute: 'attr' }) propName = defaultValue;
+    content = content.replace(/@property\(\s*\{[^}]*\}\s*\)\s*(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    
+    // This handles: @property propName = defaultValue;
+    content = content.replace(/@property\s+(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    
+    // Remove @state decorators too
+    content = content.replace(/@state\(\s*\)\s*(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    content = content.replace(/@state\s+(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    
     // Remove export statements and convert to regular declarations
     content = content.replace(/export\s+class\s+/g, 'class ');
     content = content.replace(/export\s+\{[^}]+\};\s*$/gm, '');

@@ -1,6 +1,6 @@
 /**
  * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: 2025-07-25T20:33:30.004Z
+ * Generated: 2025-07-25T20:43:53.531Z
  * 
  * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
@@ -1606,10 +1606,10 @@ class ProgressCircleBeta extends LitElement {
     }
   `;
 
-  @property({ type: Number }) progress = 0;
-  @property({ type: String }) color = '#4CAF50';
-  @property({ type: Number }) size = 100;
-  @property({ type: Number, attribute: 'stroke-width' }) strokeWidth = 15;
+  progress = 0;
+  color = '#4CAF50';
+  size = 100;
+  strokeWidth = 15;
 
   render() {
     const radius = (this.size - this.strokeWidth) / 2;
@@ -1798,13 +1798,13 @@ class TimeFlowCardBeta extends LitElement {
     }
   `;
   // Lit reactive properties
-  @property({ type: Object }) hass = {};
-  @state() _config = {};
-  @state() _errorState = null;
-  @state() _currentProgress = 0;
-  @state() _subtitleText = '';
-  @state() _isExpired = false;
-  @state() _resolvedConfig = {};
+  hass = {};
+  _config = {};
+  _errorState = null;
+  _currentProgress = 0;
+  _subtitleText = '';
+  _isExpired = false;
+  _resolvedConfig = {};
 
   constructor() {
     super();
@@ -2547,10 +2547,10 @@ class ProgressCircleBeta extends LitElement {
     }
   `;
 
-  @property({ type: Number }) progress = 0;
-  @property({ type: String }) color = '#4CAF50';
-  @property({ type: Number }) size = 100;
-  @property({ type: Number, attribute: 'stroke-width' }) strokeWidth = 15;
+  progress = 0;
+  color = '#4CAF50';
+  size = 100;
+  strokeWidth = 15;
 
   render() {
     const radius = (this.size - this.strokeWidth) / 2;

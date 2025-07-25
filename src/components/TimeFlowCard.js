@@ -277,8 +277,8 @@ export class TimeFlowCardBeta extends HTMLElement {
     if (!this._domElements || this._hasConfigChanged()) {
       await this._initializeDOM();
     } else {
-      // Only update content/attributes, never replace innerHTML
-      await this._updateContent();
+      // Use selective updates to prevent flickering
+      await this._updateContentOnly();
     }
   }
 
@@ -319,7 +319,7 @@ export class TimeFlowCardBeta extends HTMLElement {
   /**
    * Performance optimization: Initialize DOM structure only when needed
    * This method should only be called on first render or config change.
-   * After that, only _updateContent should be used to update the card.
+   * After that, only _updateContentOnly should be used to update the card.
    */
   async _initializeDOM() {
     // Generate the card's HTML structure and styles
@@ -332,10 +332,11 @@ export class TimeFlowCardBeta extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      ProgressCircleBeta: this.shadowRoot.querySelector('progress-circle-beta')
+      progressCircle: this.shadowRoot.querySelector('progress-circle-beta')
     };
-    // Initial content update without applying native styles again
-    await this._updateContent(true);
+    
+    // Initial content update
+    await this._updateContentOnly();
     this._applyCardMod();
   }
 
@@ -520,6 +521,61 @@ export class TimeFlowCardBeta extends HTMLElement {
         }
       </style>
     `;
+  }
+
+  /**
+   * Selective content updates to prevent flickering
+   * Updates only what has changed without rebuilding DOM
+   */
+  async _updateContentOnly() {
+    if (!this._domElements) return;
+
+    // Resolve any template properties first
+    const resolvedConfig = await this._resolveTemplateProperties();
+    const { title = 'Countdown Timer', expired_animation = true } = resolvedConfig;
+
+    // Update title only if it changed
+    const titleEl = this._domElements.title;
+    if (titleEl && titleEl.textContent !== title) {
+      titleEl.textContent = title;
+    }
+
+    // Update subtitle only if it changed
+    const subtitleText = this.countdownService.getSubtitle(this._config);
+    const subtitleEl = this._domElements.subtitle;
+    if (subtitleEl && subtitleEl.textContent !== subtitleText) {
+      subtitleEl.textContent = subtitleText;
+    }
+
+    // Update progress circle only if progress changed
+    const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
+    const progressEl = this._domElements.progressCircle;
+    if (progressEl) {
+      const currentProgressAttr = progressEl.getAttribute('progress');
+      if (currentProgressAttr !== currentProgress.toString()) {
+        progressEl.setAttribute('progress', currentProgress);
+      }
+      
+      // Update color if it changed
+      const progressColor = resolvedConfig.progress_color || '#4CAF50';
+      const currentColor = progressEl.getAttribute('color');
+      if (currentColor !== progressColor) {
+        progressEl.setAttribute('color', progressColor);
+      }
+    }
+
+    // Update expired state only if it changed
+    const haCardEl = this._domElements.haCard;
+    if (haCardEl) {
+      const shouldShowExpired = this.countdownService.isExpired() && expired_animation;
+      const hasExpiredClass = haCardEl.classList.contains('expired');
+      
+      if (shouldShowExpired && !hasExpiredClass) {
+        haCardEl.classList.add('expired');
+      } else if (!shouldShowExpired && hasExpiredClass) {
+        haCardEl.classList.remove('expired');
+      }
+    }
   }
 
   /**

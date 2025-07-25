@@ -391,7 +391,7 @@ export class TimeFlowCard extends HTMLElement {
     return `
       ${styleTag}
       <ha-card 
-        class="timeflow-card ${this.countdownService.isExpired() && expired_animation ? 'expired' : ''}"
+        class="timeflow-card-beta ${this.countdownService.isExpired() && expired_animation ? 'expired' : ''}"
         id="${ids.cardId}"
         role="timer"
         aria-labelledby="${ids.titleId}"
@@ -410,8 +410,8 @@ export class TimeFlowCard extends HTMLElement {
           
           <div class="content">
             <div class="progress-section" role="region" aria-labelledby="${ids.progressId}">
-              <progress-circle
-                class="progress-circle"
+              <progress-circle-beta
+                class="progress-circle-beta"
                 progress="${currentProgress}"
                 color="${resolvedConfig.progress_color || '#4CAF50'}"
                 size="${this.styleManager.calculateDynamicIconSize(resolvedConfig.width, resolvedConfig.height, resolvedConfig.aspect_ratio, resolvedConfig.icon_size)}"
@@ -420,7 +420,7 @@ export class TimeFlowCard extends HTMLElement {
                 aria-label="Timer progress indicator"
                 aria-describedby="${ids.progressId}"
                 style="${processedStyles.progress_circle || ''}"
-              ></progress-circle>
+              ></progress-circle-beta>
             </div>
           </div>
         </div>
@@ -460,11 +460,11 @@ export class TimeFlowCard extends HTMLElement {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
           
           /* CSS Variables for dynamic theming */
-          --timeflow-card-background-color: ${bgColor};
-          --timeflow-card-text-color: ${color};
-          --timeflow-card-progress-color: ${progressColor};
-          --timeflow-card-icon-size: ${dynamicIconSize}px;
-          --timeflow-card-stroke-width: ${dynamicStrokeWidth};
+          --timeflow-card-beta-background-color: ${bgColor};
+          --timeflow-card-beta-text-color: ${color};
+          --timeflow-card-beta-progress-color: ${progressColor};
+          --timeflow-card-beta-icon-size: ${dynamicIconSize}px;
+          --timeflow-card-beta-stroke-width: ${dynamicStrokeWidth};
         }
         
         ha-card {
@@ -474,8 +474,8 @@ export class TimeFlowCard extends HTMLElement {
           border-radius: 22px;
           position: relative;
           overflow: hidden;
-          background: var(--timeflow-card-background-color);
-          color: var(--timeflow-card-text-color);
+          background: var(--timeflow-card-beta-background-color);
+          color: var(--timeflow-card-beta-text-color);
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           border: none;
           ${cardStyles.join(';\n          ')};
@@ -544,7 +544,7 @@ export class TimeFlowCard extends HTMLElement {
           100% { transform: scale(1); }
         }` : ''}
         
-        .progress-circle {
+        .progress-circle-beta {
           opacity: 0.9;
         }
         

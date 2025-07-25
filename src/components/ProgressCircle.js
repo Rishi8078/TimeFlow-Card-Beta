@@ -44,7 +44,7 @@ export class ProgressCircle extends HTMLElement {
    * Sets up accessibility features
    */
   setupAccessibility() {
-    const circle = this.shadowRoot.querySelector('.progress-circle');
+    const circle = this.shadowRoot.querySelector('.progress-circle-beta');
     if (circle) {
       circle.setAttribute('tabindex', '0');
       circle.setAttribute('role', 'progressbar');
@@ -89,7 +89,7 @@ export class ProgressCircle extends HTMLElement {
    * @param {FocusEvent} event - Focus event
    */
   _handleFocus(event) {
-    const circle = this.shadowRoot.querySelector('.progress-circle');
+    const circle = this.shadowRoot.querySelector('.progress-circle-beta');
     if (circle) {
       circle.style.outline = '2px solid var(--primary-color, #03A9F4)';
       circle.style.outlineOffset = '2px';
@@ -104,7 +104,7 @@ export class ProgressCircle extends HTMLElement {
    * @param {FocusEvent} event - Blur event
    */
   _handleBlur(event) {
-    const circle = this.shadowRoot.querySelector('.progress-circle');
+    const circle = this.shadowRoot.querySelector('.progress-circle-beta');
     if (circle) {
       circle.style.outline = 'none';
     }
@@ -189,14 +189,14 @@ export class ProgressCircle extends HTMLElement {
           --progress-color: ${this._color};
         }
         
-        .progress-circle {
+        .progress-circle-beta {
           transform: rotate(-90deg);
           border-radius: 50%;
           cursor: pointer;
           transition: all 0.3s ease;
         }
         
-        .progress-circle:focus {
+        .progress-circle-beta:focus {
           outline: 2px solid var(--primary-color, #03A9F4);
           outline-offset: 2px;
         }
@@ -229,7 +229,7 @@ export class ProgressCircle extends HTMLElement {
         }
         
         /* Hover effects */
-        .progress-circle:hover .progress-bar {
+        .progress-circle-beta:hover .progress-bar {
           stroke-width: ${this._strokeWidth + 2};
         }
         
@@ -240,13 +240,13 @@ export class ProgressCircle extends HTMLElement {
           100% { opacity: 0.8; }
         }
         
-        .progress-circle.updating .progress-bar {
+        .progress-circle-beta.updating .progress-bar {
           animation: progress-pulse 0.5s ease-in-out;
         }
       </style>
       
       <svg 
-        class="progress-circle" 
+        class="progress-circle-beta" 
         width="${this._size}" 
         height="${this._size}"
         tabindex="0"
@@ -298,7 +298,7 @@ export class ProgressCircle extends HTMLElement {
      progressBar.style.transition = 'stroke-dashoffset 0.3s ease';
      progressBar.style.strokeDashoffset = offset;
    }
-   const circleEl = this.shadowRoot.querySelector('.progress-circle');
+   const circleEl = this.shadowRoot.querySelector('.progress-circle-beta');
    if (circleEl) {
      circleEl.setAttribute('aria-valuenow', Math.round(this._progress));
      circleEl.setAttribute('aria-label', `Progress: ${Math.round(this._progress)}%`);
@@ -317,7 +317,7 @@ export class ProgressCircle extends HTMLElement {
    * @param {boolean} animate - Whether to animate the change
    */
   updateProgress(progress, animate = true) {
-    const circle = this.shadowRoot.querySelector('.progress-circle');
+    const circle = this.shadowRoot.querySelector('.progress-circle-beta');
     
     if (animate && circle) {
       circle.classList.add('updating');

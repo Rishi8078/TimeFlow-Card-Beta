@@ -15,7 +15,7 @@ export class AccessibilityManager {
    */
   generateAccessibilityIds() {
     this.accessibilityIds = {
-      cardId: `timeflow-card-${Math.random().toString(36).substr(2, 9)}`,
+      cardId: `timeflow-card-beta-${Math.random().toString(36).substr(2, 9)}`,
       titleId: `title-${Math.random().toString(36).substr(2, 9)}`,
       subtitleId: `subtitle-${Math.random().toString(36).substr(2, 9)}`,
       progressId: `progress-${Math.random().toString(36).substr(2, 9)}`,

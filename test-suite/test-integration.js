@@ -138,8 +138,8 @@ class IntegrationTester {
       this.addResult('Basic Instantiation: Render method', hasRender,
         hasRender ? 'Lit render method found' : 'Render method missing');
 
-      // Test for property system (transformed from decorators)
-      const hasProperties = bundleContent.includes('progress = 0') && bundleContent.includes('hass = {}');
+      // Test for reactive property system (transformed from decorators)
+      const hasProperties = bundleContent.includes('get progress()') && bundleContent.includes('get hass()') && bundleContent.includes('requestUpdate');
       this.addResult('Basic Instantiation: Property system', hasProperties,
         hasProperties ? 'Reactive property system found' : 'Property system missing');
 

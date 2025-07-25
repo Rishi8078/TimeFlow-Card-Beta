@@ -99,6 +99,20 @@ class LitElement extends HTMLElement {
     this.requestUpdate();
   }
 
+  attributeChangedCallback(name, oldValue, newValue) {
+    // Convert kebab-case to camelCase
+    const propName = name.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+    if (this[propName] !== undefined) {
+      // Try to parse the value appropriately
+      let parsedValue = newValue;
+      if (newValue === 'true') parsedValue = true;
+      else if (newValue === 'false') parsedValue = false;
+      else if (!isNaN(newValue) && newValue !== '') parsedValue = Number(newValue);
+      
+      this[propName] = parsedValue;
+    }
+  }
+
   requestUpdate(name, oldValue) {
     if (name) {
       this._changedProperties.set(name, oldValue);
@@ -235,16 +249,53 @@ function bundleFiles() {
     // Remove all import statements since we're bundling everything
     content = content.replace(/import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"][^'"]+['"];?\s*/g, '');
     
-    // Transform @property decorators to simple property assignments
+    // Transform @property decorators to reactive property setup
     // This handles: @property({ type: Type, attribute: 'attr' }) propName = defaultValue;
-    content = content.replace(/@property\(\s*\{[^}]*\}\s*\)\s*(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    content = content.replace(/@property\(\s*\{[^}]*\}\s*\)\s*(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
+      return `
+  // Reactive property: ${propName}
+  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
+  set ${propName}(value) { 
+    const oldValue = this._${propName};
+    this._${propName} = value;
+    this.requestUpdate('${propName}', oldValue);
+  }`;
+    });
     
     // This handles: @property propName = defaultValue;
-    content = content.replace(/@property\s+(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    content = content.replace(/@property\s+(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
+      return `
+  // Reactive property: ${propName}
+  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
+  set ${propName}(value) { 
+    const oldValue = this._${propName};
+    this._${propName} = value;
+    this.requestUpdate('${propName}', oldValue);
+  }`;
+    });
     
-    // Remove @state decorators too
-    content = content.replace(/@state\(\s*\)\s*(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
-    content = content.replace(/@state\s+(\w+)\s*=\s*([^;]+);/g, '$1 = $2;');
+    // Remove @state decorators and transform to reactive properties
+    content = content.replace(/@state\(\s*\)\s*(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
+      return `
+  // Reactive state: ${propName}
+  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
+  set ${propName}(value) { 
+    const oldValue = this._${propName};
+    this._${propName} = value;
+    this.requestUpdate('${propName}', oldValue);
+  }`;
+    });
+    
+    content = content.replace(/@state\s+(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
+      return `
+  // Reactive state: ${propName}
+  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
+  set ${propName}(value) { 
+    const oldValue = this._${propName};
+    this._${propName} = value;
+    this.requestUpdate('${propName}', oldValue);
+  }`;
+    });
     
     // Remove export statements and convert to regular declarations
     content = content.replace(/export\s+class\s+/g, 'class ');

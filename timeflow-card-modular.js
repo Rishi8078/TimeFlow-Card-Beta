@@ -1,6 +1,6 @@
 /**
  * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: 2025-07-25T20:51:15.247Z
+ * Generated: 2025-07-25T21:00:37.238Z
  * 
  * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
@@ -96,6 +96,20 @@ class LitElement extends HTMLElement {
 
   connectedCallback() {
     this.requestUpdate();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    // Convert kebab-case to camelCase
+    const propName = name.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+    if (this[propName] !== undefined) {
+      // Try to parse the value appropriately
+      let parsedValue = newValue;
+      if (newValue === 'true') parsedValue = true;
+      else if (newValue === 'false') parsedValue = false;
+      else if (!isNaN(newValue) && newValue !== '') parsedValue = Number(newValue);
+      
+      this[propName] = parsedValue;
+    }
   }
 
   requestUpdate(name, oldValue) {
@@ -1606,10 +1620,38 @@ class ProgressCircleBeta extends LitElement {
     }
   `;
 
-  progress = 0;
-  color = '#4CAF50';
-  size = 100;
-  strokeWidth = 15;
+  
+  // Reactive property: progress
+  get progress() { return this._progress !== undefined ? this._progress : 0; }
+  set progress(value) { 
+    const oldValue = this._progress;
+    this._progress = value;
+    this.requestUpdate('progress', oldValue);
+  }
+  
+  // Reactive property: color
+  get color() { return this._color !== undefined ? this._color : '#4CAF50'; }
+  set color(value) { 
+    const oldValue = this._color;
+    this._color = value;
+    this.requestUpdate('color', oldValue);
+  }
+  
+  // Reactive property: size
+  get size() { return this._size !== undefined ? this._size : 100; }
+  set size(value) { 
+    const oldValue = this._size;
+    this._size = value;
+    this.requestUpdate('size', oldValue);
+  }
+  
+  // Reactive property: strokeWidth
+  get strokeWidth() { return this._strokeWidth !== undefined ? this._strokeWidth : 15; }
+  set strokeWidth(value) { 
+    const oldValue = this._strokeWidth;
+    this._strokeWidth = value;
+    this.requestUpdate('strokeWidth', oldValue);
+  }
 
   render() {
     const radius = (this.size - this.strokeWidth) / 2;
@@ -1798,13 +1840,62 @@ class TimeFlowCardBeta extends LitElement {
     }
   `;
   // Lit reactive properties
-  hass = {};
-  _config = {};
-  _errorState = null;
-  _currentProgress = 0;
-  _subtitleText = '';
-  _isExpired = false;
-  _resolvedConfig = {};
+  
+  // Reactive property: hass
+  get hass() { return this._hass !== undefined ? this._hass : {}; }
+  set hass(value) { 
+    const oldValue = this._hass;
+    this._hass = value;
+    this.requestUpdate('hass', oldValue);
+  }
+  
+  // Reactive state: _config
+  get _config() { return this.__config !== undefined ? this.__config : {}; }
+  set _config(value) { 
+    const oldValue = this.__config;
+    this.__config = value;
+    this.requestUpdate('_config', oldValue);
+  }
+  
+  // Reactive state: _errorState
+  get _errorState() { return this.__errorState !== undefined ? this.__errorState : null; }
+  set _errorState(value) { 
+    const oldValue = this.__errorState;
+    this.__errorState = value;
+    this.requestUpdate('_errorState', oldValue);
+  }
+  
+  // Reactive state: _currentProgress
+  get _currentProgress() { return this.__currentProgress !== undefined ? this.__currentProgress : 0; }
+  set _currentProgress(value) { 
+    const oldValue = this.__currentProgress;
+    this.__currentProgress = value;
+    this.requestUpdate('_currentProgress', oldValue);
+  }
+  
+  // Reactive state: _subtitleText
+  get _subtitleText() { return this.__subtitleText !== undefined ? this.__subtitleText : ''; }
+  set _subtitleText(value) { 
+    const oldValue = this.__subtitleText;
+    this.__subtitleText = value;
+    this.requestUpdate('_subtitleText', oldValue);
+  }
+  
+  // Reactive state: _isExpired
+  get _isExpired() { return this.__isExpired !== undefined ? this.__isExpired : false; }
+  set _isExpired(value) { 
+    const oldValue = this.__isExpired;
+    this.__isExpired = value;
+    this.requestUpdate('_isExpired', oldValue);
+  }
+  
+  // Reactive state: _resolvedConfig
+  get _resolvedConfig() { return this.__resolvedConfig !== undefined ? this.__resolvedConfig : {}; }
+  set _resolvedConfig(value) { 
+    const oldValue = this.__resolvedConfig;
+    this.__resolvedConfig = value;
+    this.requestUpdate('_resolvedConfig', oldValue);
+  }
 
   constructor() {
     super();

@@ -116,15 +116,31 @@
                     card.setConfig(testConfig);
                     console.log('✅ Card configured successfully');
                     
-                    // Check if the card rendered properly
+                    // Test progress circle functionality by setting properties directly
                     setTimeout(() => {
+                        const progressCircle = card.shadowRoot?.querySelector('progress-circle-beta');
+                        if (progressCircle) {
+                            console.log('🔍 Testing progress circle properties...');
+                            
+                            // Test setting properties directly
+                            progressCircle.progress = 75;
+                            progressCircle.color = '#FF6B6B';
+                            progressCircle.size = 120;
+                            
+                            console.log('✅ Progress circle properties set:', {
+                                progress: progressCircle.progress,
+                                color: progressCircle.color,
+                                size: progressCircle.size
+                            });
+                        }
+                        
                         const hasContent = card.shadowRoot && card.shadowRoot.innerHTML.length > 0;
                         console.log('✅ Card rendered:', hasContent);
                         
                         if (hasContent) {
                             const infoDiv = document.createElement('div');
                             infoDiv.className = 'info success';
-                            infoDiv.innerHTML = '<strong>🎉 Success!</strong><br>TimeFlow Card is working correctly with embedded Lit framework.';
+                            infoDiv.innerHTML = '<strong>🎉 Success!</strong><br>TimeFlow Card is working correctly with embedded Lit framework and reactive properties.';
                             document.querySelector('.container').appendChild(infoDiv);
                         } else {
                             throw new Error('Card shadow DOM is empty');

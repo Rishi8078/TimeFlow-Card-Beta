@@ -2347,7 +2347,7 @@ class TimeFlowCard extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle'),
+      progressCircle: this.shadowRoot.querySelector('progress-circle-beta'),
       liveRegion: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().liveRegionId}`),
       progressDescription: this.shadowRoot.querySelector(`#${this.accessibilityManager.getAccessibilityIds().progressId}`)
     };

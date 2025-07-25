@@ -1,6 +1,6 @@
 /**
  * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: 2025-07-25T21:18:59.483Z
+ * Generated: 2025-07-25T21:33:57.368Z
  * 
  * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
@@ -1946,12 +1946,43 @@ class TimeFlowCardBeta extends LitElement {
       this.styleManager.clearCache();
       this._clearPerformanceCache();
       
+      // Initialize reactive state with config change
+      this._initializeReactiveState();
+      
       // Trigger re-render
       this.requestUpdate();
     } catch (error) {
       this._errorState = error.message;
       console.error('TimeFlow Card: Configuration error:', error);
       this.requestUpdate();
+    }
+  }
+
+  /**
+   * Initialize reactive state properties when config changes
+   */
+  async _initializeReactiveState() {
+    try {
+      // Initialize basic properties
+      console.log('TimeFlow Debug: Initializing reactive state with config:', this._config);
+      this._subtitleText = this.countdownService.getSubtitle(this._config);
+      this._currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
+      this._isExpired = this.countdownService.isExpired();
+      this._resolvedConfig = await this._resolveTemplateProperties();
+      
+      console.log('TimeFlow Debug: Reactive state initialized:', {
+        subtitleText: this._subtitleText,
+        currentProgress: this._currentProgress,
+        isExpired: this._isExpired,
+        resolvedConfig: this._resolvedConfig
+      });
+    } catch (error) {
+      console.warn('TimeFlow Card: Error initializing reactive state:', error);
+      // Set sensible defaults
+      this._subtitleText = '';
+      this._currentProgress = 0;
+      this._isExpired = false;
+      this._resolvedConfig = this._config;
     }
   }
 
@@ -2144,14 +2175,27 @@ class TimeFlowCardBeta extends LitElement {
     try {
       await this.countdownService.updateCountdown(this._config, this.hass);
       
-      // Update reactive state
+      // Update reactive state properties - Lit will automatically re-render when these change
       const resolvedConfig = await this._resolveTemplateProperties();
-      this._currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
-      this._subtitleText = this.countdownService.getSubtitle(this._config);
-      this._isExpired = this.countdownService.isExpired();
+      const newProgress = await this.countdownService.calculateProgress(this._config, this.hass);
+      const newSubtitle = this.countdownService.getSubtitle(this._config);
+      const newExpired = this.countdownService.isExpired();
+      
+      console.log('TimeFlow Debug: Updating countdown:', {
+        oldProgress: this._currentProgress,
+        newProgress,
+        oldSubtitle: this._subtitleText,
+        newSubtitle,
+        oldExpired: this._isExpired,
+        newExpired
+      });
+      
+      this._currentProgress = newProgress;
+      this._subtitleText = newSubtitle;
+      this._isExpired = newExpired;
       this._resolvedConfig = resolvedConfig;
       
-      this._scheduleUpdate();
+      // No need to manually call requestUpdate() - reactive properties trigger it automatically
     } catch (error) {
       console.error('TimeFlow Card: Error in updateCountdown:', error);
     }
@@ -2204,6 +2248,15 @@ class TimeFlowCardBeta extends LitElement {
 
   // Main Lit render method
   render() {
+    console.log('TimeFlow Debug: Render called with state:', {
+      errorState: this._errorState,
+      config: this._config,
+      subtitleText: this._subtitleText,
+      currentProgress: this._currentProgress,
+      isExpired: this._isExpired,
+      resolvedConfig: this._resolvedConfig
+    });
+    
     if (this._errorState) {
       return this._renderError();
     }
@@ -2497,58 +2550,13 @@ class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * Selective content updates to prevent flickering
-   * Updates only what has changed without rebuilding DOM
+   * Reactive content updates using Lit's state management
+   * This method is no longer needed since Lit handles updates automatically
+   * when reactive properties change. Left for backward compatibility.
    */
   async _updateContentOnly() {
-    if (!this._domElements) return;
-
-    // Resolve any template properties first
-    const resolvedConfig = await this._resolveTemplateProperties();
-    const { title = 'Countdown Timer', expired_animation = true } = resolvedConfig;
-
-    // Update title only if it changed
-    const titleEl = this._domElements.title;
-    if (titleEl && titleEl.textContent !== title) {
-      titleEl.textContent = title;
-    }
-
-    // Update subtitle only if it changed
-    const subtitleText = this.countdownService.getSubtitle(this._config);
-    const subtitleEl = this._domElements.subtitle;
-    if (subtitleEl && subtitleEl.textContent !== subtitleText) {
-      subtitleEl.textContent = subtitleText;
-    }
-
-    // Update progress circle only if progress changed
-    const currentProgress = await this.countdownService.calculateProgress(this._config, this.hass);
-    const progressEl = this._domElements.ProgressCircleBeta;
-    if (progressEl) {
-      const currentProgressAttr = progressEl.getAttribute('progress');
-      if (currentProgressAttr !== currentProgress.toString()) {
-        progressEl.setAttribute('progress', currentProgress);
-      }
-      
-      // Update color if it changed
-      const progressColor = resolvedConfig.progress_color || '#4CAF50';
-      const currentColor = progressEl.getAttribute('color');
-      if (currentColor !== progressColor) {
-        progressEl.setAttribute('color', progressColor);
-      }
-    }
-
-    // Update expired state only if it changed
-    const haCardEl = this._domElements.haCard;
-    if (haCardEl) {
-      const shouldShowExpired = this.countdownService.isExpired() && expired_animation;
-      const hasExpiredClass = haCardEl.classList.contains('expired');
-      
-      if (shouldShowExpired && !hasExpiredClass) {
-        haCardEl.classList.add('expired');
-      } else if (!shouldShowExpired && hasExpiredClass) {
-        haCardEl.classList.remove('expired');
-      }
-    }
+    // No longer needed - Lit handles this automatically through reactive properties
+    // The reactive properties are updated in _updateCountdown()
   }
 
 

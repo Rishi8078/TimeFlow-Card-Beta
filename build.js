@@ -190,17 +190,17 @@ window.nothing = nothing;
 function bundleFiles() {
   const processedFiles = new Set();
   const processedContent = new Map();
+  const orderedContent = [];
   
   function processFile(filePath) {
     if (processedFiles.has(filePath)) {
-      return processedContent.get(filePath) || '';
+      return ''; // Return empty string for already processed files
     }
     
     processedFiles.add(filePath);
     
     if (!fs.existsSync(filePath)) {
       console.warn(`Warning: File not found: ${filePath}`);
-      processedContent.set(filePath, '');
       return '';
     }
     
@@ -210,7 +210,6 @@ function bundleFiles() {
     // First, process all imports recursively to get dependencies
     const importRegex = /import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"]([^'"]+)['"];?\s*/g;
     let match;
-    let dependencyContent = '';
     
     while ((match = importRegex.exec(originalContent)) !== null) {
       const importPath = match[2];
@@ -229,9 +228,8 @@ function bundleFiles() {
         }
       }
       
-      // Process the imported file recursively
-      const importedContent = processFile(resolvedPath);
-      dependencyContent += importedContent + '\n';
+      // Process the imported file recursively (dependencies first)
+      processFile(resolvedPath);
     }
     
     // Remove all import statements since we're bundling everything
@@ -253,19 +251,21 @@ function bundleFiles() {
     content = content.replace(/export\s+\{[^}]+\};\s*$/gm, '');
     content = content.replace(/export\s+default\s+/g, '');
     
-    const finalContent = dependencyContent + content;
-    processedContent.set(filePath, finalContent);
-    return finalContent;
+    // Store processed content
+    processedContent.set(filePath, content);
+    orderedContent.push(content);
+    
+    return content;
   }
   
   // Start with the entry point
   const entryPoint = path.join(srcDir, 'index.js');
-  const bundledContent = processFile(entryPoint);
+  processFile(entryPoint);
   
-  // Prepend the Lit bundle
+  // Prepend the Lit bundle and return all content in dependency order
   const litBundle = getLitBundle();
   
-  return litBundle + '\n' + bundledContent;
+  return litBundle + '\n' + orderedContent.join('\n');
 }
 
 /**

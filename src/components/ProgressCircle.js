@@ -1,8 +1,8 @@
 /**
- * ProgressCircle - Modular progress circle component
+ * ProgressCircleBeta - Modular progress circle component
  * Provides visual progress indication
  */
-export class ProgressCircle extends HTMLElement {
+export class ProgressCircleBeta extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });

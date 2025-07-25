@@ -106,8 +106,8 @@ class ModularBuildTester {
     this.log('🔍 Testing module integrity...');
 
     const modules = [
-      { file: 'src/components/TimeFlowCard.js', expectedExports: ['TimeFlowCard'] },
-      { file: 'src/components/ProgressCircle.js', expectedExports: ['ProgressCircle'] },
+      { file: 'src/components/TimeFlowCard.js', expectedExports: ['TimeFlowCardBeta'] },
+      { file: 'src/components/ProgressCircle.js', expectedExports: ['ProgressCircleBeta'] },
       { file: 'src/services/TemplateService.js', expectedExports: ['TemplateService'] },
       { file: 'src/services/CountdownService.js', expectedExports: ['CountdownService'] },
       { file: 'src/utils/DateParser.js', expectedExports: ['DateParser'] },
@@ -166,7 +166,7 @@ class ModularBuildTester {
       
       // Test for expected classes in bundle
       const expectedClasses = [
-        'TimeFlowCard', 'ProgressCircle', 'TemplateService', 'CountdownService',
+        'TimeFlowCardBeta', 'ProgressCircleBeta', 'TemplateService', 'CountdownService',
         'DateParser', 'ConfigValidator', 'StyleManager'
       ];
 
@@ -192,7 +192,7 @@ class ModularBuildTester {
         hasUnresolvedImports ? 'Unresolved imports found' : 'All imports resolved');
 
       // Test for version information
-      const hasVersion = content.includes('TimeFlowCard.version') || content.includes('Version 1.2.0');
+      const hasVersion = content.includes('TimeFlowCardBeta.version') || content.includes('Version 1.2.0');
       this.addResult('Bundle Content: Version info', hasVersion,
         hasVersion ? 'Version information found' : 'Missing version information');
 

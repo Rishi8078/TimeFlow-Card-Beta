@@ -1,5 +1,5 @@
 /**
- * TimeFlowCard - Main card component with modular architecture
+ * TimeFlowCardBeta - Main card component with modular architecture
  * Orchestrates all modules and provides clean separation of concerns
  */
 import { DateParser } from '../utils/DateParser.js';
@@ -7,9 +7,9 @@ import { ConfigValidator } from '../utils/ConfigValidator.js';
 import { TemplateService } from '../services/TemplateService.js';
 import { CountdownService } from '../services/CountdownService.js';
 import { StyleManager } from '../utils/StyleManager.js';
-import { ProgressCircle } from '../components/ProgressCircle.js';
+import { ProgressCircleBeta } from '../components/ProgressCircle.js';
 
-export class TimeFlowCard extends HTMLElement {
+export class TimeFlowCardBeta extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -332,7 +332,7 @@ export class TimeFlowCard extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle-beta')
+      ProgressCircleBeta: this.shadowRoot.querySelector('progress-circle-beta')
     };
     // Initial content update without applying native styles again
     await this._updateContent(true);
@@ -548,8 +548,8 @@ export class TimeFlowCard extends HTMLElement {
 
     // Update progress circle
     const progress = await this.countdownService.calculateProgress(this._config, this._hass);
-    if (this._domElements.progressCircle) {
-      this._domElements.progressCircle.setAttribute('progress', progress);
+    if (this._domElements.ProgressCircleBeta) {
+      this._domElements.ProgressCircleBeta.setAttribute('progress', progress);
     }
 
     // Update expired state

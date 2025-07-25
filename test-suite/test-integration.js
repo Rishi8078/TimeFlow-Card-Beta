@@ -51,7 +51,7 @@ class IntegrationTester {
 
       // Check for required classes
       const requiredClasses = [
-        'TimeFlowCard', 'ProgressCircle', 'DateParser', 
+        'TimeFlowCardBeta', 'ProgressCircleBeta', 'DateParser', 
         'ConfigValidator', 'TemplateService', 'CountdownService'
       ];
 
@@ -220,9 +220,9 @@ class IntegrationTester {
 
       // Test instantiation
       try {
-        const TimeFlowCardClass = context.customElements['timeflow-card-beta'];
-        if (TimeFlowCardClass) {
-          const card = new TimeFlowCardClass();
+        const TimeFlowCardBetaClass = context.customElements['timeflow-card-beta'];
+        if (TimeFlowCardBetaClass) {
+          const card = new TimeFlowCardBetaClass();
           this.addResult('Basic Instantiation: Card creation', true, 'Card instance created');
 
           // Test configuration
@@ -241,7 +241,7 @@ class IntegrationTester {
 
           // Test static methods
           try {
-            const stubConfig = TimeFlowCardClass.getStubConfig();
+            const stubConfig = TimeFlowCardBetaClass.getStubConfig();
             const hasValidStub = stubConfig && stubConfig.type === 'timeflow-card-beta';
             this.addResult('Basic Instantiation: Stub config', hasValidStub, 
               hasValidStub ? 'Valid stub configuration' : 'Invalid stub configuration');
@@ -251,7 +251,7 @@ class IntegrationTester {
 
           // Test version
           try {
-            const version = TimeFlowCardClass.version;
+            const version = TimeFlowCardBetaClass.version;
             const hasVersion = typeof version === 'string' && version.length > 0;
             this.addResult('Basic Instantiation: Version', hasVersion, 
               hasVersion ? `Version: ${version}` : 'No version');
@@ -260,7 +260,7 @@ class IntegrationTester {
           }
 
         } else {
-          this.addResult('Basic Instantiation: Card creation', false, 'TimeFlowCard class not available');
+          this.addResult('Basic Instantiation: Card creation', false, 'TimeFlowCardBeta class not available');
         }
       } catch (instantiationError) {
         this.addResult('Basic Instantiation: Card creation', false, `Error: ${instantiationError.message}`);

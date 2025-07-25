@@ -332,7 +332,7 @@ export class TimeFlowCardBeta extends HTMLElement {
       cardContent: this.shadowRoot.querySelector('.card-content'),
       title: this.shadowRoot.querySelector('.title'),
       subtitle: this.shadowRoot.querySelector('.subtitle'),
-      progressCircle: this.shadowRoot.querySelector('progress-circle-beta')
+      ProgressCircleBeta: this.shadowRoot.querySelector('progress-circle-beta')
     };
     
     // Initial content update
@@ -549,7 +549,7 @@ export class TimeFlowCardBeta extends HTMLElement {
 
     // Update progress circle only if progress changed
     const currentProgress = await this.countdownService.calculateProgress(this._config, this._hass);
-    const progressEl = this._domElements.progressCircle;
+    const progressEl = this._domElements.ProgressCircleBeta;
     if (progressEl) {
       const currentProgressAttr = progressEl.getAttribute('progress');
       if (currentProgressAttr !== currentProgress.toString()) {
@@ -575,43 +575,6 @@ export class TimeFlowCardBeta extends HTMLElement {
       } else if (!shouldShowExpired && hasExpiredClass) {
         haCardEl.classList.remove('expired');
       }
-    }
-  }
-
-  /**
-   * Performance optimization: Update only content that changes
-   * This method should never replace innerHTML or rebuild the DOM.
-   * It only updates the content/attributes of cached DOM elements.
-   * @param {boolean} isInitializing - Whether this is the first render
-   */
-  async _updateContent(isInitializing = false) {
-    if (!this._domElements) return;
-
-    // Resolve any template properties first
-    const resolvedConfig = await this._resolveTemplateProperties();
-    const { title = 'Countdown Timer' } = resolvedConfig;
-
-    // Update title
-    if (this._domElements.title && this._domElements.title.textContent !== title) {
-      this._domElements.title.textContent = title;
-    }
-
-    // Update subtitle
-    const subtitleText = this.countdownService.getSubtitle(this._config);
-    if (this._domElements.subtitle && this._domElements.subtitle.textContent !== subtitleText) {
-      this._domElements.subtitle.textContent = subtitleText;
-    }
-
-    // Update progress circle
-    const progress = await this.countdownService.calculateProgress(this._config, this._hass);
-    if (this._domElements.ProgressCircleBeta) {
-      this._domElements.ProgressCircleBeta.setAttribute('progress', progress);
-    }
-
-    // Update expired state
-    if (this._domElements.haCard) {
-      const { expired_animation = true } = this._config;
-      this._domElements.haCard.classList.toggle('expired', this.countdownService.isExpired() && expired_animation);
     }
   }
 

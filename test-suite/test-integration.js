@@ -87,10 +87,12 @@ class IntegrationTester {
       this.addResult('Component Availability: Progress Circle', hasProgressCircle,
         hasProgressCircle ? 'Progress Circle class found in bundle' : 'Progress Circle class not found');
 
-      // Test that Lit imports are preserved
-      const hasLitImports = bundleContent.includes('from \'lit\'') || bundleContent.includes('from "lit"');
-      this.addResult('Component Availability: Lit imports', hasLitImports,
-        hasLitImports ? 'Lit imports preserved for external resolution' : 'Lit imports missing');
+      // Test that Lit is embedded in the bundle (self-contained)
+      const hasEmbeddedLit = bundleContent.includes('class LitElement extends HTMLElement') || 
+                             bundleContent.includes('window.LitElement = LitElement') ||
+                             bundleContent.includes('Minimal Lit 3.x Bundle');
+      this.addResult('Component Availability: Embedded Lit', hasEmbeddedLit,
+        hasEmbeddedLit ? 'Lit framework embedded in bundle (self-contained)' : 'Lit framework not embedded');
 
       // Test for component registration code
       const hasRegistration = bundleContent.includes('customElements.define');

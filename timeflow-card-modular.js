@@ -1,8 +1,8 @@
 /**
- * TimeFlow Card - Modular Architecture Bundle with Lit 3.x
- * Generated: 2025-07-25T20:15:35.280Z
+ * TimeFlow Card - Self-Contained Bundle with Lit 3.x
+ * Generated: 2025-07-25T20:33:30.004Z
  * 
- * This bundle includes all modular components:
+ * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
  * - ProgressCircleBeta (Progress circle component using LitElement)
  * - TemplateService (Template evaluation)
@@ -10,712 +10,176 @@
  * - DateParser (Date parsing utilities)
  * - ConfigValidator (Configuration validation)
  * - StyleManager (Style management)
+ * - Lit 3.x framework (embedded minimal implementation)
  * 
- * External Dependencies:
- * - Lit 3.x (LitElement, html, css, property, state decorators)
+ * No external dependencies required.
  */
-
-import { LitElement, html, css, nothing } from 'lit';
-import { property, state } from 'lit/decorators.js';
-import { LitElement, html, css } from 'lit';
 
 
 /**
- * ProgressCircleBeta - Modular progress circle component
- * Provides visual progress indication
+ * Minimal Lit 3.x Bundle - Essential functionality for TimeFlow Card
+ * Based on lit-element 3.x but simplified for Home Assistant custom cards
  */
-import { property } from 'lit/decorators.js';
 
-class ProgressCircleBeta extends LitElement {
-  static styles = css`
-    :host {
-      display: inline-block;
-      --progress-color: var(--progress-color, #4CAF50);
-    }
-    
-    svg {
-      transform: rotate(-90deg);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      overflow: visible;
-    }
-    
-    svg:focus {
-      outline: 2px solid var(--primary-color, #03A9F4);
-      outline-offset: 2px;
-    }
-    
-    .progress-background {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.1);
-    }
-    
-    .progress-circle {
-      fill: none;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
-    }
-    
-    .progress-text {
-      fill: currentColor;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      font-weight: 600;
-      text-anchor: middle;
-      dominant-baseline: middle;
-      opacity: 0.8;
-    }
-    
-    /* Animation for progress changes */
-    @keyframes progress-pulse {
-      0% { opacity: 0.8; }
-      50% { opacity: 1; }
-      100% { opacity: 0.8; }
-    }
-    
-    svg.updating .progress-circle {
-      animation: progress-pulse 0.5s ease-in-out;
-    }
-  `;
+// Lit Template Result and HTML template implementation
+class TemplateResult {
+  constructor(strings, values, type, processor) {
+    this.strings = strings;
+    this.values = values;
+    this.type = type;
+    this.processor = processor;
+  }
+}
 
-  @property({ type: Number }) progress = 0;
-  @property({ type: String }) color = '#4CAF50';
-  @property({ type: Number }) size = 100;
-  @property({ type: Number, attribute: 'stroke-width' }) strokeWidth = 15;
+// Simple template processor
+const defaultTemplateProcessor = {
+  handleAttributeExpressions: (element, name, strings, values) => values,
+  handleTextExpression: (options) => options
+};
+
+// HTML template tag function
+const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
+
+// CSS template tag function  
+const css = (strings, ...values) => {
+  const cssText = strings.reduce((acc, str, i) => {
+    return acc + str + (values[i] || '');
+  }, '');
+  return { cssText, toString: () => cssText };
+};
+
+// Nothing placeholder
+const nothing = '';
+
+// Simple reactive property system
+const updateProperty = (instance, key, oldValue, newValue) => {
+  if (oldValue !== newValue) {
+    instance.requestUpdate(key, oldValue);
+  }
+};
+
+// Property decorator
+const property = (options = {}) => {
+  return (target, propertyKey) => {
+    const privateKey = `_${propertyKey}`;
+    
+    if (delete target[propertyKey]) {
+      Object.defineProperty(target, propertyKey, {
+        get() { return this[privateKey]; },
+        set(value) {
+          const oldValue = this[privateKey];
+          this[privateKey] = value;
+          updateProperty(this, propertyKey, oldValue, value);
+        },
+        enumerable: true,
+        configurable: true
+      });
+    }
+  };
+};
+
+// State decorator (same as property but internal)
+const state = () => property();
+
+// Base LitElement class
+class LitElement extends HTMLElement {
+  constructor() {
+    super();
+    this._updateScheduled = false;
+    this._changedProperties = new Map();
+    this.attachShadow({ mode: 'open' });
+  }
+
+  static get styles() {
+    return ``;
+  }
+
+  connectedCallback() {
+    this.requestUpdate();
+  }
+
+  requestUpdate(name, oldValue) {
+    if (name) {
+      this._changedProperties.set(name, oldValue);
+    }
+    
+    if (!this._updateScheduled) {
+      this._updateScheduled = true;
+      Promise.resolve().then(() => {
+        this._updateScheduled = false;
+        this.performUpdate();
+      });
+    }
+  }
+
+  performUpdate() {
+    const styles = this.constructor.styles;
+    if (styles && typeof styles === 'object' && styles.cssText) {
+      if (!this.shadowRoot.querySelector('style')) {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = styles.cssText;
+        this.shadowRoot.appendChild(styleEl);
+      }
+    }
+
+    const result = this.render();
+    if (result) {
+      this.shadowRoot.innerHTML = this.shadowRoot.querySelector('style') ? 
+        this.shadowRoot.querySelector('style').outerHTML + this._renderTemplate(result) :
+        this._renderTemplate(result);
+    }
+    
+    this.updated(this._changedProperties);
+    this._changedProperties.clear();
+  }
+
+  _renderTemplate(result) {
+    if (result instanceof TemplateResult) {
+      return result.strings.reduce((acc, str, i) => {
+        const value = result.values[i];
+        if (value === nothing || value === undefined || value === null) {
+          return acc + str;
+        }
+        return acc + str + this._renderValue(value);
+      }, '');
+    }
+    return String(result || '');
+  }
+
+  _renderValue(value) {
+    if (value instanceof TemplateResult) {
+      return this._renderTemplate(value);
+    }
+    if (typeof value === 'function') {
+      return this._renderValue(value());
+    }
+    if (value === nothing || value === undefined || value === null) {
+      return '';
+    }
+    return String(value);
+  }
 
   render() {
-    const radius = (this.size - this.strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (this.progress / 100) * circumference;
-
-    // Validate calculations to prevent SVG errors
-    if (isNaN(this.size) || isNaN(radius) || isNaN(circumference) || isNaN(strokeDashoffset)) {
-      console.warn('TimeFlow Card: Invalid SVG calculations, using fallback values');
-      return html`<div>Invalid circle dimensions</div>`;
-    }
-
-    return html`
-      <svg 
-        class="progress-circle-beta" 
-        width="${this.size}" 
-        height="${this.size}"
-        style="--progress-color: ${this.color};"
-      >
-        <circle
-          class="progress-background"
-          cx="${this.size / 2}"
-          cy="${this.size / 2}"
-          r="${radius}"
-          stroke-width="${this.strokeWidth}"
-        />
-        <circle
-          class="progress-circle"
-          cx="${this.size / 2}"
-          cy="${this.size / 2}"
-          r="${radius}"
-          stroke="${this.color}"
-          stroke-width="${this.strokeWidth}"
-          stroke-dasharray="${circumference}"
-          stroke-dashoffset="${strokeDashoffset}"
-        />
-        <text
-          class="progress-text"
-          x="${this.size / 2}"
-          y="${this.size / 2}"
-          fill="currentColor"
-          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
-          font-size="${Math.max(12, this.size * 0.15)}px"
-          font-weight="600"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          transform="rotate(90 ${this.size / 2} ${this.size / 2})"
-          opacity="0.8"
-        >
-          ${Math.round(this.progress)}%
-        </text>
-      </svg>
-    `;
+    return html``;
   }
 
-  /**
-   * Static method to check if component is loaded
-   * @returns {boolean} - True if component is defined
-   */
-  static isLoaded() {
-    return customElements.get('progress-circle-beta') !== undefined;
+  updated(changedProperties) {
+    // Override in subclasses
   }
 
-  /**
-   * Get component version for debugging
-   * @returns {string} - Component version
-   */
-  static get version() {
-    return '2.0.0';
+  firstUpdated(changedProperties) {
+    // Override in subclasses
   }
 }
 
-/**
- * StyleManager - Handles styling calculations and CSS processing
- * Provides dynamic sizing, proportional scaling, and style management
- */
-class StyleManager {
-  // Constants for icon and stroke size limits
-  static MIN_ICON_SIZE = 40;
-  static MAX_ICON_SIZE = 120;
-  static MIN_STROKE = 4;
-  static MAX_STROKE = 20;
+// Export the Lit functionality
+window.LitElement = LitElement;
+window.html = html;
+window.css = css;
+window.property = property;
+window.state = state;
+window.nothing = nothing;
 
-  constructor() {
-    this.cache = {
-      dynamicIconSize: null,
-      dynamicStrokeWidth: null,
-      customStyles: null,
-      lastConfigHash: null
-    };
-  }
-
-  /**
-   * Processes styles array into CSS string
-   * @param {Array} styles - Array of style objects or strings
-   * @returns {string} - CSS string
-   */
-  processStyles(styles) {
-    if (!styles || !Array.isArray(styles)) return '';
-    
-    return styles.map(style => {
-      try {
-        if (typeof style === 'string') {
-          return style;
-        } else if (typeof style === 'object' && style !== null) {
-          return Object.entries(style)
-            .map(([prop, value]) => `${prop}: ${value}`)
-            .join('; ');
-        }
-        return '';
-      } catch (e) {
-        console.warn('TimeFlow Card: Error processing style:', style, e);
-        return '';
-      }
-    }).join('; ');
-  }
-
-  /**
-   * Builds styles object from configuration
-   * @param {Object} config - Card configuration
-   * @returns {Object} - Processed styles object
-   */
-  buildStylesObject(config) {
-    // Use cached value if available and config hasn't changed
-    const configHash = JSON.stringify(config.styles || {});
-    if (this.cache.customStyles !== null && this.cache.lastConfigHash === configHash) {
-      return this.cache.customStyles;
-    }
-
-    const { styles = {} } = config;
-    
-    try {
-      const processedStyles = {
-        card: this.processStyles(styles.card),
-        title: this.processStyles(styles.title),
-        subtitle: this.processStyles(styles.subtitle),
-        progress_circle: this.processStyles(styles.progress_circle)
-      };
-
-      this.cache.customStyles = processedStyles;
-      this.cache.lastConfigHash = configHash;
-      return processedStyles;
-    } catch (e) {
-      console.warn('TimeFlow Card: Error building styles object:', e);
-      this.cache.customStyles = {
-        card: '',
-        title: '',
-        subtitle: '',
-        progress_circle: ''
-      };
-      return this.cache.customStyles;
-    }
-  }
-
-  /**
-   * Internal helper to get card dimensions based on width, height, and aspect ratio
-   */
-  _getCardDimensions(width, height, aspect_ratio) {
-    const defaultWidth = 300;
-    const defaultHeight = 150;
-    let cardWidth = defaultWidth;
-    let cardHeight = defaultHeight;
-    if (width && height) {
-      const parsedW = this.parseDimension(width);
-      const parsedH = this.parseDimension(height);
-      cardWidth = parsedW || defaultWidth;
-      cardHeight = parsedH || defaultHeight;
-    } else if (width && aspect_ratio) {
-      const parsedW = this.parseDimension(width);
-      cardWidth = parsedW || defaultWidth;
-      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
-        cardHeight = cardWidth * (ratioH / ratioW);
-      }
-    } else if (height && aspect_ratio) {
-      const parsedH = this.parseDimension(height);
-      cardHeight = parsedH || defaultHeight;
-      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioH > 0) {
-        cardWidth = cardHeight * (ratioW / ratioH);
-      }
-    } else if (aspect_ratio) {
-      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
-      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
-        cardHeight = defaultWidth * (ratioH / ratioW);
-      }
-      cardWidth = defaultWidth;
-    }
-    if (!cardWidth || isNaN(cardWidth) || cardWidth <= 0) cardWidth = defaultWidth;
-    if (!cardHeight || isNaN(cardHeight) || cardHeight <= 0) cardHeight = defaultHeight;
-    return { cardWidth, cardHeight };
-  }
-
-  /**
-   * Calculate dynamic icon size based on card dimensions - now truly proportional
-   * @param {*} width - Card width
-   * @param {*} height - Card height
-   * @param {string} aspect_ratio - Aspect ratio string
-   * @param {*} icon_size - Explicit icon size
-   * @returns {number} - Calculated icon size in pixels
-   */
-  calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
-    // Use cached value if available and config hasn't changed
-    const configKey = JSON.stringify({ width, height, aspect_ratio, icon_size });
-    if (this.cache.dynamicIconSize !== null && this.cache.lastIconConfigHash === configKey) {
-      return this.cache.dynamicIconSize;
-    }
-
-    try {
-      const { cardWidth, cardHeight } = this._getCardDimensions(width, height, aspect_ratio);
-      const minDimension = Math.min(cardWidth, cardHeight);
-      const proportionalSize = minDimension * 0.4;
-      let size = proportionalSize;
-
-      // Respect explicit icon_size if provided, otherwise use proportional
-      if (icon_size && icon_size !== '100px') {
-        const baseSize = typeof icon_size === 'string' ?
-          parseInt(icon_size.replace('px', '')) :
-          (typeof icon_size === 'number' ? icon_size : proportionalSize);
-        size = (!isNaN(baseSize))
-          ? Math.max(StyleManager.MIN_ICON_SIZE, Math.min(baseSize, minDimension * 0.6))
-          : StyleManager.MIN_ICON_SIZE;
-      }
-
-      this.cache.dynamicIconSize = Math.max(StyleManager.MIN_ICON_SIZE, Math.min(size, StyleManager.MAX_ICON_SIZE));
-      this.cache.lastIconConfigHash = configKey;
-      return this.cache.dynamicIconSize;
-    } catch (error) {
-      console.warn('TimeFlow Card: Error calculating dynamic icon size:', error);
-      this.cache.dynamicIconSize = StyleManager.MIN_ICON_SIZE; // Safe fallback
-      return this.cache.dynamicIconSize;
-    }
-  }
-
-  /**
-   * Calculate dynamic stroke width based on icon size
-   * @param {number} iconSize - Icon size in pixels
-   * @param {*} stroke_width - Explicit stroke width
-   * @returns {number} - Calculated stroke width
-   */
-  calculateDynamicStrokeWidth(iconSize, stroke_width) {
-    // Use cached value if available and config hasn't changed
-    const configKey = JSON.stringify({ iconSize, stroke_width });
-    if (this.cache.dynamicStrokeWidth !== null && this.cache.lastStrokeConfigHash === configKey) {
-      return this.cache.dynamicStrokeWidth;
-    }
-
-    try {
-      const ratio = 0.15;
-      const calculated = Math.round(iconSize * ratio);
-      this.cache.dynamicStrokeWidth = Math.max(StyleManager.MIN_STROKE, Math.min(calculated, StyleManager.MAX_STROKE));
-      this.cache.lastStrokeConfigHash = configKey;
-      return this.cache.dynamicStrokeWidth;
-    } catch (error) {
-      console.warn('TimeFlow Card: Error calculating dynamic stroke width:', error);
-      this.cache.dynamicStrokeWidth = StyleManager.MIN_STROKE; // Safe fallback
-      return this.cache.dynamicStrokeWidth;
-    }
-  }
-
-  /**
-   * Calculate proportional font sizes based on card dimensions
-   * @param {*} width - Card width
-   * @param {*} height - Card height
-   * @param {string} aspect_ratio - Aspect ratio string
-   * @returns {Object} - Object with font sizes and dimensions
-   */
-  calculateProportionalSizes(width, height, aspect_ratio) {
-    try {
-      const { cardWidth, cardHeight } = this._getCardDimensions(width, height, aspect_ratio);
-      const defaultArea = 300 * 150;
-      const scaleFactor = Math.sqrt((cardWidth * cardHeight) / defaultArea);
-
-      return {
-        titleSize: Math.max(1.2, Math.min(2.2, 1.6 * scaleFactor)),
-        subtitleSize: Math.max(0.9, Math.min(1.4, 1.1 * scaleFactor)),
-        cardWidth,
-        cardHeight
-      };
-    } catch (error) {
-      console.warn('TimeFlow Card: Error calculating proportional sizes:', error);
-      return { titleSize: 1.6, subtitleSize: 1.1, cardWidth: 300, cardHeight: 150 };
-    }
-  }
-
-  /**
-   * Helper to parse dimension strings (e.g., "200px", "100%") to numbers
-   * @param {*} dimension - Dimension value to parse
-   * @returns {number|null} - Parsed dimension in pixels
-   */
-  parseDimension(dimension) {
-    try {
-      if (typeof dimension === 'number') return dimension;
-      if (typeof dimension !== 'string') return null;
-      // Normalize string for case-insensitive matching
-      const dimStr = dimension.toLowerCase();
-      // Handle percentage values - assume 300px base for calculations
-      if (dimStr.includes('%')) {
-        const percent = parseFloat(dimStr.replace('%', ''));
-        return isNaN(percent) ? null : (percent / 100) * 300; // 300px as base
-      }
-      // Handle pixel values
-      if (dimStr.includes('px')) {
-        const pixels = parseFloat(dimStr.replace('px', ''));
-        return isNaN(pixels) ? null : pixels;
-      }
-      // Try to parse as number
-      const parsed = parseFloat(dimStr);
-      return isNaN(parsed) ? null : parsed;
-    } catch (error) {
-      console.warn('TimeFlow Card: Error parsing dimension:', dimension, error);
-      return null;
-    }
-  }
-
-  /**
-   * Generates card dimensions CSS based on configuration
-   * @param {*} width - Card width
-   * @param {*} height - Card height
-   * @param {string} aspect_ratio - Aspect ratio string
-   * @returns {Array} - Array of CSS style strings
-   */
-  generateCardDimensionStyles(width, height, aspect_ratio) {
-    const cardStyles = [];
-    
-    // Apply width if specified
-    if (width) {
-      cardStyles.push(`width: ${width}`);
-    }
-    
-    // Apply height if specified
-    if (height) {
-      cardStyles.push(`height: ${height}`);
-    } else if (aspect_ratio) {
-      // Use aspect-ratio if height not specified
-      cardStyles.push(`aspect-ratio: ${aspect_ratio}`);
-    } else {
-      // Fallback minimum height
-      cardStyles.push('min-height: 120px');
-    }
-
-    return cardStyles;
-  }
-
-  /**
-   * Clears style cache
-   */
-  clearCache() {
-    this.cache = {
-      dynamicIconSize: null,
-      dynamicStrokeWidth: null,
-      customStyles: null,
-      lastConfigHash: null
-    };
-  }
-}
-
-/**
- * CountdownService - Handles countdown calculations and time unit management
- * Provides clean separation of countdown logic from presentation
- */
-class CountdownService {
-  constructor(templateService, dateParser) {
-    this.templateService = templateService;
-    this.dateParser = dateParser;
-    this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
-    this.expired = false;
-  }
-
-  /**
-   * Updates the countdown based on current configuration
-   * @param {Object} config - Card configuration
-   * @param {Object} hass - Home Assistant object
-   * @returns {Promise<Object>} - Time remaining object
-   */
-  async updateCountdown(config, hass) {
-    try {
-      if (!config.target_date) return this.timeRemaining;
-      
-      const now = new Date().getTime();
-      const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
-      
-      if (!targetDateValue) {
-        console.warn('TimeFlow Card: Target date could not be resolved. Check your entity or date format.');
-        return this.timeRemaining;
-      }
-      
-      // Use the helper method for consistent date parsing
-      const targetDate = this.dateParser.parseISODate(targetDateValue);
-      
-      if (isNaN(targetDate)) {
-        console.warn('TimeFlow Card: Invalid target date format:', targetDateValue);
-        return this.timeRemaining;
-      }
-      
-      const difference = targetDate - now;
-
-      if (difference > 0) {
-        // Calculate time units based on what's enabled - cascade disabled units into enabled ones
-        const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
-        
-        let totalMilliseconds = difference;
-        let months = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-        
-        // Find the largest enabled unit and calculate everything from there
-        if (show_months) {
-          months = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24 * 30.44)); // Average month length
-          totalMilliseconds %= (1000 * 60 * 60 * 24 * 30.44);
-        }
-        
-        if (show_days) {
-          days = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
-          totalMilliseconds %= (1000 * 60 * 60 * 24);
-        } else if (show_months && !show_days) {
-          // If days are disabled but months are enabled, add days to months
-          const extraDays = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
-          months += Math.floor(extraDays / 30.44);
-          totalMilliseconds %= (1000 * 60 * 60 * 24);
-        }
-        
-        if (show_hours) {
-          hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
-          totalMilliseconds %= (1000 * 60 * 60);
-        } else if ((show_months || show_days) && !show_hours) {
-          // If hours are disabled but larger units are enabled, add hours to the largest enabled unit
-          const extraHours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
-          if (show_days) {
-            days += Math.floor(extraHours / 24);
-          } else if (show_months) {
-            months += Math.floor(extraHours / (24 * 30.44));
-          }
-          totalMilliseconds %= (1000 * 60 * 60);
-        }
-        
-        if (show_minutes) {
-          minutes = Math.floor(totalMilliseconds / (1000 * 60));
-          totalMilliseconds %= (1000 * 60);
-        } else if ((show_months || show_days || show_hours) && !show_minutes) {
-          // If minutes are disabled but larger units are enabled, add minutes to the largest enabled unit
-          const extraMinutes = Math.floor(totalMilliseconds / (1000 * 60));
-          if (show_hours) {
-            hours += Math.floor(extraMinutes / 60);
-          } else if (show_days) {
-            days += Math.floor(extraMinutes / (60 * 24));
-          } else if (show_months) {
-            months += Math.floor(extraMinutes / (60 * 24 * 30.44));
-          }
-          totalMilliseconds %= (1000 * 60);
-        }
-        
-        if (show_seconds) {
-          seconds = Math.floor(totalMilliseconds / 1000);
-        } else if ((show_months || show_days || show_hours || show_minutes) && !show_seconds) {
-          // If seconds are disabled but larger units are enabled, add seconds to the largest enabled unit
-          const extraSeconds = Math.floor(totalMilliseconds / 1000);
-          if (show_minutes) {
-            minutes += Math.floor(extraSeconds / 60);
-          } else if (show_hours) {
-            hours += Math.floor(extraSeconds / (60 * 60));
-          } else if (show_days) {
-            days += Math.floor(extraSeconds / (60 * 60 * 24));
-          } else if (show_months) {
-            months += Math.floor(extraSeconds / (60 * 60 * 24 * 30.44));
-          }
-        }
-
-        this.timeRemaining = { months, days, hours, minutes, seconds, total: difference };
-        this.expired = false;
-      } else {
-        this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
-        this.expired = true;
-      }
-      
-      return this.timeRemaining;
-    } catch (error) {
-      console.error('TimeFlow Card: Error in updateCountdown:', error);
-      return this.timeRemaining;
-    }
-  }
-
-  /**
-   * Calculates progress percentage
-   * @param {Object} config - Card configuration
-   * @param {Object} hass - Home Assistant object
-   * @returns {Promise<number>} - Progress percentage (0-100)
-   */
-  async calculateProgress(config, hass) {
-    const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
-    if (!targetDateValue) return 0;
-    
-    // Use the helper method for consistent date parsing
-    const targetDate = this.dateParser.parseISODate(targetDateValue);
-    const now = Date.now();
-    
-    let creationDate;
-    if (config.creation_date) {
-      const creationDateValue = await this.templateService.resolveValue(config.creation_date, hass);
-      
-      if (creationDateValue) {
-        // Use the helper method for consistent date parsing
-        creationDate = this.dateParser.parseISODate(creationDateValue);
-      } else {
-        creationDate = now;
-      }
-    } else {
-      creationDate = now; // Fallback to now if somehow no creation date
-    }
-    
-    const totalDuration = targetDate - creationDate;
-    if (totalDuration <= 0) return 100;
-    
-    const elapsed = now - creationDate;
-    const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-    
-    return this.expired ? 100 : progress;
-  }
-
-  /**
-   * Gets the main display value and label
-   * @param {Object} config - Card configuration
-   * @returns {Object} - Object with value and label properties
-   */
-  getMainDisplay(config) {
-    const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
-    const { months, days, hours, minutes, seconds } = this.timeRemaining;
-    
-    if (this.expired) {
-      return { value: '🎉', label: 'Completed!' };
-    }
-    
-    // Show the largest time unit that is enabled and has a value > 0
-    if (show_months && months > 0) {
-      return { value: months.toString(), label: months === 1 ? 'month left' : 'months left' };
-    } else if (show_days && days > 0) {
-      return { value: days.toString(), label: days === 1 ? 'day left' : 'days left' };
-    } else if (show_hours && hours > 0) {
-      return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
-    } else if (show_minutes && minutes > 0) {
-      return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
-    } else if (show_seconds && seconds >= 0) {
-      return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
-    }
-    
-    return { value: '0', label: 'seconds left' };
-  }
-
-  /**
-   * Gets the subtitle text showing time breakdown
-   * @param {Object} config - Card configuration
-   * @returns {string} - Formatted subtitle text
-   */
-  getSubtitle(config) {
-    if (this.expired) {
-      const { expired_text = 'Completed! 🎉' } = config;
-      return expired_text;
-    }
-    
-    const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
-    const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
-    
-    const parts = [];
-    
-    // Add each time unit based on configuration and if value > 0
-    if (show_months && months > 0) {
-      parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
-    }
-    
-    if (show_days && days > 0) {
-      parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
-    }
-    
-    if (show_hours && hours > 0) {
-      parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
-    }
-    
-    if (show_minutes && minutes > 0) {
-      parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
-    }
-    
-    if (show_seconds && seconds > 0) {
-      parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
-    }
-    
-    // If no parts are shown or all values are 0, show the largest enabled unit
-    if (parts.length === 0) {
-      if (show_months) {
-        parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
-      } else if (show_days) {
-        parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
-      } else if (show_hours) {
-        parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
-      } else if (show_minutes) {
-        parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
-      } else if (show_seconds) {
-        parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
-      }
-    }
-    
-    // Count enabled units for formatting decision
-    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
-    
-    // Format based on number of enabled units
-    if (enabledUnits <= 2 && parts.length > 0) {
-      // Natural format for 1-2 enabled units: "1 month and 10 days"
-      if (parts.length === 1) {
-        return `${parts[0].value} ${parts[0].unit}`;
-      } else if (parts.length === 2) {
-        return `${parts[0].value} ${parts[0].unit} and ${parts[1].value} ${parts[1].unit}`;
-      }
-    }
-    
-    // Compact format for 3+ enabled units: "1mo 10d 5h"
-    return parts.map(part => {
-      const shortUnit = part.unit.charAt(0); // m, d, h, m, s
-      return `${part.value}${shortUnit}`;
-    }).join(' ') || '0s';
-  }
-
-  /**
-   * Gets current time remaining
-   * @returns {Object} - Time remaining object
-   */
-  getTimeRemaining() {
-    return this.timeRemaining;
-  }
-
-  /**
-   * Gets expired status
-   * @returns {boolean} - Whether countdown has expired
-   */
-  isExpired() {
-    return this.expired;
-  }
-}
 
 /**
  * DateParser - Enhanced date parsing utility with three-tier fallback system
@@ -950,281 +414,6 @@ class DateParser {
       console.error('TimeFlow Card: All date parsing methods failed:', error);
       return Date.now();
     }
-  }
-}
-
-/**
- * TemplateService - Handles Home Assistant template evaluation and caching
- * Provides efficient template processing with intelligent caching
- */
-class TemplateService {
-  constructor() {
-    this.templateResults = new Map();
-    this.templateCacheLimit = 100;
-  }
-
-  /**
-   * Evaluates a Home Assistant template using the correct API
-   * @param {string} template - Template string to evaluate
-   * @param {Object} hass - Home Assistant object
-   * @returns {Promise<*>} - Evaluated template result
-   */
-  async evaluateTemplate(template, hass) {
-    if (!hass || !template) {
-      return template;
-    }
-
-    // Check cache first
-    const cacheKey = template;
-    if (this.templateResults.has(cacheKey)) {
-      const cached = this.templateResults.get(cacheKey);
-      // Check if cache is still valid (within 5 seconds)
-      if (Date.now() - cached.timestamp < 5000) {
-        return cached.result;
-      }
-    }
-
-    try {
-      // Validate template format before making API call
-      if (!this.isValidTemplate(template)) {
-        throw new Error('Invalid template format');
-      }
-
-      // Use callApi method like card-tools and button-card for HA templates
-      const result = await hass.callApi('POST', 'template', { 
-        template: template 
-      });
-      
-      // Check if the template evaluation succeeded but returned 'unknown'
-      if (result === 'unknown' || result === 'unavailable' || result === '' || result === null) {
-        // Try to extract fallback from the template itself
-        const fallback = this.extractFallbackFromTemplate(template);
-        if (fallback && fallback !== template) {
-          // Cache the fallback result
-          this.templateResults.set(cacheKey, {
-            result: fallback,
-            timestamp: Date.now()
-          });
-          
-          // Enforce cache size limits
-          this.enforceTemplateCacheLimit();
-          
-          return fallback;
-        }
-      }
-      
-      // Cache the result
-      this.templateResults.set(cacheKey, {
-        result: result,
-        timestamp: Date.now()
-      });
-      
-      // Enforce cache size limits
-      this.enforceTemplateCacheLimit();
-      
-      return result;
-    } catch (error) {
-      console.warn('TimeFlow Card: Template evaluation failed, using fallback:', error.message);
-      
-      // Immediately return fallback instead of trying callWS
-      const fallback = this.extractFallbackFromTemplate(template);
-      
-      // Cache the fallback to prevent repeated failed calls
-      this.templateResults.set(cacheKey, {
-        result: fallback,
-        timestamp: Date.now()
-      });
-      
-      this.enforceTemplateCacheLimit();
-      return fallback;
-    }
-  }
-
-  /**
-   * Extracts fallback value from template expressions with 'or' operator
-   * @param {string} template - Template string
-   * @returns {string} - Extracted fallback value
-   */
-  extractFallbackFromTemplate(template) {
-    if (!template || typeof template !== 'string') {
-      return template;
-    }
-
-    try {
-      // Remove the outer {{ }} to work with the inner expression
-      const innerTemplate = template.replace(/^\{\{\s*/, '').replace(/\s*\}\}$/, '').trim();
-      
-      // Look for patterns like "states('entity') or 'fallback'"
-      const simpleOrPattern = /^(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
-      const simpleOrMatch = innerTemplate.match(simpleOrPattern);
-      
-      if (simpleOrMatch && simpleOrMatch[2]) {
-        return simpleOrMatch[2];
-      }
-
-      // Look for chained or patterns like "states('entity1') or states('entity2') or 'fallback'"
-      const chainedOrPattern = /^(.+?)\s+or\s+(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
-      const chainedMatch = innerTemplate.match(chainedOrPattern);
-      
-      if (chainedMatch && chainedMatch[3]) {
-        return chainedMatch[3];
-      }
-
-      // Look for conditional patterns like "'value' if condition else 'fallback'"
-      const conditionalPattern = /^['"`]([^'"`]+)['"`]\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
-      const conditionalMatch = innerTemplate.match(conditionalPattern);
-      
-      if (conditionalMatch && conditionalMatch[3]) {
-        return conditionalMatch[3];
-      }
-
-      // Look for reverse conditional patterns like "condition if test else 'fallback'"
-      const reverseConditionalPattern = /^(.+?)\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
-      const reverseMatch = innerTemplate.match(reverseConditionalPattern);
-      
-      if (reverseMatch && reverseMatch[3]) {
-        return reverseMatch[3];
-      }
-
-      // If no fallback pattern found, return a helpful message
-      return 'Unavailable';
-    } catch (error) {
-      console.warn('TimeFlow Card: Error extracting fallback from template:', error);
-      return 'Template Error';
-    }
-  }
-
-  /**
-   * Detects if a value contains Home Assistant templates
-   * @param {*} value - Value to check
-   * @returns {boolean} - Whether the value is a template
-   */
-  isTemplate(value) {
-    return typeof value === 'string' && 
-           value.includes('{{') && 
-           value.includes('}}');
-  }
-
-  /**
-   * Validates template format to prevent bad API calls
-   * @param {string} template - Template string to validate
-   * @returns {boolean} - Whether template is valid
-   */
-  isValidTemplate(template) {
-    if (!template || typeof template !== 'string') return false;
-    
-    // Check for basic template format
-    if (!template.includes('{{') || !template.includes('}}')) return false;
-    
-    // Check for balanced braces
-    const openBraces = (template.match(/\{\{/g) || []).length;
-    const closeBraces = (template.match(/\}\}/g) || []).length;
-    if (openBraces !== closeBraces) return false;
-    
-    // Check for empty template
-    const content = template.replace(/\{\{\s*/, '').replace(/\s*\}\}/, '').trim();
-    if (!content) return false;
-    
-    return true;
-  }
-
-  /**
-   * Enhanced value resolver that handles entities, templates, and plain strings
-   * @param {*} value - Value to resolve
-   * @param {Object} hass - Home Assistant object
-   * @returns {Promise<*>} - Resolved value
-   */
-  async resolveValue(value, hass) {
-    if (!value) return null;
-    
-    // Handle templates first
-    if (this.isTemplate(value)) {
-      const result = await this.evaluateTemplate(value, hass);
-      return result;
-    }
-    
-    // Handle entity references
-    if (typeof value === 'string' && value.includes('.') && hass && hass.states[value]) {
-      const entity = hass.states[value];
-      // Check if entity state is unknown/unavailable
-      if (entity.state === 'unknown' || entity.state === 'unavailable') {
-        return null;
-      }
-      
-      // For entity timestamps, strip timezone info to treat as local time
-      // This provides more intuitive behavior for users
-      let entityValue = entity.state;
-      if (typeof entityValue === 'string' && entityValue.includes('T')) {
-        // Remove timezone information (+XX:XX, -XX:XX, Z) from entity values
-        // This ensures entity timestamps are always treated as local time
-        entityValue = entityValue.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
-      }
-      
-      return entityValue;
-    }
-    
-    // Return plain string/value
-    return value;
-  }
-
-  /**
-   * Clears template cache when entities change
-   */
-  clearTemplateCache() {
-    this.templateResults.clear();
-  }
-
-  /**
-   * Enforces template cache size limits to prevent memory growth
-   */
-  enforceTemplateCacheLimit() {
-    if (this.templateResults.size <= this.templateCacheLimit) {
-      return;
-    }
-
-    // Convert to array and sort by timestamp (oldest first)
-    const cacheEntries = Array.from(this.templateResults.entries())
-      .sort((a, b) => a[1].timestamp - b[1].timestamp);
-
-    // Remove oldest entries until we're under the limit
-    const entriesToRemove = cacheEntries.length - this.templateCacheLimit;
-    for (let i = 0; i < entriesToRemove; i++) {
-      this.templateResults.delete(cacheEntries[i][0]);
-    }
-  }
-
-  /**
-   * Checks if the current config contains any templates
-   * @param {Object} config - Configuration object
-   * @returns {boolean} - Whether config contains templates
-   */
-  hasTemplatesInConfig(config) {
-    if (!config) return false;
-    
-    // Check common template-enabled properties
-    const templateProperties = [
-      'target_date', 'creation_date', 'title', 'subtitle',
-      'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color'
-    ];
-    
-    return templateProperties.some(prop => 
-      config[prop] && this.isTemplate(config[prop])
-    );
-  }
-
-  /**
-   * Escapes HTML special characters to prevent XSS and ensure proper display
-   * @param {*} text - Text to escape
-   * @returns {string} - Escaped text
-   */
-  escapeHtml(text) {
-    if (text == null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 }
 
@@ -1520,6 +709,976 @@ class ConfigValidator {
     return typeof value === 'string' && 
            value.includes('{{') && 
            value.includes('}}');
+  }
+}
+
+/**
+ * TemplateService - Handles Home Assistant template evaluation and caching
+ * Provides efficient template processing with intelligent caching
+ */
+class TemplateService {
+  constructor() {
+    this.templateResults = new Map();
+    this.templateCacheLimit = 100;
+  }
+
+  /**
+   * Evaluates a Home Assistant template using the correct API
+   * @param {string} template - Template string to evaluate
+   * @param {Object} hass - Home Assistant object
+   * @returns {Promise<*>} - Evaluated template result
+   */
+  async evaluateTemplate(template, hass) {
+    if (!hass || !template) {
+      return template;
+    }
+
+    // Check cache first
+    const cacheKey = template;
+    if (this.templateResults.has(cacheKey)) {
+      const cached = this.templateResults.get(cacheKey);
+      // Check if cache is still valid (within 5 seconds)
+      if (Date.now() - cached.timestamp < 5000) {
+        return cached.result;
+      }
+    }
+
+    try {
+      // Validate template format before making API call
+      if (!this.isValidTemplate(template)) {
+        throw new Error('Invalid template format');
+      }
+
+      // Use callApi method like card-tools and button-card for HA templates
+      const result = await hass.callApi('POST', 'template', { 
+        template: template 
+      });
+      
+      // Check if the template evaluation succeeded but returned 'unknown'
+      if (result === 'unknown' || result === 'unavailable' || result === '' || result === null) {
+        // Try to extract fallback from the template itself
+        const fallback = this.extractFallbackFromTemplate(template);
+        if (fallback && fallback !== template) {
+          // Cache the fallback result
+          this.templateResults.set(cacheKey, {
+            result: fallback,
+            timestamp: Date.now()
+          });
+          
+          // Enforce cache size limits
+          this.enforceTemplateCacheLimit();
+          
+          return fallback;
+        }
+      }
+      
+      // Cache the result
+      this.templateResults.set(cacheKey, {
+        result: result,
+        timestamp: Date.now()
+      });
+      
+      // Enforce cache size limits
+      this.enforceTemplateCacheLimit();
+      
+      return result;
+    } catch (error) {
+      console.warn('TimeFlow Card: Template evaluation failed, using fallback:', error.message);
+      
+      // Immediately return fallback instead of trying callWS
+      const fallback = this.extractFallbackFromTemplate(template);
+      
+      // Cache the fallback to prevent repeated failed calls
+      this.templateResults.set(cacheKey, {
+        result: fallback,
+        timestamp: Date.now()
+      });
+      
+      this.enforceTemplateCacheLimit();
+      return fallback;
+    }
+  }
+
+  /**
+   * Extracts fallback value from template expressions with 'or' operator
+   * @param {string} template - Template string
+   * @returns {string} - Extracted fallback value
+   */
+  extractFallbackFromTemplate(template) {
+    if (!template || typeof template !== 'string') {
+      return template;
+    }
+
+    try {
+      // Remove the outer {{ }} to work with the inner expression
+      const innerTemplate = template.replace(/^\{\{\s*/, '').replace(/\s*\}\}$/, '').trim();
+      
+      // Look for patterns like "states('entity') or 'fallback'"
+      const simpleOrPattern = /^(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
+      const simpleOrMatch = innerTemplate.match(simpleOrPattern);
+      
+      if (simpleOrMatch && simpleOrMatch[2]) {
+        return simpleOrMatch[2];
+      }
+
+      // Look for chained or patterns like "states('entity1') or states('entity2') or 'fallback'"
+      const chainedOrPattern = /^(.+?)\s+or\s+(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
+      const chainedMatch = innerTemplate.match(chainedOrPattern);
+      
+      if (chainedMatch && chainedMatch[3]) {
+        return chainedMatch[3];
+      }
+
+      // Look for conditional patterns like "'value' if condition else 'fallback'"
+      const conditionalPattern = /^['"`]([^'"`]+)['"`]\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
+      const conditionalMatch = innerTemplate.match(conditionalPattern);
+      
+      if (conditionalMatch && conditionalMatch[3]) {
+        return conditionalMatch[3];
+      }
+
+      // Look for reverse conditional patterns like "condition if test else 'fallback'"
+      const reverseConditionalPattern = /^(.+?)\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
+      const reverseMatch = innerTemplate.match(reverseConditionalPattern);
+      
+      if (reverseMatch && reverseMatch[3]) {
+        return reverseMatch[3];
+      }
+
+      // If no fallback pattern found, return a helpful message
+      return 'Unavailable';
+    } catch (error) {
+      console.warn('TimeFlow Card: Error extracting fallback from template:', error);
+      return 'Template Error';
+    }
+  }
+
+  /**
+   * Detects if a value contains Home Assistant templates
+   * @param {*} value - Value to check
+   * @returns {boolean} - Whether the value is a template
+   */
+  isTemplate(value) {
+    return typeof value === 'string' && 
+           value.includes('{{') && 
+           value.includes('}}');
+  }
+
+  /**
+   * Validates template format to prevent bad API calls
+   * @param {string} template - Template string to validate
+   * @returns {boolean} - Whether template is valid
+   */
+  isValidTemplate(template) {
+    if (!template || typeof template !== 'string') return false;
+    
+    // Check for basic template format
+    if (!template.includes('{{') || !template.includes('}}')) return false;
+    
+    // Check for balanced braces
+    const openBraces = (template.match(/\{\{/g) || []).length;
+    const closeBraces = (template.match(/\}\}/g) || []).length;
+    if (openBraces !== closeBraces) return false;
+    
+    // Check for empty template
+    const content = template.replace(/\{\{\s*/, '').replace(/\s*\}\}/, '').trim();
+    if (!content) return false;
+    
+    return true;
+  }
+
+  /**
+   * Enhanced value resolver that handles entities, templates, and plain strings
+   * @param {*} value - Value to resolve
+   * @param {Object} hass - Home Assistant object
+   * @returns {Promise<*>} - Resolved value
+   */
+  async resolveValue(value, hass) {
+    if (!value) return null;
+    
+    // Handle templates first
+    if (this.isTemplate(value)) {
+      const result = await this.evaluateTemplate(value, hass);
+      return result;
+    }
+    
+    // Handle entity references
+    if (typeof value === 'string' && value.includes('.') && hass && hass.states[value]) {
+      const entity = hass.states[value];
+      // Check if entity state is unknown/unavailable
+      if (entity.state === 'unknown' || entity.state === 'unavailable') {
+        return null;
+      }
+      
+      // For entity timestamps, strip timezone info to treat as local time
+      // This provides more intuitive behavior for users
+      let entityValue = entity.state;
+      if (typeof entityValue === 'string' && entityValue.includes('T')) {
+        // Remove timezone information (+XX:XX, -XX:XX, Z) from entity values
+        // This ensures entity timestamps are always treated as local time
+        entityValue = entityValue.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
+      }
+      
+      return entityValue;
+    }
+    
+    // Return plain string/value
+    return value;
+  }
+
+  /**
+   * Clears template cache when entities change
+   */
+  clearTemplateCache() {
+    this.templateResults.clear();
+  }
+
+  /**
+   * Enforces template cache size limits to prevent memory growth
+   */
+  enforceTemplateCacheLimit() {
+    if (this.templateResults.size <= this.templateCacheLimit) {
+      return;
+    }
+
+    // Convert to array and sort by timestamp (oldest first)
+    const cacheEntries = Array.from(this.templateResults.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+    // Remove oldest entries until we're under the limit
+    const entriesToRemove = cacheEntries.length - this.templateCacheLimit;
+    for (let i = 0; i < entriesToRemove; i++) {
+      this.templateResults.delete(cacheEntries[i][0]);
+    }
+  }
+
+  /**
+   * Checks if the current config contains any templates
+   * @param {Object} config - Configuration object
+   * @returns {boolean} - Whether config contains templates
+   */
+  hasTemplatesInConfig(config) {
+    if (!config) return false;
+    
+    // Check common template-enabled properties
+    const templateProperties = [
+      'target_date', 'creation_date', 'title', 'subtitle',
+      'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color'
+    ];
+    
+    return templateProperties.some(prop => 
+      config[prop] && this.isTemplate(config[prop])
+    );
+  }
+
+  /**
+   * Escapes HTML special characters to prevent XSS and ensure proper display
+   * @param {*} text - Text to escape
+   * @returns {string} - Escaped text
+   */
+  escapeHtml(text) {
+    if (text == null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+}
+
+/**
+ * CountdownService - Handles countdown calculations and time unit management
+ * Provides clean separation of countdown logic from presentation
+ */
+class CountdownService {
+  constructor(templateService, dateParser) {
+    this.templateService = templateService;
+    this.dateParser = dateParser;
+    this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+    this.expired = false;
+  }
+
+  /**
+   * Updates the countdown based on current configuration
+   * @param {Object} config - Card configuration
+   * @param {Object} hass - Home Assistant object
+   * @returns {Promise<Object>} - Time remaining object
+   */
+  async updateCountdown(config, hass) {
+    try {
+      if (!config.target_date) return this.timeRemaining;
+      
+      const now = new Date().getTime();
+      const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
+      
+      if (!targetDateValue) {
+        console.warn('TimeFlow Card: Target date could not be resolved. Check your entity or date format.');
+        return this.timeRemaining;
+      }
+      
+      // Use the helper method for consistent date parsing
+      const targetDate = this.dateParser.parseISODate(targetDateValue);
+      
+      if (isNaN(targetDate)) {
+        console.warn('TimeFlow Card: Invalid target date format:', targetDateValue);
+        return this.timeRemaining;
+      }
+      
+      const difference = targetDate - now;
+
+      if (difference > 0) {
+        // Calculate time units based on what's enabled - cascade disabled units into enabled ones
+        const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
+        
+        let totalMilliseconds = difference;
+        let months = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+        
+        // Find the largest enabled unit and calculate everything from there
+        if (show_months) {
+          months = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24 * 30.44)); // Average month length
+          totalMilliseconds %= (1000 * 60 * 60 * 24 * 30.44);
+        }
+        
+        if (show_days) {
+          days = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
+          totalMilliseconds %= (1000 * 60 * 60 * 24);
+        } else if (show_months && !show_days) {
+          // If days are disabled but months are enabled, add days to months
+          const extraDays = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
+          months += Math.floor(extraDays / 30.44);
+          totalMilliseconds %= (1000 * 60 * 60 * 24);
+        }
+        
+        if (show_hours) {
+          hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+          totalMilliseconds %= (1000 * 60 * 60);
+        } else if ((show_months || show_days) && !show_hours) {
+          // If hours are disabled but larger units are enabled, add hours to the largest enabled unit
+          const extraHours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+          if (show_days) {
+            days += Math.floor(extraHours / 24);
+          } else if (show_months) {
+            months += Math.floor(extraHours / (24 * 30.44));
+          }
+          totalMilliseconds %= (1000 * 60 * 60);
+        }
+        
+        if (show_minutes) {
+          minutes = Math.floor(totalMilliseconds / (1000 * 60));
+          totalMilliseconds %= (1000 * 60);
+        } else if ((show_months || show_days || show_hours) && !show_minutes) {
+          // If minutes are disabled but larger units are enabled, add minutes to the largest enabled unit
+          const extraMinutes = Math.floor(totalMilliseconds / (1000 * 60));
+          if (show_hours) {
+            hours += Math.floor(extraMinutes / 60);
+          } else if (show_days) {
+            days += Math.floor(extraMinutes / (60 * 24));
+          } else if (show_months) {
+            months += Math.floor(extraMinutes / (60 * 24 * 30.44));
+          }
+          totalMilliseconds %= (1000 * 60);
+        }
+        
+        if (show_seconds) {
+          seconds = Math.floor(totalMilliseconds / 1000);
+        } else if ((show_months || show_days || show_hours || show_minutes) && !show_seconds) {
+          // If seconds are disabled but larger units are enabled, add seconds to the largest enabled unit
+          const extraSeconds = Math.floor(totalMilliseconds / 1000);
+          if (show_minutes) {
+            minutes += Math.floor(extraSeconds / 60);
+          } else if (show_hours) {
+            hours += Math.floor(extraSeconds / (60 * 60));
+          } else if (show_days) {
+            days += Math.floor(extraSeconds / (60 * 60 * 24));
+          } else if (show_months) {
+            months += Math.floor(extraSeconds / (60 * 60 * 24 * 30.44));
+          }
+        }
+
+        this.timeRemaining = { months, days, hours, minutes, seconds, total: difference };
+        this.expired = false;
+      } else {
+        this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+        this.expired = true;
+      }
+      
+      return this.timeRemaining;
+    } catch (error) {
+      console.error('TimeFlow Card: Error in updateCountdown:', error);
+      return this.timeRemaining;
+    }
+  }
+
+  /**
+   * Calculates progress percentage
+   * @param {Object} config - Card configuration
+   * @param {Object} hass - Home Assistant object
+   * @returns {Promise<number>} - Progress percentage (0-100)
+   */
+  async calculateProgress(config, hass) {
+    const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
+    if (!targetDateValue) return 0;
+    
+    // Use the helper method for consistent date parsing
+    const targetDate = this.dateParser.parseISODate(targetDateValue);
+    const now = Date.now();
+    
+    let creationDate;
+    if (config.creation_date) {
+      const creationDateValue = await this.templateService.resolveValue(config.creation_date, hass);
+      
+      if (creationDateValue) {
+        // Use the helper method for consistent date parsing
+        creationDate = this.dateParser.parseISODate(creationDateValue);
+      } else {
+        creationDate = now;
+      }
+    } else {
+      creationDate = now; // Fallback to now if somehow no creation date
+    }
+    
+    const totalDuration = targetDate - creationDate;
+    if (totalDuration <= 0) return 100;
+    
+    const elapsed = now - creationDate;
+    const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    
+    return this.expired ? 100 : progress;
+  }
+
+  /**
+   * Gets the main display value and label
+   * @param {Object} config - Card configuration
+   * @returns {Object} - Object with value and label properties
+   */
+  getMainDisplay(config) {
+    const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
+    const { months, days, hours, minutes, seconds } = this.timeRemaining;
+    
+    if (this.expired) {
+      return { value: '🎉', label: 'Completed!' };
+    }
+    
+    // Show the largest time unit that is enabled and has a value > 0
+    if (show_months && months > 0) {
+      return { value: months.toString(), label: months === 1 ? 'month left' : 'months left' };
+    } else if (show_days && days > 0) {
+      return { value: days.toString(), label: days === 1 ? 'day left' : 'days left' };
+    } else if (show_hours && hours > 0) {
+      return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
+    } else if (show_minutes && minutes > 0) {
+      return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
+    } else if (show_seconds && seconds >= 0) {
+      return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
+    }
+    
+    return { value: '0', label: 'seconds left' };
+  }
+
+  /**
+   * Gets the subtitle text showing time breakdown
+   * @param {Object} config - Card configuration
+   * @returns {string} - Formatted subtitle text
+   */
+  getSubtitle(config) {
+    if (this.expired) {
+      const { expired_text = 'Completed! 🎉' } = config;
+      return expired_text;
+    }
+    
+    const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+    const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
+    
+    const parts = [];
+    
+    // Add each time unit based on configuration and if value > 0
+    if (show_months && months > 0) {
+      parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
+    }
+    
+    if (show_days && days > 0) {
+      parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
+    }
+    
+    if (show_hours && hours > 0) {
+      parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
+    }
+    
+    if (show_minutes && minutes > 0) {
+      parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
+    }
+    
+    if (show_seconds && seconds > 0) {
+      parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
+    }
+    
+    // If no parts are shown or all values are 0, show the largest enabled unit
+    if (parts.length === 0) {
+      if (show_months) {
+        parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
+      } else if (show_days) {
+        parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
+      } else if (show_hours) {
+        parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
+      } else if (show_minutes) {
+        parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
+      } else if (show_seconds) {
+        parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
+      }
+    }
+    
+    // Count enabled units for formatting decision
+    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
+    
+    // Format based on number of enabled units
+    if (enabledUnits <= 2 && parts.length > 0) {
+      // Natural format for 1-2 enabled units: "1 month and 10 days"
+      if (parts.length === 1) {
+        return `${parts[0].value} ${parts[0].unit}`;
+      } else if (parts.length === 2) {
+        return `${parts[0].value} ${parts[0].unit} and ${parts[1].value} ${parts[1].unit}`;
+      }
+    }
+    
+    // Compact format for 3+ enabled units: "1mo 10d 5h"
+    return parts.map(part => {
+      const shortUnit = part.unit.charAt(0); // m, d, h, m, s
+      return `${part.value}${shortUnit}`;
+    }).join(' ') || '0s';
+  }
+
+  /**
+   * Gets current time remaining
+   * @returns {Object} - Time remaining object
+   */
+  getTimeRemaining() {
+    return this.timeRemaining;
+  }
+
+  /**
+   * Gets expired status
+   * @returns {boolean} - Whether countdown has expired
+   */
+  isExpired() {
+    return this.expired;
+  }
+}
+
+/**
+ * StyleManager - Handles styling calculations and CSS processing
+ * Provides dynamic sizing, proportional scaling, and style management
+ */
+class StyleManager {
+  // Constants for icon and stroke size limits
+  static MIN_ICON_SIZE = 40;
+  static MAX_ICON_SIZE = 120;
+  static MIN_STROKE = 4;
+  static MAX_STROKE = 20;
+
+  constructor() {
+    this.cache = {
+      dynamicIconSize: null,
+      dynamicStrokeWidth: null,
+      customStyles: null,
+      lastConfigHash: null
+    };
+  }
+
+  /**
+   * Processes styles array into CSS string
+   * @param {Array} styles - Array of style objects or strings
+   * @returns {string} - CSS string
+   */
+  processStyles(styles) {
+    if (!styles || !Array.isArray(styles)) return '';
+    
+    return styles.map(style => {
+      try {
+        if (typeof style === 'string') {
+          return style;
+        } else if (typeof style === 'object' && style !== null) {
+          return Object.entries(style)
+            .map(([prop, value]) => `${prop}: ${value}`)
+            .join('; ');
+        }
+        return '';
+      } catch (e) {
+        console.warn('TimeFlow Card: Error processing style:', style, e);
+        return '';
+      }
+    }).join('; ');
+  }
+
+  /**
+   * Builds styles object from configuration
+   * @param {Object} config - Card configuration
+   * @returns {Object} - Processed styles object
+   */
+  buildStylesObject(config) {
+    // Use cached value if available and config hasn't changed
+    const configHash = JSON.stringify(config.styles || {});
+    if (this.cache.customStyles !== null && this.cache.lastConfigHash === configHash) {
+      return this.cache.customStyles;
+    }
+
+    const { styles = {} } = config;
+    
+    try {
+      const processedStyles = {
+        card: this.processStyles(styles.card),
+        title: this.processStyles(styles.title),
+        subtitle: this.processStyles(styles.subtitle),
+        progress_circle: this.processStyles(styles.progress_circle)
+      };
+
+      this.cache.customStyles = processedStyles;
+      this.cache.lastConfigHash = configHash;
+      return processedStyles;
+    } catch (e) {
+      console.warn('TimeFlow Card: Error building styles object:', e);
+      this.cache.customStyles = {
+        card: '',
+        title: '',
+        subtitle: '',
+        progress_circle: ''
+      };
+      return this.cache.customStyles;
+    }
+  }
+
+  /**
+   * Internal helper to get card dimensions based on width, height, and aspect ratio
+   */
+  _getCardDimensions(width, height, aspect_ratio) {
+    const defaultWidth = 300;
+    const defaultHeight = 150;
+    let cardWidth = defaultWidth;
+    let cardHeight = defaultHeight;
+    if (width && height) {
+      const parsedW = this.parseDimension(width);
+      const parsedH = this.parseDimension(height);
+      cardWidth = parsedW || defaultWidth;
+      cardHeight = parsedH || defaultHeight;
+    } else if (width && aspect_ratio) {
+      const parsedW = this.parseDimension(width);
+      cardWidth = parsedW || defaultWidth;
+      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
+        cardHeight = cardWidth * (ratioH / ratioW);
+      }
+    } else if (height && aspect_ratio) {
+      const parsedH = this.parseDimension(height);
+      cardHeight = parsedH || defaultHeight;
+      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioH > 0) {
+        cardWidth = cardHeight * (ratioW / ratioH);
+      }
+    } else if (aspect_ratio) {
+      const [ratioW, ratioH] = aspect_ratio.split('/').map(parseFloat);
+      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioW > 0) {
+        cardHeight = defaultWidth * (ratioH / ratioW);
+      }
+      cardWidth = defaultWidth;
+    }
+    if (!cardWidth || isNaN(cardWidth) || cardWidth <= 0) cardWidth = defaultWidth;
+    if (!cardHeight || isNaN(cardHeight) || cardHeight <= 0) cardHeight = defaultHeight;
+    return { cardWidth, cardHeight };
+  }
+
+  /**
+   * Calculate dynamic icon size based on card dimensions - now truly proportional
+   * @param {*} width - Card width
+   * @param {*} height - Card height
+   * @param {string} aspect_ratio - Aspect ratio string
+   * @param {*} icon_size - Explicit icon size
+   * @returns {number} - Calculated icon size in pixels
+   */
+  calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
+    // Use cached value if available and config hasn't changed
+    const configKey = JSON.stringify({ width, height, aspect_ratio, icon_size });
+    if (this.cache.dynamicIconSize !== null && this.cache.lastIconConfigHash === configKey) {
+      return this.cache.dynamicIconSize;
+    }
+
+    try {
+      const { cardWidth, cardHeight } = this._getCardDimensions(width, height, aspect_ratio);
+      const minDimension = Math.min(cardWidth, cardHeight);
+      const proportionalSize = minDimension * 0.4;
+      let size = proportionalSize;
+
+      // Respect explicit icon_size if provided, otherwise use proportional
+      if (icon_size && icon_size !== '100px') {
+        const baseSize = typeof icon_size === 'string' ?
+          parseInt(icon_size.replace('px', '')) :
+          (typeof icon_size === 'number' ? icon_size : proportionalSize);
+        size = (!isNaN(baseSize))
+          ? Math.max(StyleManager.MIN_ICON_SIZE, Math.min(baseSize, minDimension * 0.6))
+          : StyleManager.MIN_ICON_SIZE;
+      }
+
+      this.cache.dynamicIconSize = Math.max(StyleManager.MIN_ICON_SIZE, Math.min(size, StyleManager.MAX_ICON_SIZE));
+      this.cache.lastIconConfigHash = configKey;
+      return this.cache.dynamicIconSize;
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating dynamic icon size:', error);
+      this.cache.dynamicIconSize = StyleManager.MIN_ICON_SIZE; // Safe fallback
+      return this.cache.dynamicIconSize;
+    }
+  }
+
+  /**
+   * Calculate dynamic stroke width based on icon size
+   * @param {number} iconSize - Icon size in pixels
+   * @param {*} stroke_width - Explicit stroke width
+   * @returns {number} - Calculated stroke width
+   */
+  calculateDynamicStrokeWidth(iconSize, stroke_width) {
+    // Use cached value if available and config hasn't changed
+    const configKey = JSON.stringify({ iconSize, stroke_width });
+    if (this.cache.dynamicStrokeWidth !== null && this.cache.lastStrokeConfigHash === configKey) {
+      return this.cache.dynamicStrokeWidth;
+    }
+
+    try {
+      const ratio = 0.15;
+      const calculated = Math.round(iconSize * ratio);
+      this.cache.dynamicStrokeWidth = Math.max(StyleManager.MIN_STROKE, Math.min(calculated, StyleManager.MAX_STROKE));
+      this.cache.lastStrokeConfigHash = configKey;
+      return this.cache.dynamicStrokeWidth;
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating dynamic stroke width:', error);
+      this.cache.dynamicStrokeWidth = StyleManager.MIN_STROKE; // Safe fallback
+      return this.cache.dynamicStrokeWidth;
+    }
+  }
+
+  /**
+   * Calculate proportional font sizes based on card dimensions
+   * @param {*} width - Card width
+   * @param {*} height - Card height
+   * @param {string} aspect_ratio - Aspect ratio string
+   * @returns {Object} - Object with font sizes and dimensions
+   */
+  calculateProportionalSizes(width, height, aspect_ratio) {
+    try {
+      const { cardWidth, cardHeight } = this._getCardDimensions(width, height, aspect_ratio);
+      const defaultArea = 300 * 150;
+      const scaleFactor = Math.sqrt((cardWidth * cardHeight) / defaultArea);
+
+      return {
+        titleSize: Math.max(1.2, Math.min(2.2, 1.6 * scaleFactor)),
+        subtitleSize: Math.max(0.9, Math.min(1.4, 1.1 * scaleFactor)),
+        cardWidth,
+        cardHeight
+      };
+    } catch (error) {
+      console.warn('TimeFlow Card: Error calculating proportional sizes:', error);
+      return { titleSize: 1.6, subtitleSize: 1.1, cardWidth: 300, cardHeight: 150 };
+    }
+  }
+
+  /**
+   * Helper to parse dimension strings (e.g., "200px", "100%") to numbers
+   * @param {*} dimension - Dimension value to parse
+   * @returns {number|null} - Parsed dimension in pixels
+   */
+  parseDimension(dimension) {
+    try {
+      if (typeof dimension === 'number') return dimension;
+      if (typeof dimension !== 'string') return null;
+      // Normalize string for case-insensitive matching
+      const dimStr = dimension.toLowerCase();
+      // Handle percentage values - assume 300px base for calculations
+      if (dimStr.includes('%')) {
+        const percent = parseFloat(dimStr.replace('%', ''));
+        return isNaN(percent) ? null : (percent / 100) * 300; // 300px as base
+      }
+      // Handle pixel values
+      if (dimStr.includes('px')) {
+        const pixels = parseFloat(dimStr.replace('px', ''));
+        return isNaN(pixels) ? null : pixels;
+      }
+      // Try to parse as number
+      const parsed = parseFloat(dimStr);
+      return isNaN(parsed) ? null : parsed;
+    } catch (error) {
+      console.warn('TimeFlow Card: Error parsing dimension:', dimension, error);
+      return null;
+    }
+  }
+
+  /**
+   * Generates card dimensions CSS based on configuration
+   * @param {*} width - Card width
+   * @param {*} height - Card height
+   * @param {string} aspect_ratio - Aspect ratio string
+   * @returns {Array} - Array of CSS style strings
+   */
+  generateCardDimensionStyles(width, height, aspect_ratio) {
+    const cardStyles = [];
+    
+    // Apply width if specified
+    if (width) {
+      cardStyles.push(`width: ${width}`);
+    }
+    
+    // Apply height if specified
+    if (height) {
+      cardStyles.push(`height: ${height}`);
+    } else if (aspect_ratio) {
+      // Use aspect-ratio if height not specified
+      cardStyles.push(`aspect-ratio: ${aspect_ratio}`);
+    } else {
+      // Fallback minimum height
+      cardStyles.push('min-height: 120px');
+    }
+
+    return cardStyles;
+  }
+
+  /**
+   * Clears style cache
+   */
+  clearCache() {
+    this.cache = {
+      dynamicIconSize: null,
+      dynamicStrokeWidth: null,
+      customStyles: null,
+      lastConfigHash: null
+    };
+  }
+}
+
+/**
+ * ProgressCircleBeta - Modular progress circle component
+ * Provides visual progress indication
+ */
+class ProgressCircleBeta extends LitElement {
+  static styles = css`
+    :host {
+      display: inline-block;
+      --progress-color: var(--progress-color, #4CAF50);
+    }
+    
+    svg {
+      transform: rotate(-90deg);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: visible;
+    }
+    
+    svg:focus {
+      outline: 2px solid var(--primary-color, #03A9F4);
+      outline-offset: 2px;
+    }
+    
+    .progress-background {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-circle {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+    }
+    
+    .progress-text {
+      fill: currentColor;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      opacity: 0.8;
+    }
+    
+    /* Animation for progress changes */
+    @keyframes progress-pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
+    }
+    
+    svg.updating .progress-circle {
+      animation: progress-pulse 0.5s ease-in-out;
+    }
+  `;
+
+  @property({ type: Number }) progress = 0;
+  @property({ type: String }) color = '#4CAF50';
+  @property({ type: Number }) size = 100;
+  @property({ type: Number, attribute: 'stroke-width' }) strokeWidth = 15;
+
+  render() {
+    const radius = (this.size - this.strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (this.progress / 100) * circumference;
+
+    // Validate calculations to prevent SVG errors
+    if (isNaN(this.size) || isNaN(radius) || isNaN(circumference) || isNaN(strokeDashoffset)) {
+      console.warn('TimeFlow Card: Invalid SVG calculations, using fallback values');
+      return html`<div>Invalid circle dimensions</div>`;
+    }
+
+    return html`
+      <svg 
+        class="progress-circle-beta" 
+        width="${this.size}" 
+        height="${this.size}"
+        style="--progress-color: ${this.color};"
+      >
+        <circle
+          class="progress-background"
+          cx="${this.size / 2}"
+          cy="${this.size / 2}"
+          r="${radius}"
+          stroke-width="${this.strokeWidth}"
+        />
+        <circle
+          class="progress-circle"
+          cx="${this.size / 2}"
+          cy="${this.size / 2}"
+          r="${radius}"
+          stroke="${this.color}"
+          stroke-width="${this.strokeWidth}"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${strokeDashoffset}"
+        />
+        <text
+          class="progress-text"
+          x="${this.size / 2}"
+          y="${this.size / 2}"
+          fill="currentColor"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+          font-size="${Math.max(12, this.size * 0.15)}px"
+          font-weight="600"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(90 ${this.size / 2} ${this.size / 2})"
+          opacity="0.8"
+        >
+          ${Math.round(this.progress)}%
+        </text>
+      </svg>
+    `;
+  }
+
+  /**
+   * Static method to check if component is loaded
+   * @returns {boolean} - True if component is defined
+   */
+  static isLoaded() {
+    return customElements.get('progress-circle-beta') !== undefined;
+  }
+
+  /**
+   * Get component version for debugging
+   * @returns {string} - Component version
+   */
+  static get version() {
+    return '2.0.0';
   }
 }
 
@@ -2327,6 +2486,138 @@ class TimeFlowCardBeta extends LitElement {
     return 3; // Default
   }
 
+  static get version() {
+    return '2.0.0';
+  }
+}
+
+/**
+ * ProgressCircleBeta - Modular progress circle component
+ * Provides visual progress indication
+ */
+class ProgressCircleBeta extends LitElement {
+  static styles = css`
+    :host {
+      display: inline-block;
+      --progress-color: var(--progress-color, #4CAF50);
+    }
+    
+    svg {
+      transform: rotate(-90deg);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: visible;
+    }
+    
+    svg:focus {
+      outline: 2px solid var(--primary-color, #03A9F4);
+      outline-offset: 2px;
+    }
+    
+    .progress-background {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-circle {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+    }
+    
+    .progress-text {
+      fill: currentColor;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      opacity: 0.8;
+    }
+    
+    /* Animation for progress changes */
+    @keyframes progress-pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
+    }
+    
+    svg.updating .progress-circle {
+      animation: progress-pulse 0.5s ease-in-out;
+    }
+  `;
+
+  @property({ type: Number }) progress = 0;
+  @property({ type: String }) color = '#4CAF50';
+  @property({ type: Number }) size = 100;
+  @property({ type: Number, attribute: 'stroke-width' }) strokeWidth = 15;
+
+  render() {
+    const radius = (this.size - this.strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (this.progress / 100) * circumference;
+
+    // Validate calculations to prevent SVG errors
+    if (isNaN(this.size) || isNaN(radius) || isNaN(circumference) || isNaN(strokeDashoffset)) {
+      console.warn('TimeFlow Card: Invalid SVG calculations, using fallback values');
+      return html`<div>Invalid circle dimensions</div>`;
+    }
+
+    return html`
+      <svg 
+        class="progress-circle-beta" 
+        width="${this.size}" 
+        height="${this.size}"
+        style="--progress-color: ${this.color};"
+      >
+        <circle
+          class="progress-background"
+          cx="${this.size / 2}"
+          cy="${this.size / 2}"
+          r="${radius}"
+          stroke-width="${this.strokeWidth}"
+        />
+        <circle
+          class="progress-circle"
+          cx="${this.size / 2}"
+          cy="${this.size / 2}"
+          r="${radius}"
+          stroke="${this.color}"
+          stroke-width="${this.strokeWidth}"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${strokeDashoffset}"
+        />
+        <text
+          class="progress-text"
+          x="${this.size / 2}"
+          y="${this.size / 2}"
+          fill="currentColor"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+          font-size="${Math.max(12, this.size * 0.15)}px"
+          font-weight="600"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(90 ${this.size / 2} ${this.size / 2})"
+          opacity="0.8"
+        >
+          ${Math.round(this.progress)}%
+        </text>
+      </svg>
+    `;
+  }
+
+  /**
+   * Static method to check if component is loaded
+   * @returns {boolean} - True if component is defined
+   */
+  static isLoaded() {
+    return customElements.get('progress-circle-beta') !== undefined;
+  }
+
+  /**
+   * Get component version for debugging
+   * @returns {string} - Component version
+   */
   static get version() {
     return '2.0.0';
   }

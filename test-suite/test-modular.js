@@ -212,7 +212,8 @@ class ModularBuildTester {
         hasVersion ? 'Version information found' : 'Missing version information');
 
       // Test bundle header
-      const hasHeader = content.includes('TimeFlow Card - Modular Architecture Bundle');
+      const hasHeader = content.includes('TimeFlow Card - Self-Contained Bundle') || 
+                        content.includes('TimeFlow Card - Modular Architecture Bundle');
       this.addResult('Bundle Content: Build header', hasHeader,
         hasHeader ? 'Build header found' : 'Missing build header');
 

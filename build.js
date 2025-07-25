@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Build script for TimeFlow Card - Modular Architecture with Lit 3.x support
- * Bundles all modules into a single file for distribution
+ * Build script for TimeFlow Card - Self-Contained Bundle with Lit 3.x
+ * Bundles all modules including Lit into a single self-contained file
  */
 
 const fs = require('fs');
@@ -12,53 +12,218 @@ const srcDir = path.join(__dirname, 'src');
 const distFile = path.join(__dirname, 'timeflow-card-modular.js');
 
 /**
- * Resolves ES6 imports and bundles files with Lit support
+ * Minimal Lit 3.x implementation for bundling
+ * Based on essential Lit functionality needed for TimeFlow Card
+ */
+function getLitBundle() {
+  return `
+/**
+ * Minimal Lit 3.x Bundle - Essential functionality for TimeFlow Card
+ * Based on lit-element 3.x but simplified for Home Assistant custom cards
+ */
+
+// Lit Template Result and HTML template implementation
+class TemplateResult {
+  constructor(strings, values, type, processor) {
+    this.strings = strings;
+    this.values = values;
+    this.type = type;
+    this.processor = processor;
+  }
+}
+
+// Simple template processor
+const defaultTemplateProcessor = {
+  handleAttributeExpressions: (element, name, strings, values) => values,
+  handleTextExpression: (options) => options
+};
+
+// HTML template tag function
+const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
+
+// CSS template tag function  
+const css = (strings, ...values) => {
+  const cssText = strings.reduce((acc, str, i) => {
+    return acc + str + (values[i] || '');
+  }, '');
+  return { cssText, toString: () => cssText };
+};
+
+// Nothing placeholder
+const nothing = '';
+
+// Simple reactive property system
+const updateProperty = (instance, key, oldValue, newValue) => {
+  if (oldValue !== newValue) {
+    instance.requestUpdate(key, oldValue);
+  }
+};
+
+// Property decorator
+const property = (options = {}) => {
+  return (target, propertyKey) => {
+    const privateKey = \`_\${propertyKey}\`;
+    
+    if (delete target[propertyKey]) {
+      Object.defineProperty(target, propertyKey, {
+        get() { return this[privateKey]; },
+        set(value) {
+          const oldValue = this[privateKey];
+          this[privateKey] = value;
+          updateProperty(this, propertyKey, oldValue, value);
+        },
+        enumerable: true,
+        configurable: true
+      });
+    }
+  };
+};
+
+// State decorator (same as property but internal)
+const state = () => property();
+
+// Base LitElement class
+class LitElement extends HTMLElement {
+  constructor() {
+    super();
+    this._updateScheduled = false;
+    this._changedProperties = new Map();
+    this.attachShadow({ mode: 'open' });
+  }
+
+  static get styles() {
+    return \`\`;
+  }
+
+  connectedCallback() {
+    this.requestUpdate();
+  }
+
+  requestUpdate(name, oldValue) {
+    if (name) {
+      this._changedProperties.set(name, oldValue);
+    }
+    
+    if (!this._updateScheduled) {
+      this._updateScheduled = true;
+      Promise.resolve().then(() => {
+        this._updateScheduled = false;
+        this.performUpdate();
+      });
+    }
+  }
+
+  performUpdate() {
+    const styles = this.constructor.styles;
+    if (styles && typeof styles === 'object' && styles.cssText) {
+      if (!this.shadowRoot.querySelector('style')) {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = styles.cssText;
+        this.shadowRoot.appendChild(styleEl);
+      }
+    }
+
+    const result = this.render();
+    if (result) {
+      this.shadowRoot.innerHTML = this.shadowRoot.querySelector('style') ? 
+        this.shadowRoot.querySelector('style').outerHTML + this._renderTemplate(result) :
+        this._renderTemplate(result);
+    }
+    
+    this.updated(this._changedProperties);
+    this._changedProperties.clear();
+  }
+
+  _renderTemplate(result) {
+    if (result instanceof TemplateResult) {
+      return result.strings.reduce((acc, str, i) => {
+        const value = result.values[i];
+        if (value === nothing || value === undefined || value === null) {
+          return acc + str;
+        }
+        return acc + str + this._renderValue(value);
+      }, '');
+    }
+    return String(result || '');
+  }
+
+  _renderValue(value) {
+    if (value instanceof TemplateResult) {
+      return this._renderTemplate(value);
+    }
+    if (typeof value === 'function') {
+      return this._renderValue(value());
+    }
+    if (value === nothing || value === undefined || value === null) {
+      return '';
+    }
+    return String(value);
+  }
+
+  render() {
+    return html\`\`;
+  }
+
+  updated(changedProperties) {
+    // Override in subclasses
+  }
+
+  firstUpdated(changedProperties) {
+    // Override in subclasses
+  }
+}
+
+// Export the Lit functionality
+window.LitElement = LitElement;
+window.html = html;
+window.css = css;
+window.property = property;
+window.state = state;
+window.nothing = nothing;
+
+`;
+}
+
+/**
+ * Resolves ES6 imports and bundles files with embedded Lit
  */
 function bundleFiles() {
   const processedFiles = new Set();
-  const externalImports = new Set();
+  const processedContent = new Map();
   
   function processFile(filePath) {
     if (processedFiles.has(filePath)) {
-      return '';
+      return processedContent.get(filePath) || '';
     }
     
     processedFiles.add(filePath);
     
     if (!fs.existsSync(filePath)) {
       console.warn(`Warning: File not found: ${filePath}`);
+      processedContent.set(filePath, '');
       return '';
     }
     
     let content = fs.readFileSync(filePath, 'utf8');
+    const originalContent = content;
     
-    // Extract and process imports - improved regex to handle various import patterns
+    // First, process all imports recursively to get dependencies
     const importRegex = /import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"]([^'"]+)['"];?\s*/g;
     let match;
+    let dependencyContent = '';
     
-    while ((match = importRegex.exec(content)) !== null) {
-      const importedItems = match[1];
+    while ((match = importRegex.exec(originalContent)) !== null) {
       const importPath = match[2];
       
-      // Check if this is an external import (like 'lit', 'lit/decorators.js')
+      // Skip external imports like 'lit'
       if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
-        // This is an external import - preserve it at the top level
-        externalImports.add(match[0].trim());
-        content = content.replace(match[0], '');
         continue;
       }
       
       // Handle relative imports (internal modules)
       let resolvedPath;
       if (importPath.startsWith('./') || importPath.startsWith('../')) {
-        // Relative import
         resolvedPath = path.resolve(path.dirname(filePath), importPath);
-        if (!resolvedPath.endsWith('.js')) {
-          resolvedPath += '.js';
-        }
-      } else {
-        // Absolute import from src
-        resolvedPath = path.join(srcDir, importPath);
         if (!resolvedPath.endsWith('.js')) {
           resolvedPath += '.js';
         }
@@ -66,51 +231,47 @@ function bundleFiles() {
       
       // Process the imported file recursively
       const importedContent = processFile(resolvedPath);
-      
-      // Remove the import statement
-      content = content.replace(match[0], '');
-      
-      // Add the imported content at the beginning
-      content = importedContent + '\n' + content;
+      dependencyContent += importedContent + '\n';
     }
+    
+    // Remove all import statements since we're bundling everything
+    content = content.replace(/import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"][^'"]+['"];?\s*/g, '');
     
     // Remove export statements and convert to regular declarations
     content = content.replace(/export\s+class\s+/g, 'class ');
     content = content.replace(/export\s+\{[^}]+\};\s*$/gm, '');
     content = content.replace(/export\s+default\s+/g, '');
     
-    return content;
+    const finalContent = dependencyContent + content;
+    processedContent.set(filePath, finalContent);
+    return finalContent;
   }
   
   // Start with the entry point
   const entryPoint = path.join(srcDir, 'index.js');
-  let bundledContent = processFile(entryPoint);
+  const bundledContent = processFile(entryPoint);
   
-  // Add external imports at the top
-  const externalImportsArray = Array.from(externalImports);
-  const externalImportsContent = externalImportsArray.length > 0 
-    ? externalImportsArray.join('\n') + '\n\n' 
-    : '';
+  // Prepend the Lit bundle
+  const litBundle = getLitBundle();
   
-  // Return the bundle with external imports at the top
-  return externalImportsContent + bundledContent;
+  return litBundle + '\n' + bundledContent;
 }
 
 /**
  * Main build function
  */
 function build() {
-  console.log('🏗️  Building TimeFlow Card with Lit 3.x...');
+  console.log('🏗️  Building TimeFlow Card with embedded Lit 3.x...');
   
   try {
     const bundledContent = bundleFiles();
     
     // Add header comment
     const header = `/**
- * TimeFlow Card - Modular Architecture Bundle with Lit 3.x
+ * TimeFlow Card - Self-Contained Bundle with Lit 3.x
  * Generated: ${new Date().toISOString()}
  * 
- * This bundle includes all modular components:
+ * This bundle includes all components and dependencies:
  * - TimeFlowCardBeta (Main card component using LitElement) 
  * - ProgressCircleBeta (Progress circle component using LitElement)
  * - TemplateService (Template evaluation)
@@ -118,9 +279,9 @@ function build() {
  * - DateParser (Date parsing utilities)
  * - ConfigValidator (Configuration validation)
  * - StyleManager (Style management)
+ * - Lit 3.x framework (embedded minimal implementation)
  * 
- * External Dependencies:
- * - Lit 3.x (LitElement, html, css, property, state decorators)
+ * No external dependencies required.
  */
 
 `;
@@ -130,7 +291,7 @@ function build() {
     fs.writeFileSync(distFile, finalContent, 'utf8');
     console.log('✅ Bundle created:', distFile);
     console.log('📦 Size:', (fs.statSync(distFile).size / 1024).toFixed(2), 'KB');
-    console.log('🔗 External dependencies preserved for CDN/bundler resolution');
+    console.log('🔗 Self-contained - no external dependencies required');
   } catch (error) {
     console.error('❌ Build failed:', error.message);
     process.exit(1);

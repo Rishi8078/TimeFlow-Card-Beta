@@ -262,21 +262,54 @@ export class StyleManager {
     
     // Apply width if specified
     if (width) {
-      cardStyles.push(`width: ${width}`);
+      const formattedWidth = this._formatDimensionValue(width);
+      if (formattedWidth) {
+        cardStyles.push(`width: ${formattedWidth}`);
+      }
     }
     
     // Apply height if specified
     if (height) {
-      cardStyles.push(`height: ${height}`);
-    } else if (aspect_ratio) {
+      const formattedHeight = this._formatDimensionValue(height);
+      if (formattedHeight) {
+        cardStyles.push(`height: ${formattedHeight}`);
+      }
+    } else if (aspect_ratio && !height) {
       // Use aspect-ratio if height not specified
       cardStyles.push(`aspect-ratio: ${aspect_ratio}`);
-    } else {
-      // Fallback minimum height
+    }
+    
+    // Add a minimum height if no height or aspect ratio is specified
+    if (!height && !aspect_ratio) {
       cardStyles.push('min-height: 120px');
     }
 
     return cardStyles;
+  }
+
+  /**
+   * Helper method to format dimension values with proper units
+   * @param {*} value - The dimension value (string or number)
+   * @returns {string|null} - Formatted CSS value or null if invalid
+   */
+  private _formatDimensionValue(value: any): string | null {
+    if (!value) return null;
+    
+    const strValue = String(value).trim();
+    
+    // If it already has units (px, %, em, rem, vh, vw, etc.), use as-is
+    if (/^[\d.]+\s*(px|%|em|rem|vh|vw|vmin|vmax|ch|ex)$/i.test(strValue)) {
+      return strValue;
+    }
+    
+    // If it's a pure number, add 'px' unit
+    const numValue = parseFloat(strValue);
+    if (!isNaN(numValue)) {
+      return `${numValue}px`;
+    }
+    
+    // Invalid value
+    return null;
   }
 
   /**

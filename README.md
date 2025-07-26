@@ -192,39 +192,49 @@ cards:
         - transform: scale(1.0)
 ```
 
-## 🐛 Troubleshooting
+### Dimension Configuration
+```yaml
+# Fixed dimensions
+type: custom:timeflow-card-beta
+title: "Fixed Size Card"
+target_date: "2025-12-31T23:59:59"
+width: "400px"
+height: "200px"
+```
 
-**Card not showing?**
-- Check Lovelace resources are added correctly
-- Verify `target_date` format: `"YYYY-MM-DDTHH:mm:ss"`
-- Clear browser cache (Ctrl+F5 or Cmd+Shift+R)
-- Restart Home Assistant if needed
+```yaml
+# Width with aspect ratio
+type: custom:timeflow-card-beta
+title: "Proportional Card"
+target_date: "2025-12-31T23:59:59"
+width: "300px"
+aspect_ratio: "2/1"  # Will be 300px × 150px
+```
 
-**Entity issues?**
-- Ensure entity exists and has valid datetime state
-- Use ISO format in entity states
-- Check entity availability in Developer Tools
+```yaml
+# Responsive percentage width
+type: custom:timeflow-card-beta
+title: "Responsive Card"
+target_date: "2025-12-31T23:59:59"
+width: "50%"
+height: "150px"
+```
 
+```yaml
+# Aspect ratio only (uses default width)
+type: custom:timeflow-card-beta
+title: "Aspect Ratio Card"
+target_date: "2025-12-31T23:59:59"
+aspect_ratio: "16/9"  # Widescreen format
+```
 
-## 📄 License
+**Dimension Options:**
+- `width`: CSS width value (e.g., "300px", "50%", "20em")
+- `height`: CSS height value (e.g., "200px", "150px", "10em")  
+- `aspect_ratio`: Width-to-height ratio (e.g., "16/9", "4/3", "2/1")
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## ☕ Support Development
-
-If you find TimeFlow Card useful, consider buying me a coffee! Your support helps maintain and improve this project.
-
-<a href="https://coff.ee/rishi8078" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
----
-
-**Made with ❤️ for the Home Assistant community**
-<!-- Link references -->
-[ha_badge]: https://img.shields.io/badge/Home%20Assistant-Compatible-green
-[ha_link]: https://www.home-assistant.io/
-[hacs_badge]: https://img.shields.io/badge/HACS-Compatible-orange
-[hacs_link]: https://hacs.xyz/
-[release_badge]: https://img.shields.io/github/v/release/Rishi8078/TimeFlow-Card
-[release]: https://github.com/Rishi8078/TimeFlow-Card/releases
-[bmac_badge]: https://img.shields.io/badge/buy_me_a-coffee-yellow
-[bmac]: https://coff.ee/rishi8078
+**Priority Order:**
+1. If both `width` and `height` are specified, both are used
+2. If `width` + `aspect_ratio`, height is calculated from ratio
+3. If `height` + `aspect_ratio`, width is calculated from ratio
+4. If only `aspect_ratio`, default width is used with calculated height

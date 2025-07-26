@@ -42,8 +42,9 @@ export interface CardConfig {
   show_minutes?: boolean;
   show_seconds?: boolean;
   show_months?: boolean;
-  aspect_ratio?: string;
+  width?: string | number;
   height?: string | number;
+  aspect_ratio?: string;
   [key: string]: any; // Allow additional properties
 }
 

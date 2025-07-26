@@ -223,14 +223,23 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size = 100,
       expired_animation = true,
       expired_text = 'Completed! 🎉',
+      width,
+      height,
+      aspect_ratio
     } = this._resolvedConfig;
 
     // Determine colors with fallback CSS vars
     const mainProgressColor = progress_color || color || 'var(--progress-color, #4caf50)';
     const cardBackground = background_color || 'var(--card-background, #fff)';
 
-    // Compose CSS styles for card including dynamic background
-    const cardStyles = `background: ${cardBackground};`;
+    // Generate dimension styles for the card
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
+    
+    // Compose CSS styles for card including dynamic background and dimensions
+    const cardStyles = [
+      `background: ${cardBackground}`,
+      ...dimensionStyles
+    ].join('; ');
 
     // Compose subtitle text
     const subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig));

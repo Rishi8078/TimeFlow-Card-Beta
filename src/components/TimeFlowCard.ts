@@ -133,14 +133,15 @@ export class TimeFlowCardBeta extends LitElement {
   // Provide default configuration stub (like original)
   static getStubConfig(): CardConfig {
     return {
-      type: 'timeflow-card-beta',
+      type: 'custom:timeflow-card-beta',
       target_date: '2026-12-31T23:59:59',
       title: 'New Year Countdown',
       show_days: true,
       show_hours: true,
       show_minutes: true,
       show_seconds: true,
-      progress_color: '#4caf50',
+      progress_color: '#C0F950',
+      background_color: "#1a1a1a",
       stroke_width: 15,
       icon_size: 100,
       expired_animation: true,

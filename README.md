@@ -53,7 +53,29 @@ resources:
 | `color` | string | `"#ffffff"` | Text color |
 | `background_color` | string | `"#1976d2"` | Card background |
 | `progress_color` | string | `"#4CAF50"` | Progress circle color |
+| `stroke_width` | number | `15` | Progress circle stroke thickness |
+| `icon_size` | number | `100` | Base progress circle size (auto-adjusted) |
 | `card_mod` | object | `null` | [Card-mod](https://github.com/thomasloven/lovelace-card-mod) styling configuration |
+
+## 🎯 Progress Circle Behavior
+
+The progress circle is **automatically positioned at the bottom-right** of the card and **dynamically sized** to fit within the card dimensions:
+
+**Positioning:**
+- Always anchored to bottom-right corner
+- Stays within card boundaries
+- Overlays content with proper z-index
+
+**Dynamic Sizing:**
+- Automatically calculates optimal size based on card dimensions
+- Prevents overflow when card width/height is small
+- Maintains proportional stroke width
+- Respects minimum (40px) and maximum (120px) size limits
+
+**Responsive Behavior:**
+- Adapts to percentage-based card widths
+- Scales proportionally with aspect ratios
+- Maintains consistent positioning across different screen sizes
 
 ## 🎨 Template Support
 

@@ -50,6 +50,8 @@ export class TimeFlowCardBeta extends LitElement {
         background: var(--card-background, var(--primary-background-color, #fff));
         box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgb(0 0 0 / 0.12));
         transition: background-color 0.3s ease;
+        position: relative;
+        overflow: hidden;
       }
       ha-card.expired {
         background-color: var(--expired-background-color, #eee);
@@ -65,11 +67,14 @@ export class TimeFlowCardBeta extends LitElement {
         margin: 0 0 16px 0;
       }
       .content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1em;
-        flex-wrap: wrap;
+        position: relative;
+        min-height: 60px;
+      }
+      .progress-circle-container {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 1;
       }
       progress-circle-beta {
         flex-shrink: 0;
@@ -232,6 +237,10 @@ export class TimeFlowCardBeta extends LitElement {
     const mainProgressColor = progress_color || color || 'var(--progress-color, #4caf50)';
     const cardBackground = background_color || 'var(--card-background, #fff)';
 
+    // Calculate dynamic circle size based on card dimensions to prevent overflow
+    const dynamicCircleSize = this.styleManager.calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
+    const dynamicStroke = this.styleManager.calculateDynamicStrokeWidth(dynamicCircleSize, stroke_width);
+
     // Generate dimension styles for the card
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     
@@ -255,13 +264,15 @@ export class TimeFlowCardBeta extends LitElement {
         <div class="title" aria-live="polite">${titleText}</div>
         <div class="subtitle" aria-live="polite">${subtitleText}</div>
         <div class="content" role="group" aria-label="Countdown Progress">
-          <progress-circle-beta
-            .progress="${this._progress}"
-            .color="${mainProgressColor}"
-            .size="${icon_size}"
-            .strokeWidth="${stroke_width}"
-            aria-label="Countdown progress: ${Math.round(this._progress)}%"
-          ></progress-circle-beta>
+          <div class="progress-circle-container">
+            <progress-circle-beta
+              .progress="${this._progress}"
+              .color="${mainProgressColor}"
+              .size="${dynamicCircleSize}"
+              .strokeWidth="${dynamicStroke}"
+              aria-label="Countdown progress: ${Math.round(this._progress)}%"
+            ></progress-circle-beta>
+          </div>
         </div>
       </ha-card>
     `;

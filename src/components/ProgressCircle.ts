@@ -102,7 +102,7 @@ export class ProgressCircleBeta extends LitElement {
             cx="${size / 2}" cy="${size / 2}"
             r="${radius}"
             fill="none"
-            stroke="#e6e6e6"
+            stroke="#FFFFFF1A"
             stroke-width="${stroke}"
           ></circle>
           <circle

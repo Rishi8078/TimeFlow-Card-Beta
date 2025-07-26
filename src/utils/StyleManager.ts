@@ -9,6 +9,15 @@ export class StyleManager {
   static MIN_STROKE = 4;
   static MAX_STROKE = 20;
 
+  private cache: {
+    dynamicIconSize: number | null;
+    dynamicStrokeWidth: number | null;
+    customStyles: any | null;
+    lastConfigHash: string | null;
+    lastIconConfigHash?: string | null;
+    lastStrokeConfigHash?: string | null;
+  };
+
   constructor() {
     this.cache = {
       dynamicIconSize: null,
@@ -23,7 +32,7 @@ export class StyleManager {
    * @param {Array} styles - Array of style objects or strings
    * @returns {string} - CSS string
    */
-  processStyles(styles) {
+  processStyles(styles: any[]): string {
     if (!styles || !Array.isArray(styles)) return '';
     
     return styles.map(style => {
@@ -48,7 +57,7 @@ export class StyleManager {
    * @param {Object} config - Card configuration
    * @returns {Object} - Processed styles object
    */
-  buildStylesObject(config) {
+  buildStylesObject(config: any): any {
     // Use cached value if available and config hasn't changed
     const configHash = JSON.stringify(config.styles || {});
     if (this.cache.customStyles !== null && this.cache.lastConfigHash === configHash) {
@@ -83,7 +92,7 @@ export class StyleManager {
   /**
    * Internal helper to get card dimensions based on width, height, and aspect ratio
    */
-  _getCardDimensions(width, height, aspect_ratio) {
+  _getCardDimensions(width: any, height: any, aspect_ratio: any): any {
     const defaultWidth = 300;
     const defaultHeight = 150;
     let cardWidth = defaultWidth;
@@ -127,7 +136,7 @@ export class StyleManager {
    * @param {*} icon_size - Explicit icon size
    * @returns {number} - Calculated icon size in pixels
    */
-  calculateDynamicIconSize(width, height, aspect_ratio, icon_size) {
+  calculateDynamicIconSize(width: any, height: any, aspect_ratio: any, icon_size: any): number {
     // Use cached value if available and config hasn't changed
     const configKey = JSON.stringify({ width, height, aspect_ratio, icon_size });
     if (this.cache.dynamicIconSize !== null && this.cache.lastIconConfigHash === configKey) {
@@ -166,7 +175,7 @@ export class StyleManager {
    * @param {*} stroke_width - Explicit stroke width
    * @returns {number} - Calculated stroke width
    */
-  calculateDynamicStrokeWidth(iconSize, stroke_width) {
+  calculateDynamicStrokeWidth(iconSize: any, stroke_width: any): number {
     // Use cached value if available and config hasn't changed
     const configKey = JSON.stringify({ iconSize, stroke_width });
     if (this.cache.dynamicStrokeWidth !== null && this.cache.lastStrokeConfigHash === configKey) {
@@ -193,7 +202,7 @@ export class StyleManager {
    * @param {string} aspect_ratio - Aspect ratio string
    * @returns {Object} - Object with font sizes and dimensions
    */
-  calculateProportionalSizes(width, height, aspect_ratio) {
+  calculateProportionalSizes(width: any, height: any, aspect_ratio: any): any {
     try {
       const { cardWidth, cardHeight } = this._getCardDimensions(width, height, aspect_ratio);
       const defaultArea = 300 * 150;
@@ -216,7 +225,7 @@ export class StyleManager {
    * @param {*} dimension - Dimension value to parse
    * @returns {number|null} - Parsed dimension in pixels
    */
-  parseDimension(dimension) {
+  parseDimension(dimension: any): number | null {
     try {
       if (typeof dimension === 'number') return dimension;
       if (typeof dimension !== 'string') return null;
@@ -248,7 +257,7 @@ export class StyleManager {
    * @param {string} aspect_ratio - Aspect ratio string
    * @returns {Array} - Array of CSS style strings
    */
-  generateCardDimensionStyles(width, height, aspect_ratio) {
+  generateCardDimensionStyles(width: any, height: any, aspect_ratio: any): string[] {
     const cardStyles = [];
     
     // Apply width if specified

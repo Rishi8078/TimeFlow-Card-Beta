@@ -1,9 +1,17 @@
+import { TemplateService } from './TemplateService';
+import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
+
 /**
  * CountdownService - Handles countdown calculations and time unit management
  * Provides clean separation of countdown logic from presentation
  */
 export class CountdownService {
-  constructor(templateService, dateParser) {
+  private templateService: any;
+  private dateParser: any;
+  private timeRemaining: CountdownState;
+  private expired: boolean;
+
+  constructor(templateService: any, dateParser: any) {
     this.templateService = templateService;
     this.dateParser = dateParser;
     this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
@@ -16,7 +24,7 @@ export class CountdownService {
    * @param {Object} hass - Home Assistant object
    * @returns {Promise<Object>} - Time remaining object
    */
-  async updateCountdown(config, hass) {
+  async updateCountdown(config: CardConfig, hass: HomeAssistant | null): Promise<CountdownState> {
     try {
       if (!config.target_date) return this.timeRemaining;
       
@@ -127,7 +135,7 @@ export class CountdownService {
    * @param {Object} hass - Home Assistant object
    * @returns {Promise<number>} - Progress percentage (0-100)
    */
-  async calculateProgress(config, hass) {
+  async calculateProgress(config: CardConfig, hass: HomeAssistant | null): Promise<number> {
     const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
     if (!targetDateValue) return 0;
     
@@ -163,7 +171,7 @@ export class CountdownService {
    * @param {Object} config - Card configuration
    * @returns {Object} - Object with value and label properties
    */
-  getMainDisplay(config) {
+  getMainDisplay(config: CardConfig): { value: string; label: string } {
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
     const { months, days, hours, minutes, seconds } = this.timeRemaining;
     
@@ -192,7 +200,7 @@ export class CountdownService {
    * @param {Object} config - Card configuration
    * @returns {string} - Formatted subtitle text
    */
-  getSubtitle(config) {
+  getSubtitle(config: CardConfig): string {
     if (this.expired) {
       const { expired_text = 'Completed! 🎉' } = config;
       return expired_text;
@@ -263,7 +271,7 @@ export class CountdownService {
    * Gets current time remaining
    * @returns {Object} - Time remaining object
    */
-  getTimeRemaining() {
+  getTimeRemaining(): CountdownState {
     return this.timeRemaining;
   }
 
@@ -271,7 +279,7 @@ export class CountdownService {
    * Gets expired status
    * @returns {boolean} - Whether countdown has expired
    */
-  isExpired() {
+  isExpired(): boolean {
     return this.expired;
   }
 }

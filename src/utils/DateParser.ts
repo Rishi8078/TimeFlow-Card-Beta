@@ -8,28 +8,19 @@ export class DateParser {
    * @param {string} dateString - ISO date string to parse
    * @returns {number} - Unix timestamp in milliseconds
    */
-  static parseISODate(dateString) {
+  static parseISODate(dateString: string): number {
     try {
-      console.log('TimeFlow Debug: Parsing date string:', dateString);
-      
       // Fast path: Use native parsing for most cases
       const nativeResult = new Date(dateString);
       if (!isNaN(nativeResult.getTime()) && this.isValidDateResult(nativeResult, dateString)) {
-        console.log('TimeFlow Debug: Native parsing succeeded:', nativeResult.getTime());
         return nativeResult.getTime();
       }
       
-      console.log('TimeFlow Debug: Native parsing failed, trying robust parsing');
-      
       // Enhanced path: Use robust parsing for edge cases
-      const robustResult = this.parseISODateRobust(dateString);
-      console.log('TimeFlow Debug: Robust parsing result:', robustResult);
-      return robustResult;
+      return this.parseISODateRobust(dateString);
     } catch (e) {
       console.warn('TimeFlow Card: Date parsing error, using fallback:', e);
-      const fallbackResult = this.parseISODateFallback(dateString);
-      console.log('TimeFlow Debug: Fallback parsing result:', fallbackResult);
-      return fallbackResult;
+      return this.parseISODateFallback(dateString);
     }
   }
 
@@ -39,7 +30,7 @@ export class DateParser {
    * @param {string} originalString - Original date string
    * @returns {boolean} - Whether the date is valid
    */
-  static isValidDateResult(dateObj, originalString) {
+  static isValidDateResult(dateObj: Date, originalString: string): boolean {
     const timestamp = dateObj.getTime();
     
     // Check for reasonable date range (1970-2100)
@@ -66,7 +57,7 @@ export class DateParser {
    * @param {number} year - Year to check
    * @returns {boolean} - Whether the year is a leap year
    */
-  static isLeapYear(year) {
+  static isLeapYear(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
   }
 
@@ -75,11 +66,14 @@ export class DateParser {
    * @param {string} dateString - Date string to parse
    * @returns {number} - Unix timestamp
    */
-  static parseISODateRobust(dateString) {
+  static parseISODateRobust(dateString: string): number {
     try {
       // Check for Intl support
-      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-        return this.parseWithIntl(dateString);
+      if (typeof Intl !== 'undefined') {
+        const intlResult = this.parseWithIntl(dateString);
+        if (intlResult) {
+          return intlResult.getTime();
+        }
       }
       
       // Fallback to enhanced manual parsing
@@ -95,15 +89,11 @@ export class DateParser {
    * @param {string} dateString - Date string to parse
    * @returns {number} - Unix timestamp
    */
-  static parseWithIntl(dateString) {
+  static parseWithIntl(dateString: string): Date | null {
     try {
-      // Normalize the date string first
-      const normalizedDate = this.normalizeDateString(dateString);
-      
-      // First try to parse the normalized date
-      const baseDate = new Date(normalizedDate);
+      // First try to parse normally to get a base date
+      const baseDate = new Date(dateString);
       if (isNaN(baseDate.getTime())) {
-        console.warn('TimeFlow Card: Base date parsing failed for:', dateString, 'normalized to:', normalizedDate);
         throw new Error('Base date parsing failed');
       }
       
@@ -119,7 +109,7 @@ export class DateParser {
       });
       
       const parts = formatter.formatToParts(baseDate);
-      const partsObj = {};
+      const partsObj: { [key: string]: string } = {};
       parts.forEach(part => {
         if (part.type !== 'literal') {
           partsObj[part.type] = part.value;
@@ -128,15 +118,15 @@ export class DateParser {
       
       // Construct date from parsed parts for consistency
       const reconstructed = new Date(
-        partsObj.year || 1970,
-        (partsObj.month || 1) - 1,
-        partsObj.day || 1,
-        partsObj.hour || 0,
-        partsObj.minute || 0,
-        partsObj.second || 0
+        parseInt(partsObj.year) || 1970,
+        (parseInt(partsObj.month) || 1) - 1,
+        parseInt(partsObj.day) || 1,
+        parseInt(partsObj.hour) || 0,
+        parseInt(partsObj.minute) || 0,
+        parseInt(partsObj.second) || 0
       );
       
-      return reconstructed.getTime();
+      return reconstructed;
     } catch (error) {
       // If Intl parsing fails, fall back to manual parsing
       throw error;
@@ -148,7 +138,7 @@ export class DateParser {
    * @param {string} dateString - Date string to parse
    * @returns {number} - Unix timestamp
    */
-  static parseISODateManual(dateString) {
+  static parseISODateManual(dateString: string): number {
     if (typeof dateString === 'string' && dateString.includes('T')) {
       // Check if the string contains timezone information (Z, +XX:XX, -XX:XX)
       const hasTimezone = /[+-]\d{2}:\d{2}$|Z$/.test(dateString);
@@ -186,39 +176,13 @@ export class DateParser {
   }
 
   /**
-   * Normalizes date strings to improve parsing success
-   * @param {string} dateString - Original date string
-   * @returns {string} - Normalized date string
-   */
-  static normalizeDateString(dateString) {
-    if (!dateString || typeof dateString !== 'string') {
-      return dateString;
-    }
-
-    // Remove extra whitespace
-    let normalized = dateString.trim();
-
-    // Handle common date format variations
-    // Convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DDTHH:MM:SS
-    normalized = normalized.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/, '$1T$2');
-
-    // Ensure ISO format has timezone if it has time but no timezone
-    if (normalized.includes('T') && !normalized.includes('Z') && !normalized.includes('+') && !normalized.includes('-', 10)) {
-      // Add Z to indicate UTC if no timezone is specified
-      normalized = normalized + 'Z';
-    }
-
-    return normalized;
-  }
-
-  /**
    * Validates date components
    * @param {number} year - Year component
    * @param {number} month - Month component (1-12)
    * @param {number} day - Day component
    * @returns {boolean} - Whether components are valid
    */
-  static isValidDateComponents(year, month, day) {
+  static isValidDateComponents(year: number, month: number, day: number): boolean {
     if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
     if (year < 1970 || year > 2100) return false;
     if (month < 1 || month > 12) return false;
@@ -238,7 +202,7 @@ export class DateParser {
    * @param {number} second - Second component
    * @returns {boolean} - Whether components are valid
    */
-  static isValidTimeComponents(hour, minute, second) {
+  static isValidTimeComponents(hour: any, minute: any, second: any): boolean {
     const h = parseInt(hour);
     const m = parseInt(minute);
     const s = parseInt(second);
@@ -256,7 +220,7 @@ export class DateParser {
    * @param {string} dateString - Date string to parse
    * @returns {number} - Unix timestamp
    */
-  static parseISODateFallback(dateString) {
+  static parseISODateFallback(dateString: string): number {
     try {
       const timestamp = Date.parse(dateString);
       if (!isNaN(timestamp)) {

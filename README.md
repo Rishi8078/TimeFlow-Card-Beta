@@ -2,32 +2,21 @@
 
 [![Home Assistant][ha_badge]][ha_link] [![HACS][hacs_badge]][hacs_link] [![GitHub Release][release_badge]][release] [![Buy Me A Coffee][bmac_badge]][bmac]
 
-A beautiful countdown timer card for Home Assistant with animated progress circle, intelligent time formatting, and modern **Lit 3.x** architecture.
+A beautiful countdown timer card for Home Assistant with animated progress circle, intelligent time formatting, and modern modular architecture.
 
 ![TimeFlow Card Preview](assets/preview.png)
 
 ## ✨ Features
 
-- **🏗️ Modern Architecture**: Built with **Lit 3.x** for optimal performance and maintainability
+- **🏗️ Modular Architecture**: Clean, maintainable code with focused components
 - **🎨 Template Support**: Dynamic values for all configuration properties
-- **⚡ Performance Optimized**: Efficient reactive rendering with Lit's smart update system
+- **⚡ Performance Optimized**: Efficient rendering with caching and smart updates
 - **🎯 Smart Time Display**: Natural language formatting with unit cascading
 - **🔄 Animated Progress**: SVG progress circle with dynamic scaling
 - **🎨 Customizable Styling**: Colors, sizes, time units, and Card-mod support
 - **📱 Responsive Design**: Automatic sizing and mobile-friendly layouts
 - **♿ Accessibility**: Screen reader support and keyboard navigation
 - **🌐 Cross-Platform**: Robust date parsing across all browsers
-
-## 🆕 Latest Update: Lit 3.x Migration
-
-TimeFlow Card has been upgraded to **Lit 3.x** for improved performance and developer experience:
-
-- ✅ **Better Performance**: Efficient DOM updates with reactive properties
-- ✅ **Cleaner Code**: Declarative templates instead of manual DOM manipulation  
-- ✅ **Future-Proof**: Built on modern web component standards
-- ✅ **Backward Compatible**: Existing configurations work unchanged
-
-See [LIT_MIGRATION_SUMMARY.md](LIT_MIGRATION_SUMMARY.md) for complete migration details.
 
 ## 🚀 Installation
 

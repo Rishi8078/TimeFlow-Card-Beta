@@ -113,7 +113,7 @@ demo-*.html
 minimal-fallback-test.yaml
 
 # Test suite and testing artifacts
-tests/
+test-suite/
 *.test.js
 *.spec.js
 test-results/

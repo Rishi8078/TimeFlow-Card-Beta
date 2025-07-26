@@ -1,8 +1,19 @@
+import { HomeAssistant, TimeFlowCard } from '../types/index';
+
+interface CacheEntry {
+  result: any;
+  timestamp: number;
+}
+
 /**
  * TemplateService - Handles Home Assistant template evaluation and caching
  * Provides efficient template processing with intelligent caching
  */
 export class TemplateService {
+  private templateResults: Map<string, CacheEntry>;
+  private templateCacheLimit: number;
+  public card?: TimeFlowCard;
+
   constructor() {
     this.templateResults = new Map();
     this.templateCacheLimit = 100;
@@ -14,7 +25,7 @@ export class TemplateService {
    * @param {Object} hass - Home Assistant object
    * @returns {Promise<*>} - Evaluated template result
    */
-  async evaluateTemplate(template, hass) {
+  async evaluateTemplate(template: string, hass: any): Promise<any> {
     if (!hass || !template) {
       return template;
     }
@@ -24,7 +35,7 @@ export class TemplateService {
     if (this.templateResults.has(cacheKey)) {
       const cached = this.templateResults.get(cacheKey);
       // Check if cache is still valid (within 5 seconds)
-      if (Date.now() - cached.timestamp < 5000) {
+      if (cached && Date.now() - cached.timestamp < 5000) {
         return cached.result;
       }
     }
@@ -33,12 +44,6 @@ export class TemplateService {
       // Validate template format before making API call
       if (!this.isValidTemplate(template)) {
         throw new Error('Invalid template format');
-      }
-
-      // Check if hass.callApi exists and is a function
-      if (!hass.callApi || typeof hass.callApi !== 'function') {
-        console.warn('TimeFlow Card: hass.callApi not available, using fallback for template:', template);
-        return this.getFallbackValue(template);
       }
 
       // Use callApi method like card-tools and button-card for HA templates
@@ -74,8 +79,8 @@ export class TemplateService {
       this.enforceTemplateCacheLimit();
       
       return result;
-    } catch (error) {
-      console.warn('TimeFlow Card: Template evaluation failed, using fallback:', error.message);
+    } catch (error: any) {
+      console.warn('TimeFlow Card: Template evaluation failed, using fallback:', error?.message || error);
       
       // Immediately return fallback instead of trying callWS
       const fallback = this.extractFallbackFromTemplate(template);
@@ -92,32 +97,11 @@ export class TemplateService {
   }
 
   /**
-   * Gets a reasonable fallback value for templates when hass.callApi is not available
-   * @param {string} template - Template string
-   * @returns {string} - Fallback value
-   */
-  getFallbackValue(template) {
-    // First try to extract fallback from the template itself
-    const templateFallback = this.extractFallbackFromTemplate(template);
-    if (templateFallback && templateFallback !== template) {
-      return templateFallback;
-    }
-
-    // Return the template as-is if it's not a Jinja template
-    if (!template.includes('{{') && !template.includes('{%')) {
-      return template;
-    }
-
-    // For templates without explicit fallbacks, return a safe default
-    return 'Unavailable';
-  }
-
-  /**
    * Extracts fallback value from template expressions with 'or' operator
    * @param {string} template - Template string
    * @returns {string} - Extracted fallback value
    */
-  extractFallbackFromTemplate(template) {
+  extractFallbackFromTemplate(template: string): string {
     if (!template || typeof template !== 'string') {
       return template;
     }
@@ -171,7 +155,7 @@ export class TemplateService {
    * @param {*} value - Value to check
    * @returns {boolean} - Whether the value is a template
    */
-  isTemplate(value) {
+  isTemplate(value: any): boolean {
     return typeof value === 'string' && 
            value.includes('{{') && 
            value.includes('}}');
@@ -182,7 +166,7 @@ export class TemplateService {
    * @param {string} template - Template string to validate
    * @returns {boolean} - Whether template is valid
    */
-  isValidTemplate(template) {
+  isValidTemplate(template: string): boolean {
     if (!template || typeof template !== 'string') return false;
     
     // Check for basic template format
@@ -206,40 +190,28 @@ export class TemplateService {
    * @param {Object} hass - Home Assistant object
    * @returns {Promise<*>} - Resolved value
    */
-  async resolveValue(value, hass) {
+  async resolveValue(value: string): Promise<string | null> {
     if (!value) return null;
-    
-    // Handle templates first
+
     if (this.isTemplate(value)) {
+      const hass = this.card?.hass;
       const result = await this.evaluateTemplate(value, hass);
       return result;
     }
-    
-    // Handle entity references
+
+    // Handle entity state
+    const hass = this.card?.hass;
     if (typeof value === 'string' && value.includes('.') && hass && hass.states[value]) {
       const entity = hass.states[value];
-      // Check if entity state is unknown/unavailable
-      if (entity.state === 'unknown' || entity.state === 'unavailable') {
+      if (!entity) {
+        console.warn(`Entity ${value} not found`);
         return null;
       }
-      
-      // For entity timestamps, strip timezone info to treat as local time
-      // This provides more intuitive behavior for users
-      let entityValue = entity.state;
-      if (typeof entityValue === 'string' && entityValue.includes('T')) {
-        // Remove timezone information (+XX:XX, -XX:XX, Z) from entity values
-        // This ensures entity timestamps are always treated as local time
-        entityValue = entityValue.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
-      }
-      
-      return entityValue;
+      return entity.state;
     }
-    
-    // Return plain string/value
-    return value;
-  }
 
-  /**
+    return value;
+  }  /**
    * Clears template cache when entities change
    */
   clearTemplateCache() {
@@ -270,7 +242,7 @@ export class TemplateService {
    * @param {Object} config - Configuration object
    * @returns {boolean} - Whether config contains templates
    */
-  hasTemplatesInConfig(config) {
+  hasTemplatesInConfig(config: any): boolean {
     if (!config) return false;
     
     // Check common template-enabled properties
@@ -289,7 +261,7 @@ export class TemplateService {
    * @param {*} text - Text to escape
    * @returns {string} - Escaped text
    */
-  escapeHtml(text) {
+  escapeHtml(text: string): string {
     if (text == null || text === undefined) return '';
     return String(text)
       .replace(/&/g, '&amp;')

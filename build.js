@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Build script for TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Bundles all modules including Lit into a single self-contained file
+ * Build script for TimeFlow Card - Modular Architecture
+ * Bundles all modules into a single file for distribution
  */
 
 const fs = require('fs');
@@ -12,207 +12,58 @@ const srcDir = path.join(__dirname, 'src');
 const distFile = path.join(__dirname, 'timeflow-card-modular.js');
 
 /**
- * Minimal Lit 3.x implementation for bundling
- * Based on essential Lit functionality needed for TimeFlow Card
+ * Transpile decorators to static properties for Lit components
+ * @param {string} content - File content with decorators
+ * @returns {string} - Content with transpiled decorators
  */
-function getLitBundle() {
-  return `
-/**
- * Minimal Lit 3.x Bundle - Essential functionality for TimeFlow Card
- * Based on lit-element 3.x but simplified for Home Assistant custom cards
- */
-
-// Lit Template Result and HTML template implementation
-class TemplateResult {
-  constructor(strings, values, type, processor) {
-    this.strings = strings;
-    this.values = values;
-    this.type = type;
-    this.processor = processor;
-  }
-}
-
-// Simple template processor
-const defaultTemplateProcessor = {
-  handleAttributeExpressions: (element, name, strings, values) => values,
-  handleTextExpression: (options) => options
-};
-
-// HTML template tag function
-const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
-
-// CSS template tag function  
-const css = (strings, ...values) => {
-  const cssText = strings.reduce((acc, str, i) => {
-    return acc + str + (values[i] || '');
-  }, '');
-  return { cssText, toString: () => cssText };
-};
-
-// Nothing placeholder
-const nothing = '';
-
-// Simple reactive property system
-const updateProperty = (instance, key, oldValue, newValue) => {
-  if (oldValue !== newValue) {
-    instance.requestUpdate(key, oldValue);
-  }
-};
-
-// Property decorator
-const property = (options = {}) => {
-  return (target, propertyKey) => {
-    const privateKey = \`_\${propertyKey}\`;
-    
-    if (delete target[propertyKey]) {
-      Object.defineProperty(target, propertyKey, {
-        get() { return this[privateKey]; },
-        set(value) {
-          const oldValue = this[privateKey];
-          this[privateKey] = value;
-          updateProperty(this, propertyKey, oldValue, value);
-        },
-        enumerable: true,
-        configurable: true
-      });
-    }
-  };
-};
-
-// State decorator (same as property but internal)
-const state = () => property();
-
-// Base LitElement class
-class LitElement extends HTMLElement {
-  constructor() {
-    super();
-    this._updateScheduled = false;
-    this._changedProperties = new Map();
-    this.attachShadow({ mode: 'open' });
-  }
-
-  static get styles() {
-    return \`\`;
-  }
-
-  connectedCallback() {
-    this.requestUpdate();
-  }
-
-  disconnectedCallback() {
-    // Override in subclasses for cleanup
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    // Convert kebab-case to camelCase
-    const propName = name.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
-    if (this[propName] !== undefined) {
-      // Try to parse the value appropriately
-      let parsedValue = newValue;
-      if (newValue === 'true') parsedValue = true;
-      else if (newValue === 'false') parsedValue = false;
-      else if (!isNaN(newValue) && newValue !== '') parsedValue = Number(newValue);
-      
-      this[propName] = parsedValue;
-    }
-  }
-
-  requestUpdate(name, oldValue) {
-    if (name) {
-      this._changedProperties.set(name, oldValue);
-    }
-    
-    if (!this._updateScheduled) {
-      this._updateScheduled = true;
-      Promise.resolve().then(() => {
-        this._updateScheduled = false;
-        this.performUpdate();
-      });
-    }
-  }
-
-  performUpdate() {
-    const styles = this.constructor.styles;
-    if (styles && typeof styles === 'object' && styles.cssText) {
-      if (!this.shadowRoot.querySelector('style')) {
-        const styleEl = document.createElement('style');
-        styleEl.textContent = styles.cssText;
-        this.shadowRoot.appendChild(styleEl);
+function transpileDecorators(content) {
+  let result = content;
+  
+  // Handle @property decorators - extract configurations for static properties
+  const propertyMatches = [...content.matchAll(/@property\(\s*\{([^}]+)\}\s*\)\s+(\w+)\s*=\s*([^;]+);?/g)];
+  
+  // Handle @state decorators
+  result = result.replace(
+    /@state\(\)\s+(\w+)\s*=\s*([^;]+);?/g,
+    '$1 = $2;'
+  );
+  
+  // Handle @property decorators - remove decorator and keep property
+  result = result.replace(
+    /@property\(\s*\{([^}]+)\}\s*\)\s+(\w+)\s*=\s*([^;]+);?/g,
+    '$2 = $3;'
+  );
+  
+  // Add static properties definition for classes that had @property decorators
+  if (propertyMatches.length > 0) {
+    result = result.replace(
+      /class\s+(\w+)\s+extends\s+LitElement\s*\{/,
+      (match, className) => {
+        let staticProperties = '  static properties = {\n';
+        
+        propertyMatches.forEach(([, config, name]) => {
+          staticProperties += `    ${name}: { ${config} },\n`;
+        });
+        
+        staticProperties += '  };\n\n';
+        
+        return `${match}\n${staticProperties}`;
       }
-    }
-
-    const result = this.render();
-    if (result) {
-      this.shadowRoot.innerHTML = this.shadowRoot.querySelector('style') ? 
-        this.shadowRoot.querySelector('style').outerHTML + this._renderTemplate(result) :
-        this._renderTemplate(result);
-    }
-    
-    this.updated(this._changedProperties);
-    this._changedProperties.clear();
+    );
   }
-
-  _renderTemplate(result) {
-    if (result instanceof TemplateResult) {
-      return result.strings.reduce((acc, str, i) => {
-        const value = result.values[i];
-        if (value === nothing || value === undefined || value === null) {
-          return acc + str;
-        }
-        return acc + str + this._renderValue(value);
-      }, '');
-    }
-    return String(result || '');
-  }
-
-  _renderValue(value) {
-    if (value instanceof TemplateResult) {
-      return this._renderTemplate(value);
-    }
-    if (typeof value === 'function') {
-      return this._renderValue(value());
-    }
-    if (value === nothing || value === undefined || value === null) {
-      return '';
-    }
-    return String(value);
-  }
-
-  render() {
-    return html\`\`;
-  }
-
-  updated(changedProperties) {
-    // Override in subclasses
-  }
-
-  firstUpdated(changedProperties) {
-    // Override in subclasses
-  }
-}
-
-// Export the Lit functionality
-window.LitElement = LitElement;
-window.html = html;
-window.css = css;
-window.property = property;
-window.state = state;
-window.nothing = nothing;
-
-`;
+  
+  return result;
 }
 
 /**
- * Resolves ES6 imports and bundles files with embedded Lit
+ * Resolves ES6 imports and bundles files
  */
 function bundleFiles() {
   const processedFiles = new Set();
-  const processedContent = new Map();
-  const orderedContent = [];
   
   function processFile(filePath) {
     if (processedFiles.has(filePath)) {
-      return ''; // Return empty string for already processed files
+      return '';
     }
     
     processedFiles.add(filePath);
@@ -223,145 +74,73 @@ function bundleFiles() {
     }
     
     let content = fs.readFileSync(filePath, 'utf8');
-    const originalContent = content;
     
-    // First, process all imports recursively to get dependencies
-    const importRegex = /import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"]([^'"]+)['"];?\s*/g;
+    // Transpile decorators first
+    content = transpileDecorators(content);
+    
+    // Extract and process imports
+    const importRegex = /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"];?\s*/g;
     let match;
     
-    while ((match = importRegex.exec(originalContent)) !== null) {
+    while ((match = importRegex.exec(content)) !== null) {
       const importPath = match[2];
-      
-      // Skip external imports like 'lit'
-      if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
-        continue;
-      }
-      
-      // Handle relative imports (internal modules)
       let resolvedPath;
+      
       if (importPath.startsWith('./') || importPath.startsWith('../')) {
+        // Relative import
         resolvedPath = path.resolve(path.dirname(filePath), importPath);
+        if (!resolvedPath.endsWith('.js')) {
+          resolvedPath += '.js';
+        }
+      } else {
+        // Absolute import from src
+        resolvedPath = path.join(srcDir, importPath);
         if (!resolvedPath.endsWith('.js')) {
           resolvedPath += '.js';
         }
       }
       
-      // Process the imported file recursively (dependencies first)
-      processFile(resolvedPath);
+      // Process the imported file recursively
+      const importedContent = processFile(resolvedPath);
+      
+      // Remove the import statement
+      content = content.replace(match[0], '');
+      
+      // Add the imported content at the beginning
+      content = importedContent + '\n' + content;
     }
-    
-    // Remove all import statements since we're bundling everything
-    content = content.replace(/import\s+(\{[^}]+\}|\w+|\*\s+as\s+\w+)\s+from\s+['"][^'"]+['"];?\s*/g, '');
-    
-    // Transform @property decorators to reactive property setup
-    // This handles: @property({ type: Type, attribute: 'attr' }) propName = defaultValue;
-    content = content.replace(/@property\(\s*\{[^}]*\}\s*\)\s*(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
-      return `
-  // Reactive property: ${propName}
-  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
-  set ${propName}(value) { 
-    const oldValue = this._${propName};
-    this._${propName} = value;
-    this.requestUpdate('${propName}', oldValue);
-  }`;
-    });
-    
-    // This handles: @property propName = defaultValue;
-    content = content.replace(/@property\s+(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
-      return `
-  // Reactive property: ${propName}
-  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
-  set ${propName}(value) { 
-    const oldValue = this._${propName};
-    this._${propName} = value;
-    this.requestUpdate('${propName}', oldValue);
-  }`;
-    });
-    
-    // Remove @state decorators and transform to reactive properties
-    content = content.replace(/@state\(\s*\)\s*(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
-      return `
-  // Reactive state: ${propName}
-  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
-  set ${propName}(value) { 
-    const oldValue = this._${propName};
-    this._${propName} = value;
-    this.requestUpdate('${propName}', oldValue);
-  }`;
-    });
-    
-    content = content.replace(/@state\s+(\w+)\s*=\s*([^;]+);/g, (match, propName, defaultValue) => {
-      return `
-  // Reactive state: ${propName}
-  get ${propName}() { return this._${propName} !== undefined ? this._${propName} : ${defaultValue}; }
-  set ${propName}(value) { 
-    const oldValue = this._${propName};
-    this._${propName} = value;
-    this.requestUpdate('${propName}', oldValue);
-  }`;
-    });
     
     // Remove export statements and convert to regular declarations
     content = content.replace(/export\s+class\s+/g, 'class ');
     content = content.replace(/export\s+\{[^}]+\};\s*$/gm, '');
     content = content.replace(/export\s+default\s+/g, '');
     
-    // Store processed content
-    processedContent.set(filePath, content);
-    orderedContent.push(content);
-    
     return content;
   }
   
   // Start with the entry point
   const entryPoint = path.join(srcDir, 'index.js');
-  processFile(entryPoint);
+  let bundledContent = processFile(entryPoint);
   
-  // Prepend the Lit bundle and return all content in dependency order
-  const litBundle = getLitBundle();
-  
-  return litBundle + '\n' + orderedContent.join('\n');
-}
-
-/**
- * Main build function
- */
-function build() {
-  console.log('🏗️  Building TimeFlow Card with embedded Lit 3.x...');
-  
-  try {
-    const bundledContent = bundleFiles();
-    
-    // Add header comment
-    const header = `/**
- * TimeFlow Card - Self-Contained Bundle with Lit 3.x
- * Generated: ${new Date().toISOString()}
+  // Add header comment
+  const header = `/**
+ * TimeFlow Card - Modular Architecture Bundle
+ * Generated on ${new Date().toISOString()}
  * 
- * This bundle includes all components and dependencies:
- * - TimeFlowCardBeta (Main card component using LitElement) 
- * - ProgressCircleBeta (Progress circle component using LitElement)
- * - TemplateService (Template evaluation)
- * - CountdownService (Countdown logic)
- * - DateParser (Date parsing utilities)
- * - ConfigValidator (Configuration validation)
- * - StyleManager (Style management)
- * - Lit 3.x framework (embedded minimal implementation)
- * 
- * No external dependencies required.
+ * This file is automatically generated from the modular source files.
+ * For development, see the individual files in the src/ directory.
  */
 
 `;
-    
-    const finalContent = header + bundledContent;
-    
-    fs.writeFileSync(distFile, finalContent, 'utf8');
-    console.log('✅ Bundle created:', distFile);
-    console.log('📦 Size:', (fs.statSync(distFile).size / 1024).toFixed(2), 'KB');
-    console.log('🔗 Self-contained - no external dependencies required');
-  } catch (error) {
-    console.error('❌ Build failed:', error.message);
-    process.exit(1);
-  }
+  
+  bundledContent = header + bundledContent;
+  
+  // Write the bundled file
+  fs.writeFileSync(distFile, bundledContent, 'utf8');
+  
+  console.log(`✅ Bundle created: ${distFile}`);
+  console.log(`📦 Size: ${(fs.statSync(distFile).size / 1024).toFixed(2)} KB`);
+  console.log(`🔧 Processed ${processedFiles.size} files`);
 }
 
 /**
@@ -370,31 +149,35 @@ function build() {
 function watchFiles() {
   console.log('👀 Watching for changes...');
   
-  function watchDir(dir) {
-    fs.watch(dir, { recursive: true }, (eventType, filename) => {
-      if (filename && filename.endsWith('.js')) {
-        const filePath = path.join(dir, filename);
-        if (fs.existsSync(filePath)) {
-          console.log('📝 Changed:', filename);
-          setTimeout(build, 100); // Debounce
-        }
+  function watchDirectory(dir) {
+    fs.readdirSync(dir).forEach(file => {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+      
+      if (stat.isDirectory()) {
+        watchDirectory(filePath);
+      } else if (file.endsWith('.js')) {
+        fs.watchFile(filePath, () => {
+          console.log(`📝 Changed: ${filePath}`);
+          bundleFiles();
+        });
       }
     });
   }
   
-  watchDir(srcDir);
-  build(); // Initial build
+  watchDirectory(srcDir);
 }
 
 // Main execution
 if (require.main === module) {
-  const isWatchMode = process.argv.includes('--watch');
+  const args = process.argv.slice(2);
   
-  if (isWatchMode) {
+  if (args.includes('--watch') || args.includes('-w')) {
+    bundleFiles();
     watchFiles();
   } else {
-    build();
+    bundleFiles();
   }
 }
 
-module.exports = { bundleFiles, build };
+module.exports = { bundleFiles };

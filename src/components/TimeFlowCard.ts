@@ -40,47 +40,85 @@ export class TimeFlowCardBeta extends LitElement {
     return css`
       :host {
         display: block;
-        font-family: 'Roboto', 'Arial', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
         color: var(--primary-text-color, #222);
         --progress-color: var(--progress-color, #4caf50);
       }
       ha-card {
-        padding: 16px;
-        border-radius: 12px;
-        background: var(--card-background, var(--primary-background-color, #fff));
-        box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgb(0 0 0 / 0.12));
-        transition: background-color 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        border-radius: 22px;
         position: relative;
         overflow: hidden;
+        background: var(--card-background, var(--primary-background-color, #fff));
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border: none;
+        transition: background-color 0.3s ease;
       }
       ha-card.expired {
-        background-color: var(--expired-background-color, #eee);
+        animation: celebration 0.8s ease-in-out;
       }
-      .title {
-        font-size: 1.5em;
-        font-weight: 600;
-        margin: 0 0 4px 0;
-      }
-      .subtitle {
-        font-size: 1em;
-        color: var(--secondary-text-color, #666);
-        margin: 0 0 16px 0;
-      }
-      .content {
-        position: relative;
-        min-height: 60px;
+      .card-content {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        padding: 20px;
+        height: 100%;
       }
-      .progress-circle-container {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        z-index: 1;
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0;
       }
-      progress-circle-beta {
+      .title-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .title {
+        font-size: var(--timeflow-title-size, 1.5rem);
+        font-weight: 500;
+        margin: 0;
+        opacity: 0.9;
+        line-height: 1.3;
+        letter-spacing: -0.01em;
+        color: var(--timeflow-card-text-color, inherit);
+      }
+      .subtitle {
+        font-size: var(--timeflow-subtitle-size, 1rem);
+        opacity: 0.65;
+        margin: 0;
+        font-weight: 400;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, inherit);
+      }
+      .progress-section {
         flex-shrink: 0;
+        margin-left: auto;
+      }
+      .content {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        margin-top: auto;
+        padding-top: 12px;
+      }
+      .progress-circle {
+        opacity: 0.9;
+      }
+      @keyframes celebration {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        ha-card {
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
       }
     `;
   }
@@ -239,17 +277,29 @@ export class TimeFlowCardBeta extends LitElement {
     // Determine colors with fallback CSS vars
     const mainProgressColor = progress_color || color || 'var(--progress-color, #4caf50)';
     const cardBackground = background_color || 'var(--card-background, #fff)';
+    const textColor = color || 'var(--primary-text-color, #222)';
 
     // Calculate dynamic circle size based on card dimensions to prevent overflow
     const dynamicCircleSize = this.styleManager.calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
     const dynamicStroke = this.styleManager.calculateDynamicStrokeWidth(dynamicCircleSize, stroke_width);
 
+    // Calculate proportional text sizes
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, aspect_ratio);
+
     // Generate dimension styles for the card
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     
-    // Compose CSS styles for card including dynamic background and dimensions
+    // Compose CSS styles for card including dynamic background, dimensions, and theme variables
     const cardStyles = [
       `background: ${cardBackground}`,
+      `color: ${textColor}`,
+      `--timeflow-card-background-color: ${cardBackground}`,
+      `--timeflow-card-text-color: ${textColor}`,
+      `--timeflow-card-progress-color: ${mainProgressColor}`,
+      `--timeflow-card-icon-size: ${dynamicCircleSize}px`,
+      `--timeflow-card-stroke-width: ${dynamicStroke}`,
+      `--timeflow-title-size: ${proportionalSizes.titleSize}rem`,
+      `--timeflow-subtitle-size: ${proportionalSizes.subtitleSize}rem`,
       ...dimensionStyles
     ].join('; ');
 
@@ -264,17 +314,25 @@ export class TimeFlowCardBeta extends LitElement {
 
     return html`
       <ha-card class="${expiredClass}" style="${cardStyles}">
-        <div class="title" aria-live="polite">${titleText}</div>
-        <div class="subtitle" aria-live="polite">${subtitleText}</div>
-        <div class="content" role="group" aria-label="Countdown Progress">
-          <div class="progress-circle-container">
-            <progress-circle-beta
-              .progress="${this._progress}"
-              .color="${mainProgressColor}"
-              .size="${dynamicCircleSize}"
-              .strokeWidth="${dynamicStroke}"
-              aria-label="Countdown progress: ${Math.round(this._progress)}%"
-            ></progress-circle-beta>
+        <div class="card-content">
+          <header class="header">
+            <div class="title-section">
+              <h2 class="title" aria-live="polite">${titleText}</h2>
+              <p class="subtitle" aria-live="polite">${subtitleText}</p>
+            </div>
+          </header>
+          
+          <div class="content" role="group" aria-label="Countdown Progress">
+            <div class="progress-section">
+              <progress-circle-beta
+                class="progress-circle"
+                .progress="${this._progress}"
+                .color="${mainProgressColor}"
+                .size="${dynamicCircleSize}"
+                .strokeWidth="${dynamicStroke}"
+                aria-label="Countdown progress: ${Math.round(this._progress)}%"
+              ></progress-circle-beta>
+            </div>
           </div>
         </div>
       </ha-card>

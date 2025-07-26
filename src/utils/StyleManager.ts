@@ -5,9 +5,9 @@
 export class StyleManager {
   // Constants for icon and stroke size limits
   static MIN_ICON_SIZE = 40;
-  static MAX_ICON_SIZE = 120;
+  static MAX_ICON_SIZE = 300;  // Increased from 120 to 300
   static MIN_STROKE = 4;
-  static MAX_STROKE = 20;
+  static MAX_STROKE = 50;      // Increased from 20 to 50
 
   private cache: {
     dynamicIconSize: number | null;
@@ -154,9 +154,8 @@ export class StyleManager {
         const baseSize = typeof icon_size === 'string' ?
           parseInt(icon_size.replace('px', '')) :
           (typeof icon_size === 'number' ? icon_size : proportionalSize);
-        size = (!isNaN(baseSize))
-          ? Math.max(StyleManager.MIN_ICON_SIZE, Math.min(baseSize, minDimension * 0.6))
-          : StyleManager.MIN_ICON_SIZE;
+        // If explicit size is provided, use it directly (within max limit)
+        size = (!isNaN(baseSize)) ? baseSize : proportionalSize;
       }
 
       this.cache.dynamicIconSize = Math.max(StyleManager.MIN_ICON_SIZE, Math.min(size, StyleManager.MAX_ICON_SIZE));
@@ -183,9 +182,16 @@ export class StyleManager {
     }
 
     try {
-      const ratio = 0.15;
-      const calculated = Math.round(iconSize * ratio);
-      this.cache.dynamicStrokeWidth = Math.max(StyleManager.MIN_STROKE, Math.min(calculated, StyleManager.MAX_STROKE));
+      // If explicit stroke_width is provided, use it directly
+      if (stroke_width && typeof stroke_width === 'number') {
+        this.cache.dynamicStrokeWidth = Math.max(StyleManager.MIN_STROKE, Math.min(stroke_width, StyleManager.MAX_STROKE));
+      } else {
+        // Otherwise calculate proportional stroke based on icon size
+        const ratio = 0.15;
+        const calculated = Math.round(iconSize * ratio);
+        this.cache.dynamicStrokeWidth = Math.max(StyleManager.MIN_STROKE, Math.min(calculated, StyleManager.MAX_STROKE));
+      }
+      
       this.cache.lastStrokeConfigHash = configKey;
       return this.cache.dynamicStrokeWidth;
     } catch (error) {

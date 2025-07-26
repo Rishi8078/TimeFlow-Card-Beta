@@ -323,4 +323,15 @@ export class StyleManager {
       lastConfigHash: null
     };
   }
+
+  /**
+   * Public method to get card dimensions based on configuration
+   * @param {*} width - Card width
+   * @param {*} height - Card height
+   * @param {string} aspect_ratio - Aspect ratio string
+   * @returns {Object} - Object with cardWidth and cardHeight
+   */
+  getCardDimensions(width: any, height: any, aspect_ratio: any): { cardWidth: number; cardHeight: number } {
+    return this._getCardDimensions(width, height, aspect_ratio);
+  }
 }

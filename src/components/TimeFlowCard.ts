@@ -69,11 +69,14 @@ export class TimeFlowCardBeta extends LitElement {
       .content {
         position: relative;
         min-height: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
       .progress-circle-container {
         position: absolute;
-        bottom: 0;
-        right: 0;
+        bottom: 8px;
+        right: 8px;
         z-index: 1;
       }
       progress-circle-beta {

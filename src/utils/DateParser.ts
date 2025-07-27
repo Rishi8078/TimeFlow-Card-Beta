@@ -1,27 +1,33 @@
 /**
- * DateParser - Enhanced date parsing utility with three-tier fallback system
+ * DateParser - Enhanced date parsing utility with a more streamlined fallback system
  * Handles cross-browser compatibility and edge cases for date string parsing
  */
 export class DateParser {
   /**
-   * Main entry point for date parsing with hybrid approach
+   * Main entry point for date parsing with a hybrid approach
    * @param {string} dateString - ISO date string to parse
    * @returns {number} - Unix timestamp in milliseconds
    */
   static parseISODate(dateString: string): number {
+    // First, try a robust manual parsing for common ISO formats.
+    // This is more consistent across browsers than new Date().
     try {
-      // Fast path: Use native parsing for most cases
-      const nativeResult = new Date(dateString);
-      if (!isNaN(nativeResult.getTime()) && this.isValidDateResult(nativeResult, dateString)) {
-        return nativeResult.getTime();
+      const manualResult = this.parseISODateManual(dateString);
+      if (!isNaN(manualResult)) {
+        return manualResult;
       }
-      
-      // Enhanced path: Use robust parsing for edge cases
-      return this.parseISODateRobust(dateString);
     } catch (e) {
-      console.warn('TimeFlow Card: Date parsing error, using fallback:', e);
-      return this.parseISODateFallback(dateString);
+      // Fall through to other methods if manual parsing fails
     }
+
+    // Second, try the native Date constructor, which can handle more formats.
+    const nativeResult = new Date(dateString);
+    if (!isNaN(nativeResult.getTime()) && this.isValidDateResult(nativeResult, dateString)) {
+      return nativeResult.getTime();
+    }
+    
+    // If all else fails, use the final fallback.
+    return this.parseISODateFallback(dateString);
   }
 
   /**
@@ -59,78 +65,6 @@ export class DateParser {
    */
   static isLeapYear(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-  }
-
-  /**
-   * Robust date parsing using Intl.DateTimeFormat for edge cases
-   * @param {string} dateString - Date string to parse
-   * @returns {number} - Unix timestamp
-   */
-  static parseISODateRobust(dateString: string): number {
-    try {
-      // Check for Intl support
-      if (typeof Intl !== 'undefined') {
-        const intlResult = this.parseWithIntl(dateString);
-        if (intlResult) {
-          return intlResult.getTime();
-        }
-      }
-      
-      // Fallback to enhanced manual parsing
-      return this.parseISODateManual(dateString);
-    } catch (error) {
-      console.warn('TimeFlow Card: Robust parsing failed, using manual fallback:', error);
-      return this.parseISODateManual(dateString);
-    }
-  }
-
-  /**
-   * Parse date using Intl.DateTimeFormat for maximum compatibility
-   * @param {string} dateString - Date string to parse
-   * @returns {number} - Unix timestamp
-   */
-  static parseWithIntl(dateString: string): Date | null {
-    try {
-      // First try to parse normally to get a base date
-      const baseDate = new Date(dateString);
-      if (isNaN(baseDate.getTime())) {
-        throw new Error('Base date parsing failed');
-      }
-      
-      // Use Intl to format and re-parse for consistency
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZone: 'UTC'
-      });
-      
-      const parts = formatter.formatToParts(baseDate);
-      const partsObj: { [key: string]: string } = {};
-      parts.forEach(part => {
-        if (part.type !== 'literal') {
-          partsObj[part.type] = part.value;
-        }
-      });
-      
-      // Construct date from parsed parts for consistency
-      const reconstructed = new Date(
-        parseInt(partsObj.year) || 1970,
-        (parseInt(partsObj.month) || 1) - 1,
-        parseInt(partsObj.day) || 1,
-        parseInt(partsObj.hour) || 0,
-        parseInt(partsObj.minute) || 0,
-        parseInt(partsObj.second) || 0
-      );
-      
-      return reconstructed;
-    } catch (error) {
-      // If Intl parsing fails, fall back to manual parsing
-      throw error;
-    }
   }
 
   /**

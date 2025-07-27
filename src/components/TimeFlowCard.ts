@@ -362,7 +362,17 @@ export class TimeFlowCardBeta extends LitElement {
           : this.countdownService.getSubtitle(this._resolvedConfig, this.hass)));
 
     // Compose title text with fallback
-    const titleText = title || (this._expired ? expired_text : 'Countdown Timer');
+    let titleText = title;
+    if (!titleText) {
+      if (this._resolvedConfig.timer_entity && this.hass) {
+        titleText = TimerEntityService.getTimerTitle(
+          this._resolvedConfig.timer_entity,
+          this.hass
+        );
+      } else {
+        titleText = this._expired ? expired_text : 'Countdown Timer';
+      }
+    }
 
     // FIXED: Determine card classes including initialization state
     const cardClasses = [

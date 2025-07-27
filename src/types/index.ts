@@ -26,6 +26,7 @@ export interface CardConfig {
   type?: string;
   target_date?: string;
   creation_date?: string;
+  timer_entity?: string; 
   title?: string;
   subtitle?: string;
   color?: string;

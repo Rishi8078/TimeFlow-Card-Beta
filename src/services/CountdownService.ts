@@ -1,5 +1,6 @@
 import { TemplateService } from './TemplateService';
 import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
+import { TimerEntityService } from './Timer';
 
 /**
  * CountdownService - Handles countdown calculations and time unit management
@@ -26,6 +27,17 @@ export class CountdownService {
    */
   async updateCountdown(config: CardConfig, hass: HomeAssistant | null): Promise<CountdownState> {
     try {
+      // TIMER ENTITY SUPPORT
+      if (config.timer_entity && hass) {
+        const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
+        if (timerData) {
+          // Convert TimerData to CountdownState
+          this.timeRemaining = this._timerDataToCountdownState(timerData);
+          this.expired = TimerEntityService.isTimerExpired(timerData);
+          return this.timeRemaining;
+        }
+      }
+      
       if (!config.target_date) return this.timeRemaining;
       
       const now = new Date().getTime();
@@ -136,6 +148,12 @@ export class CountdownService {
    * @returns {Promise<number>} - Progress percentage (0-100)
    */
   async calculateProgress(config: CardConfig, hass: HomeAssistant | null): Promise<number> {
+    // TIMER ENTITY SUPPORT
+    if (config.timer_entity && hass) {
+      const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
+      return timerData ? timerData.progress : 0;
+    }
+    
     const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
     if (!targetDateValue) return 0;
     
@@ -172,6 +190,14 @@ export class CountdownService {
    * @returns {Object} - Object with value and label properties
    */
   getMainDisplay(config: CardConfig): { value: string; label: string } {
+    // TIMER ENTITY SUPPORT
+    if (config.timer_entity) {
+      const { hours, minutes, seconds } = this.timeRemaining;
+      if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour' : 'hours' };
+      if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute' : 'minutes' };
+      return { value: seconds.toString(), label: seconds === 1 ? 'second' : 'seconds' };
+    }
+    
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
     const { months, days, hours, minutes, seconds } = this.timeRemaining;
     
@@ -200,7 +226,15 @@ export class CountdownService {
    * @param {Object} config - Card configuration
    * @returns {string} - Formatted subtitle text
    */
-  getSubtitle(config: CardConfig): string {
+  getSubtitle(config: CardConfig, hass?: HomeAssistant): string {
+    // TIMER ENTITY SUPPORT
+    if (config.timer_entity && hass) {
+      const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
+      if (timerData) {
+        return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
+      }
+    }
+    
     if (this.expired) {
       const { expired_text = 'Completed! 🎉' } = config;
       return expired_text;
@@ -265,6 +299,20 @@ export class CountdownService {
       const shortUnit = part.unit.charAt(0); // m, d, h, m, s
       return `${part.value}${shortUnit}`;
     }).join(' ') || '0s';
+  }
+
+  /**
+   * Converts TimerData to CountdownState for unified interface
+   */
+  private _timerDataToCountdownState(timerData: any): CountdownState {
+    return {
+      months: 0,
+      days: 0,
+      hours: Math.floor(timerData.remaining / 3600),
+      minutes: Math.floor((timerData.remaining % 3600) / 60),
+      seconds: Math.floor(timerData.remaining % 60),
+      total: timerData.remaining * 1000 // ms for consistency
+    };
   }
 
   /**

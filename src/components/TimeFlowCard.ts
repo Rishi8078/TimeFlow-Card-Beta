@@ -1,7 +1,7 @@
 //TimeFlowCardBeta.ts
 import { LitElement, html, css, TemplateResult, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-
+import { TimerEntityService } from '../services/Timer';
 import { DateParser } from '../utils/DateParser';
 import { ConfigValidator } from '../utils/ConfigValidator';
 import { TemplateService } from '../services/TemplateService';
@@ -166,6 +166,7 @@ export class TimeFlowCardBeta extends LitElement {
       type: 'custom:timeflow-card-beta',
       target_date: '2025-12-31T23:59:59',
       creation_date: '2024-12-31T23:59:59',
+      timer_entity: '',
       title: 'New Year Countdown',
       show_days: true,
       show_hours: true,
@@ -268,6 +269,7 @@ export class TimeFlowCardBeta extends LitElement {
     const templateKeys = [
       'target_date',
       'creation_date',
+      'timer_entity',
       'title',
       'subtitle',
       'color',

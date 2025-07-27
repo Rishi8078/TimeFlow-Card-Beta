@@ -127,7 +127,7 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
                 .color="${m}"
                 .size="${f}"
                 .strokeWidth="${g}"
-                .showProgressText="${this._resolvedConfig.show_progress_text||!1}"
+                .showProgressText=${this._resolvedConfig.show_progress_text||!1}
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

@@ -363,7 +363,7 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Compose title text with fallback
     let titleText = title;
-    if (typeof title !== 'string' || title.trim() === '') {
+    if (titleText === undefined || titleText === null || titleText.trim() === '') {
       if (this._resolvedConfig.timer_entity && this.hass) {
         titleText = TimerEntityService.getTimerTitle(
           this._resolvedConfig.timer_entity,

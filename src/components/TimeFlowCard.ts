@@ -352,7 +352,14 @@ export class TimeFlowCardBeta extends LitElement {
     ].join('; ');
 
     // Compose subtitle text
-    const subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig));
+    const subtitleText = this._expired
+      ? expired_text
+      : (subtitle || (this._resolvedConfig.timer_entity && this.hass
+          ? TimerEntityService.getTimerSubtitle(
+              TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass)!,
+              this._resolvedConfig.show_seconds !== false
+            )
+          : this.countdownService.getSubtitle(this._resolvedConfig, this.hass)));
 
     // Compose title text with fallback
     const titleText = title || (this._expired ? expired_text : 'Countdown Timer');

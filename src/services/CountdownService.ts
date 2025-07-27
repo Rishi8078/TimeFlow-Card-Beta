@@ -151,7 +151,8 @@ export class CountdownService {
     // TIMER ENTITY SUPPORT
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
-      return timerData ? timerData.progress : 0;
+      if (!timerData) return 0;
+      return timerData.progress;
     }
     
     const targetDateValue = await this.templateService.resolveValue(config.target_date, hass);
@@ -226,7 +227,7 @@ export class CountdownService {
    * @param {Object} config - Card configuration
    * @returns {string} - Formatted subtitle text
    */
-  getSubtitle(config: CardConfig, hass?: HomeAssistant): string {
+  getSubtitle(config: CardConfig, hass: HomeAssistant | null): string {
     // TIMER ENTITY SUPPORT
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);

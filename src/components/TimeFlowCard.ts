@@ -12,10 +12,10 @@ import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
 export class TimeFlowCardBeta extends LitElement {
   // Reactive properties to trigger updates
   @property({ type: Object }) hass: HomeAssistant | null = null;
-  @property({ type: Object }) config: CardConfig = {};
+  @property({ type: Object }) config: CardConfig = this.getStubConfig();
 
   // Internal reactive state for resolved config props and countdown state
-  @state() private _resolvedConfig: CardConfig = {};
+  @state() private _resolvedConfig: CardConfig = this.getStubConfig();
   @state() private _progress: number = 0;
   @state() private _countdown: CountdownState = {
     months: 0,
@@ -154,10 +154,10 @@ export class TimeFlowCardBeta extends LitElement {
 
   constructor() {
     super();
-    // Default config stub
-    this.config = this.getStubConfig();
-    // FIXED: Initialize resolved config with stub to prevent empty state
-    this._resolvedConfig = this.getStubConfig();
+    // Initialize with proper stub config
+    const stubConfig = this.getStubConfig();
+    this.config = stubConfig;
+    this._resolvedConfig = stubConfig;
   }
 
   // Provide default configuration stub (like original)
@@ -277,12 +277,13 @@ export class TimeFlowCardBeta extends LitElement {
       'progress_color',
       'primary_color',
       'secondary_color'
-    ];
+    ] as const;
 
     // Resolve templates where applicable
     for (const key of templateKeys) {
-      if (typeof resolvedConfig[key] === 'string' && this.templateService.isTemplate(resolvedConfig[key])) {
-        resolvedConfig[key] = await this.templateService.resolveValue(resolvedConfig[key]);
+      if (typeof resolvedConfig[key] === 'string' && this.templateService.isTemplate(resolvedConfig[key] as string)) {
+        const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
+        resolvedConfig[key] = resolvedValue || undefined;
       }
     }
 

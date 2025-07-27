@@ -7,25 +7,52 @@ export interface TimerData {
   remaining: number; // in seconds
   finishesAt: Date | null;
   progress: number; // 0-100
+  // NEW: Alexa-specific properties
+  isAlexaTimer?: boolean;
+  alexaDevice?: string;
+  timerLabel?: string;
 }
 
 /**
- * TimerEntityService - Handles Home Assistant timer entity integration
- * Provides timer state parsing and progress calculation
+ * TimerEntityService - Enhanced with Amazon Alexa Timer support
+ * Handles Home Assistant timer entity integration including Alexa Media Player timers
  */
 export class TimerEntityService {
   
   /**
-   * Checks if an entity ID is a timer entity
+   * Checks if an entity ID is a timer entity (including Alexa timers)
    * @param entityId - Entity ID to check
    * @returns boolean - Whether the entity is a timer
    */
   static isTimerEntity(entityId: string): boolean {
-    return !!entityId && entityId.startsWith('timer.');
+    if (!entityId) return false;
+    
+    // Standard HA timers
+    if (entityId.startsWith('timer.')) return true;
+    
+    // Alexa Media Player timer sensors
+    if (entityId.includes('_next_timer') || 
+        entityId.includes('alexa_timer') || 
+        (entityId.startsWith('sensor.') && entityId.includes('timer'))) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**
-   * Gets timer data from a Home Assistant timer entity
+   * Checks if entity is an Alexa timer specifically
+   * @param entityId - Entity ID to check
+   * @returns boolean - Whether this is an Alexa timer
+   */
+  static isAlexaTimer(entityId: string): boolean {
+    return entityId.includes('_next_timer') || 
+           entityId.includes('alexa_timer') || 
+           (entityId.startsWith('sensor.') && entityId.includes('alexa') && entityId.includes('timer'));
+  }
+
+  /**
+   * Gets timer data from a Home Assistant timer entity (including Alexa timers)
    * @param entityId - Timer entity ID
    * @param hass - Home Assistant object
    * @returns TimerData object with timer information
@@ -41,6 +68,98 @@ export class TimerEntityService {
       return null;
     }
 
+    // Handle Alexa timers differently
+    if (this.isAlexaTimer(entityId)) {
+      return this.getAlexaTimerData(entityId, entity, hass);
+    }
+
+    // Handle standard HA timers (existing logic)
+    return this.getStandardTimerData(entityId, entity);
+  }
+
+  /**
+   * Handles Alexa timer data extraction
+   * @param entityId - Alexa timer entity ID
+   * @param entity - Entity state object
+   * @param hass - Home Assistant object
+   * @returns TimerData for Alexa timer
+   */
+  private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssistant): TimerData | null {
+    const state = entity.state;
+    const attributes = entity.attributes;
+
+    // Alexa timers might be stored as timestamps or duration strings
+    let remaining = 0;
+    let duration = 0;
+    let finishesAt: Date | null = null;
+    let isActive = false;
+    
+    // Handle different Alexa timer formats
+    if (state && state !== 'unavailable' && state !== 'unknown') {
+      // Case 1: State is a timestamp (end time)
+      if (this.isISOTimestamp(state)) {
+        finishesAt = new Date(state);
+        if (!isNaN(finishesAt.getTime())) {
+          const now = Date.now();
+          remaining = Math.max(0, Math.floor((finishesAt.getTime() - now) / 1000));
+          isActive = remaining > 0;
+        }
+      }
+      // Case 2: State is duration in seconds
+      else if (!isNaN(parseFloat(state))) {
+        remaining = Math.max(0, parseFloat(state));
+        isActive = remaining > 0;
+      }
+      // Case 3: State is duration string (HH:MM:SS)
+      else if (typeof state === 'string' && state.includes(':')) {
+        remaining = this.parseDuration(state);
+        isActive = remaining > 0;
+      }
+    }
+
+    // Try to get duration from attributes
+    if (attributes.original_duration) {
+      duration = this.parseDuration(attributes.original_duration);
+    } else if (attributes.duration) {
+      duration = this.parseDuration(attributes.duration);
+    } else {
+      // If no original duration, use remaining as duration estimate
+      duration = remaining > 0 ? remaining : 0;
+    }
+
+    // Calculate progress
+    let progress = 0;
+    if (duration > 0 && isActive) {
+      const elapsed = duration - remaining;
+      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+    } else if (!isActive && remaining === 0) {
+      progress = 100; // Timer finished
+    }
+
+    // Extract Alexa-specific info
+    const alexaDevice = this.extractAlexaDevice(entityId, attributes);
+    const timerLabel = attributes.friendly_name || attributes.timer_label || this.formatAlexaTimerName(entityId);
+
+    return {
+      isActive,
+      isPaused: false, // Alexa timers don't typically pause
+      duration,
+      remaining,
+      finishesAt,
+      progress,
+      isAlexaTimer: true,
+      alexaDevice,
+      timerLabel
+    };
+  }
+
+  /**
+   * Handles standard HA timer data extraction (existing logic)
+   * @param entityId - Timer entity ID
+   * @param entity - Entity state object
+   * @returns TimerData for standard timer
+   */
+  private static getStandardTimerData(entityId: string, entity: any): TimerData | null {
     const state = entity.state;
     const attributes = entity.attributes;
 
@@ -89,8 +208,55 @@ export class TimerEntityService {
       duration,
       remaining,
       finishesAt,
-      progress
+      progress,
+      isAlexaTimer: false
     };
+  }
+
+  /**
+   * Checks if a string is an ISO timestamp
+   * @param str - String to check
+   * @returns boolean - Whether string is ISO timestamp
+   */
+  private static isISOTimestamp(str: string): boolean {
+    // Check for ISO 8601 format
+    const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?([+-]\d{2}:\d{2}|Z)?$/;
+    return isoRegex.test(str);
+  }
+
+  /**
+   * Extracts Alexa device name from entity ID or attributes
+   * @param entityId - Entity ID
+   * @param attributes - Entity attributes
+   * @returns string - Device name
+   */
+  private static extractAlexaDevice(entityId: string, attributes: any): string {
+    // Try to extract from entity ID
+    if (entityId.includes('echo')) {
+      const match = entityId.match(/echo[^_]*(?:_\w+)*/);
+      if (match) return match[0].replace(/_/g, ' ');
+    }
+    
+    // Try from attributes
+    if (attributes.device_name) return attributes.device_name;
+    if (attributes.device) return attributes.device;
+    
+    // Fallback
+    return 'Alexa Device';
+  }
+
+  /**
+   * Formats Alexa timer name from entity ID
+   * @param entityId - Entity ID
+   * @returns string - Formatted name
+   */
+  private static formatAlexaTimerName(entityId: string): string {
+    return entityId
+      .replace(/^sensor\./, '')
+      .replace(/_next_timer$/, '')
+      .replace(/_timer$/, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
   }
 
   /**
@@ -155,7 +321,7 @@ export class TimerEntityService {
   }
 
   /**
-   * Gets appropriate title text for timer entity
+   * Gets appropriate title text for timer entity (enhanced for Alexa)
    * @param entityId - Timer entity ID
    * @param hass - Home Assistant object
    * @param customTitle - Custom title override
@@ -175,12 +341,21 @@ export class TimerEntityService {
       return 'Timer';
     }
 
+    // Handle Alexa timers
+    if (this.isAlexaTimer(entityId)) {
+      const timerData = this.getAlexaTimerData(entityId, entity, hass);
+      if (timerData?.timerLabel) {
+        return timerData.timerLabel;
+      }
+      return this.formatAlexaTimerName(entityId);
+    }
+
     // Use friendly name or fall back to entity ID
     return entity.attributes.friendly_name || entityId.replace('timer.', '').replace(/_/g, ' ');
   }
 
   /**
-   * Gets appropriate subtitle text for timer entity
+   * Gets appropriate subtitle text for timer entity (enhanced for Alexa)
    * @param timerData - Timer data object
    * @param showSeconds - Whether to show seconds in remaining time
    * @returns string - Subtitle text
@@ -190,6 +365,19 @@ export class TimerEntityService {
       return 'Timer not found';
     }
 
+    // Handle Alexa timers
+    if (timerData.isAlexaTimer) {
+      if (timerData.isActive && timerData.remaining > 0) {
+        const remainingText = this.formatRemainingTime(timerData.remaining, showSeconds);
+        return `${remainingText} remaining${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+      } else if (timerData.remaining === 0 && timerData.progress >= 100) {
+        return `Timer finished${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+      } else {
+        return `Timer ready${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+      }
+    }
+
+    // Handle standard HA timers
     if (timerData.isActive) {
       const remainingText = this.formatRemainingTime(timerData.remaining, showSeconds);
       return `${remainingText} remaining`;
@@ -208,16 +396,24 @@ export class TimerEntityService {
   }
 
   /**
-   * Checks if timer is expired/finished
+   * Checks if timer is expired/finished (enhanced for Alexa)
    * @param timerData - Timer data object
    * @returns boolean - Whether timer is expired
    */
   static isTimerExpired(timerData: TimerData): boolean {
-    return timerData && !timerData.isActive && !timerData.isPaused && timerData.progress >= 100;
+    if (!timerData) return false;
+    
+    // For Alexa timers, check if remaining time is 0 and progress is 100%
+    if (timerData.isAlexaTimer) {
+      return timerData.remaining === 0 && timerData.progress >= 100;
+    }
+    
+    // For standard timers
+    return !timerData.isActive && !timerData.isPaused && timerData.progress >= 100;
   }
 
   /**
-   * Gets timer state color based on current state
+   * Gets timer state color based on current state (enhanced for Alexa)
    * @param timerData - Timer data object
    * @param defaultColor - Default color to use
    * @returns string - Color value
@@ -227,6 +423,18 @@ export class TimerEntityService {
       return defaultColor;
     }
 
+    // Alexa-specific coloring
+    if (timerData.isAlexaTimer) {
+      if (timerData.isActive && timerData.remaining > 0) {
+        return '#00d4ff'; // Alexa blue for active
+      } else if (this.isTimerExpired(timerData)) {
+        return '#ff4444'; // Red for expired
+      } else {
+        return '#888888'; // Gray for inactive
+      }
+    }
+
+    // Standard timer coloring
     if (timerData.isActive) {
       return '#4caf50'; // Green for active
     } else if (timerData.isPaused) {
@@ -236,5 +444,31 @@ export class TimerEntityService {
     } else {
       return '#9e9e9e'; // Gray for idle
     }
+  }
+
+  /**
+   * AUTO-DISCOVERY: Attempts to find Alexa timer entities in Home Assistant
+   * @param hass - Home Assistant object
+   * @returns string[] - Array of potential Alexa timer entity IDs
+   */
+  static discoverAlexaTimers(hass: HomeAssistant): string[] {
+    if (!hass || !hass.states) return [];
+    
+    const alexaTimers: string[] = [];
+    
+    for (const entityId in hass.states) {
+      if (this.isAlexaTimer(entityId)) {
+        const entity = hass.states[entityId];
+        // Only include if the entity has a meaningful state
+        if (entity.state && 
+            entity.state !== 'unavailable' && 
+            entity.state !== 'unknown' && 
+            entity.state !== 'none') {
+          alexaTimers.push(entityId);
+        }
+      }
+    }
+    
+    return alexaTimers;
   }
 }

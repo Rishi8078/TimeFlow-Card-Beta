@@ -25,7 +25,7 @@ export class TemplateService {
    * @param {Object} hass - Home Assistant object
    * @returns {Promise<*>} - Evaluated template result
    */
-  async evaluateTemplate(template: string, hass: any): Promise<any> {
+  async evaluateTemplate(template: string, hass: HomeAssistant | null): Promise<any> {
     if (!hass || !template) {
       return template;
     }
@@ -187,16 +187,15 @@ export class TemplateService {
   /**
    * Enhanced value resolver that handles entities, templates, and plain strings
    * @param {*} value - Value to resolve
-   * @param {Object} hass - Home Assistant object
    * @returns {Promise<*>} - Resolved value
    */
-  async resolveValue(value: string): Promise<string | null> {
-    if (!value) return null;
+  async resolveValue(value: string): Promise<string | undefined> {
+    if (!value) return undefined;
 
     if (this.isTemplate(value)) {
-      const hass = this.card?.hass;
+      const hass = this.card?.hass || null;
       const result = await this.evaluateTemplate(value, hass);
-      return result;
+      return result || undefined;
     }
 
     // Handle entity state
@@ -205,13 +204,15 @@ export class TemplateService {
       const entity = hass.states[value];
       if (!entity) {
         console.warn(`Entity ${value} not found`);
-        return null;
+        return undefined;
       }
       return entity.state;
     }
 
     return value;
-  }  /**
+  }
+
+  /**
    * Clears template cache when entities change
    */
   clearTemplateCache() {

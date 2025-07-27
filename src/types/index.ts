@@ -1,16 +1,10 @@
-// Shared type definitions for TimeFlow Card
+// Enhanced types/index.ts with Alexa Timer support
+
 export interface HomeAssistant {
-  states: { [key: string]: any };
-  callService: (domain: string, service: string, data?: any) => Promise<any>;
-  callApi?: (method: string, path: string, data?: any) => Promise<any>;
-  connection?: any;
-  config?: {
-    time_zone?: string;
-  };
-  user?: {
-    name?: string;
-  };
-  [key: string]: any;
+  states: { [entity_id: string]: any };
+  callService: (domain: string, service: string, serviceData?: any) => void;
+  callApi: (method: string, path: string, data?: any) => Promise<any>;
+  // Add other HA properties as needed
 }
 
 export interface CountdownState {
@@ -22,13 +16,37 @@ export interface CountdownState {
   total: number;
 }
 
+// Add TimeFlowCard interface for TemplateService
+export interface TimeFlowCard {
+  hass: HomeAssistant | null;
+  // Add other properties as needed
+}
+
 export interface CardConfig {
-  type?: string;
+  type: string;
+  
+  // Basic countdown configuration
   target_date?: string;
   creation_date?: string;
-  timer_entity?: string; 
+  
+  // Timer entity configuration (enhanced for Alexa)
+  timer_entity?: string;
+  auto_discover_alexa?: boolean; // NEW: Automatically find and use Alexa timers
+  alexa_device_filter?: string[];  // NEW: Only use timers from specific Alexa devices
+  prefer_labeled_timers?: boolean; // NEW: Prefer timers with labels over unnamed ones
+  
+  // Display configuration
   title?: string;
   subtitle?: string;
+  
+  // Time unit visibility
+  show_months?: boolean;
+  show_days?: boolean;
+  show_hours?: boolean;
+  show_minutes?: boolean;
+  show_seconds?: boolean;
+  
+  // Styling
   color?: string;
   background_color?: string;
   progress_color?: string;
@@ -36,19 +54,25 @@ export interface CardConfig {
   secondary_color?: string;
   stroke_width?: number;
   icon_size?: number;
-  expired_animation?: boolean;
-  expired_text?: string;
-  show_days?: boolean;
-  show_hours?: boolean;
-  show_minutes?: boolean;
-  show_seconds?: boolean;
-  show_months?: boolean;
+  
+  // Card dimensions
   width?: string | number;
   height?: string | number;
   aspect_ratio?: string;
-  [key: string]: any; // Allow additional properties
-}
-
-export interface TimeFlowCard {
-  hass?: HomeAssistant | null;
+  
+  // Completion behavior
+  expired_animation?: boolean;
+  expired_text?: string;
+  
+  // Alexa-specific styling (NEW)
+  alexa_color?: string;           // Custom color for Alexa timers
+  show_alexa_device?: boolean;    // Show device name in subtitle
+  alexa_icon?: string;           // Custom icon for Alexa timers
+  
+  // Debug options
+  debug?: boolean;
+  show_timer_info?: boolean;     // NEW: Show debug info about discovered timers
+  
+  // Allow any additional string properties to fix template key indexing
+  [key: string]: any;
 }

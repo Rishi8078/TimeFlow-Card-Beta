@@ -167,7 +167,7 @@ export class TimeFlowCardBeta extends LitElement {
       target_date: '2025-12-31T23:59:59',
       creation_date: '2024-12-31T23:59:59',
       timer_entity: '',
-      title: undefined,
+      title: 'New Year Countdown',
       show_days: true,
       show_hours: true,
       show_minutes: true,
@@ -308,13 +308,13 @@ export class TimeFlowCardBeta extends LitElement {
     }
 
     const {
-      title = 'Countdown Timer',
+      title ,
       subtitle,
       color,
       background_color,
       progress_color,
-      stroke_width = 15,
-      icon_size = 100,
+      stroke_width ,
+      icon_size ,
       expired_animation = true,
       expired_text = 'Completed! 🎉',
       width,

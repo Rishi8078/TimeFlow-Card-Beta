@@ -231,10 +231,14 @@ export class CountdownService {
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
       if (!timerData) return 'Timer not found';
+      // 1:1 mapping inspired by timer-bar-card
+      const subtitleMap = {
+        idle:   'Ready',
+        paused: `Paused – ${TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false)}`,
+        active: `${TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false)} remaining`,
+      };
       const isIdle = !timerData.isActive && !timerData.isPaused;
-      if (isIdle) return 'Idle';
-      if (timerData.isPaused) return `Paused – ${TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false)}`;
-      return TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false);
+      return subtitleMap[isIdle ? 'idle' : timerData.isPaused ? 'paused' : 'active'];
     }
     
     if (this.expired) {

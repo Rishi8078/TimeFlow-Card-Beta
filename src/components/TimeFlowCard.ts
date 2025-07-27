@@ -27,6 +27,7 @@ export class TimeFlowCardBeta extends LitElement {
   };
   @state() private _expired: boolean = false;
   @state() private _error: string | null = null;
+  @state() private _initialized: boolean = false; // NEW: Track initialization
 
   // Timer ID
   private _timerId: ReturnType<typeof setInterval> | null = null;
@@ -44,6 +45,8 @@ export class TimeFlowCardBeta extends LitElement {
         color: var(--primary-text-color, #222);
         --progress-color: var(--progress-color, #4caf50);
       }
+      
+      /* FIXED: Set initial background immediately to prevent white flash */
       ha-card {
         display: flex;
         flex-direction: column;
@@ -51,32 +54,53 @@ export class TimeFlowCardBeta extends LitElement {
         border-radius: 22px;
         position: relative;
         overflow: hidden;
+        /* IMPORTANT: Set default background immediately */
         background: var(--card-background, var(--primary-background-color, #1a1a1a));
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         border: none;
+        /* REMOVED: transition that causes flash - only animate specific properties if needed */
+        /* transition: background-color 0.3s ease; */
+        min-height: 120px; /* Prevent layout shift */
       }
+      
+      /* FIXED: Only show card after initialization to prevent white flash */
+      ha-card:not(.initialized) {
+        opacity: 0;
+      }
+      
+      ha-card.initialized {
+        opacity: 1;
+        transition: opacity 0.2s ease-in;
+      }
+      
       ha-card.expired {
         animation: celebration 0.8s ease-in-out;
       }
+      
       .card-content {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         padding: 20px;
         height: 100%;
+        /* FIXED: Ensure content has proper background inheritance */
+        background: inherit;
       }
+      
       .header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         margin-bottom: 0;
       }
+      
       .title-section {
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
+      
       .title {
         font-size: var(--timeflow-title-size, 1.5rem);
         font-weight: 500;
@@ -86,6 +110,7 @@ export class TimeFlowCardBeta extends LitElement {
         letter-spacing: -0.01em;
         color: var(--timeflow-card-text-color, inherit);
       }
+      
       .subtitle {
         font-size: var(--timeflow-subtitle-size, 1rem);
         opacity: 0.65;
@@ -94,10 +119,12 @@ export class TimeFlowCardBeta extends LitElement {
         line-height: 1.2;
         color: var(--timeflow-card-text-color, inherit);
       }
+      
       .progress-section {
         flex-shrink: 0;
         margin-left: auto;
       }
+      
       .content {
         display: flex;
         align-items: flex-end;
@@ -105,14 +132,17 @@ export class TimeFlowCardBeta extends LitElement {
         margin-top: auto;
         padding-top: 12px;
       }
+      
       .progress-circle {
         opacity: 0.9;
       }
+      
       @keyframes celebration {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
         100% { transform: scale(1); }
       }
+      
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         ha-card {
@@ -126,7 +156,8 @@ export class TimeFlowCardBeta extends LitElement {
     super();
     // Default config stub
     this.config = this.getStubConfig();
-    this._resolvedConfig = {};
+    // FIXED: Initialize resolved config with stub to prevent empty state
+    this._resolvedConfig = this.getStubConfig();
   }
 
   // Provide default configuration stub (like original)
@@ -158,9 +189,18 @@ export class TimeFlowCardBeta extends LitElement {
     try {
       ConfigValidator.validateConfig(config);
       this.config = { ...config };
+      // FIXED: Immediately update resolved config to prevent empty state
+      this._resolvedConfig = { ...config };
       this._error = null;
+      this._initialized = false; // Reset initialization flag
       this.templateService.clearTemplateCache();
       this.styleManager.clearCache();
+      
+      // FIXED: Trigger immediate update after config change
+      this._updateCountdownAndRender().then(() => {
+        this._initialized = true;
+        this.requestUpdate();
+      });
     } catch (err) {
       this._error = (err as Error).message || 'Invalid configuration';
       console.error('TimeFlow Card: Configuration error:', err);
@@ -171,7 +211,13 @@ export class TimeFlowCardBeta extends LitElement {
   firstUpdated(): void {
     // Set up template service with card reference
     this.templateService.card = this;
-    this._startCountdownUpdates();
+    
+    // FIXED: Initialize immediately on first update
+    this._updateCountdownAndRender().then(() => {
+      this._initialized = true;
+      this.requestUpdate();
+      this._startCountdownUpdates();
+    });
   }
 
   // Cleanup on disconnect
@@ -193,7 +239,6 @@ export class TimeFlowCardBeta extends LitElement {
    */
   _startCountdownUpdates(): void {
     this._stopCountdownUpdates(); // clear previous interval
-    this._updateCountdownAndRender().catch(console.error);
     this._timerId = setInterval(() => {
       this._updateCountdownAndRender().catch(console.error);
     }, 1000);
@@ -275,10 +320,10 @@ export class TimeFlowCardBeta extends LitElement {
       aspect_ratio
     } = this._resolvedConfig;
 
-    // Determine colors with fallback CSS vars
+    // FIXED: Ensure background color has a sensible default
+    const cardBackground = background_color || 'var(--card-background, var(--primary-background-color, #1a1a1a))';
+    const textColor = color || 'var(--primary-text-color, #fff)';
     const mainProgressColor = progress_color || color || 'var(--progress-color, #4caf50)';
-    const cardBackground = background_color || 'var(--card-background, #fff)';
-    const textColor = color || 'var(--primary-text-color, #222)';
 
     // Calculate dynamic circle size based on card dimensions to prevent overflow
     const dynamicCircleSize = this.styleManager.calculateDynamicIconSize(width, height, aspect_ratio, icon_size);
@@ -290,9 +335,9 @@ export class TimeFlowCardBeta extends LitElement {
     // Generate dimension styles for the card
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     
-    // Compose CSS styles for card including dynamic background, dimensions, and theme variables
+    // FIXED: Compose CSS styles with proper background handling
     const cardStyles = [
-      `background: ${cardBackground}`,
+      `background: ${cardBackground}`, 
       `color: ${textColor}`,
       `--timeflow-card-background-color: ${cardBackground}`,
       `--timeflow-card-text-color: ${textColor}`,
@@ -310,11 +355,14 @@ export class TimeFlowCardBeta extends LitElement {
     // Compose title text with fallback
     const titleText = title || (this._expired ? expired_text : 'Countdown Timer');
 
-    // Determine show expired class for card
-    const expiredClass = (this._expired && expired_animation) ? 'expired' : '';
+    // FIXED: Determine card classes including initialization state
+    const cardClasses = [
+      this._initialized ? 'initialized' : '',
+      (this._expired && expired_animation) ? 'expired' : ''
+    ].filter(Boolean).join(' ');
 
     return html`
-      <ha-card class="${expiredClass}" style="${cardStyles}">
+      <ha-card class="${cardClasses}" style="${cardStyles}">
         <div class="card-content">
           <header class="header">
             <div class="title-section">
@@ -369,4 +417,3 @@ export class TimeFlowCardBeta extends LitElement {
     return '1.2.0-lit';
   }
 }
-

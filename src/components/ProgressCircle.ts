@@ -6,13 +6,15 @@ export class ProgressCircleBeta extends LitElement {
     progress: { type: Number },
     color: { type: String },
     size: { type: Number },
-    strokeWidth: { type: Number }
+    strokeWidth: { type: Number },
+    showProgressText: { type: Boolean }
   };
 
   progress: number = 0;
   color: string = '#4CAF50';
   size: number = 100;
   strokeWidth: number = 15;
+  showProgressText: boolean = false;
 
   static get styles(): CSSResult {
     return css`
@@ -26,6 +28,15 @@ export class ProgressCircleBeta extends LitElement {
       svg {
         display: block;
         margin: 0 auto;
+      }
+      .progress-text {
+        font-size: 1.1em;
+        font-weight: bold;
+        fill: var(--progress-text-color, #444);
+        dominant-baseline: middle;
+        text-anchor: middle;
+        pointer-events: none;
+        user-select: none;
       }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
@@ -72,7 +83,6 @@ export class ProgressCircleBeta extends LitElement {
   }
 
   render(): TemplateResult {
-    // Calculations as before
     const safeProgress = Math.max(0, Math.min(100, Number(this.progress) || 0));
     const size = Number(this.size) || 100;
     const stroke = Number(this.strokeWidth) || 15;
@@ -111,11 +121,20 @@ export class ProgressCircleBeta extends LitElement {
               transform-origin: ${size / 2}px ${size / 2}px;
             "
           ></circle>
+
+          ${this.showProgressText
+            ? html`
+                <text
+                  x="50%" y="50%"
+                  class="progress-text"
+                  dy="2"
+                >
+                  ${Math.round(safeProgress)}%
+                </text>
+              `
+            : ''}
         </svg>
       </div>
     `;
   }
 }
-
-// Register the custom element
-customElements.define('progress-circle-beta', ProgressCircleBeta);

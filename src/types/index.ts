@@ -38,6 +38,7 @@ export interface CardConfig {
   // Display configuration
   title?: string;
   subtitle?: string;
+  show_progress_text?: boolean;
   
   // Time unit visibility
   show_months?: boolean;

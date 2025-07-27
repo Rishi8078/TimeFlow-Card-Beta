@@ -12,10 +12,9 @@ function t(t,e,s,i){var r,o=arguments.length,n=o<3?e:null===i?i=Object.getOwnPro
         border-radius: 22px;
         position: relative;
         overflow: hidden;
-        background: var(--card-background, var(--primary-background-color, #fff));
+        background: var(--card-background, var(--primary-background-color, #1a1a1a));
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         border: none;
-        transition: background-color 0.3s ease;
       }
       ha-card.expired {
         animation: celebration 0.8s ease-in-out;

@@ -27,16 +27,6 @@ export class ProgressCircleBeta extends LitElement {
         display: block;
         margin: 0 auto;
       }
-      .progress-text {
-        font-size: 1.1em;
-        font-weight: bold;
-        fill: var(--progress-text-color, #444);
-        dominant-baseline: middle;
-        text-anchor: middle;
-        /* Center in SVG */
-        pointer-events: none;
-        user-select: none;
-      }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
       }
@@ -121,15 +111,6 @@ export class ProgressCircleBeta extends LitElement {
               transform-origin: ${size / 2}px ${size / 2}px;
             "
           ></circle>
-          <text
-            x="50%" y="50%"
-            class="progress-text"
-            dominant-baseline="middle"
-            text-anchor="middle"
-            dy="2"
-          >
-            ${Math.round(safeProgress)}%
-          </text>
         </svg>
       </div>
     `;

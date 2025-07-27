@@ -230,9 +230,11 @@ export class CountdownService {
     // TIMER ENTITY SUPPORT
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
-      if (timerData) {
-        return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
-      }
+      if (!timerData) return 'Timer not found';
+      const isIdle = !timerData.isActive && !timerData.isPaused;
+      if (isIdle) return 'Idle';
+      if (timerData.isPaused) return `Paused – ${TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false)}`;
+      return TimerEntityService.formatRemainingTime(timerData.remaining, config.show_seconds !== false);
     }
     
     if (this.expired) {

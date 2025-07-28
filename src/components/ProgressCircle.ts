@@ -32,7 +32,7 @@ export class ProgressCircleBeta extends LitElement {
       .progress-text {
         font-size: 1.1em;
         font-weight: bold;
-        fill: var(--progress-text-color, #444);
+        fill: var(--progress-text-color, #f4f5f4ff);
         dominant-baseline: middle;
         text-anchor: middle;
         pointer-events: none;

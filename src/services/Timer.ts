@@ -143,11 +143,11 @@ export class TimerEntityService {
         progress = 100; // Timer finished
       }
     } else {
-      // No original duration available - simplified approach
+      // No original duration available - provide minimal visual feedback
       if (isActive && remaining > 0) {
-        // Since we don't know the original duration, start from 0% and let it progress
-        // This ensures all timers start from the same position (12 o'clock)
-        progress = 0;
+        // Show a small progress (5%) to indicate the timer is active
+        // This ensures users can see the timer is running even without knowing total duration
+        progress = 5;
       } else if (!isActive && remaining === 0) {
         progress = 100; // Timer finished
       } else {

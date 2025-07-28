@@ -7,7 +7,7 @@ export class ProgressCircleBeta extends LitElement {
     color: { type: String },
     size: { type: Number },
     strokeWidth: { type: Number },
-    showProgressText: { type: Boolean }
+    showProgressText: { type: Boolean, attribute: 'show-progress-text' }
   };
 
   progress: number = 0;

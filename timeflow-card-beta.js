@@ -127,7 +127,7 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
                 .color="${f}"
                 .size="${g}"
                 .strokeWidth="${_}"
-                .showProgressText="${null!==(t=this._resolvedConfig.show_progress_text)&&void 0!==t&&t}"
+                show-progress-text="${null!==(t=this._resolvedConfig.show_progress_text)&&void 0!==t&&t}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>
@@ -201,5 +201,5 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
               `:""}
         </svg>
       </div>
-    `}}vt.properties={progress:{type:Number},color:{type:String},size:{type:Number},strokeWidth:{type:Number},showProgressText:{type:Boolean}},customElements.get("progress-circle-beta")?console.debug("TimeFlow Card: progress-circle-beta component already registered"):(customElements.define("progress-circle-beta",vt),console.debug("TimeFlow Card: Registered progress-circle-beta component")),customElements.get("timeflow-card-beta")?console.debug("TimeFlow Card: timeflow-card-beta component already registered"):(customElements.define("timeflow-card-beta",yt),console.debug("TimeFlow Card: Registered timeflow-card-beta component")),window.customCards=window.customCards||[],window.customCards.push({type:"timeflow-card-beta",name:"TimeFlow Card (Lit Version)",description:"A beautiful countdown timer card with progress circle for Home Assistant, using Lit",preview:!0,documentationURL:"https://github.com/Rishi8078/TimeFlow-Card"}),console.info("%c TIMEFLOW-CARD (Lit) \n%c Version 1.2.0 ","color: orange; font-weight: bold; background: black","color: white; font-weight: bold; background: dimgray");export{vt as ProgressCircleBeta,yt as TimeFlowCardBeta};
+    `}}vt.properties={progress:{type:Number},color:{type:String},size:{type:Number},strokeWidth:{type:Number},showProgressText:{type:Boolean,attribute:"show-progress-text"}},customElements.get("progress-circle-beta")?console.debug("TimeFlow Card: progress-circle-beta component already registered"):(customElements.define("progress-circle-beta",vt),console.debug("TimeFlow Card: Registered progress-circle-beta component")),customElements.get("timeflow-card-beta")?console.debug("TimeFlow Card: timeflow-card-beta component already registered"):(customElements.define("timeflow-card-beta",yt),console.debug("TimeFlow Card: Registered timeflow-card-beta component")),window.customCards=window.customCards||[],window.customCards.push({type:"timeflow-card-beta",name:"TimeFlow Card (Lit Version)",description:"A beautiful countdown timer card with progress circle for Home Assistant, using Lit",preview:!0,documentationURL:"https://github.com/Rishi8078/TimeFlow-Card"}),console.info("%c TIMEFLOW-CARD (Lit) \n%c Version 1.2.0 ","color: orange; font-weight: bold; background: black","color: white; font-weight: bold; background: dimgray");export{vt as ProgressCircleBeta,yt as TimeFlowCardBeta};
 //# sourceMappingURL=timeflow-card-beta.js.map

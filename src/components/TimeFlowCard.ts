@@ -178,6 +178,7 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size: 100,
       expired_animation: true,
       expired_text: 'Completed! 🎉',
+      show_progress_text: false, // FIXED: Added to stub config
     };
   }
 
@@ -320,7 +321,8 @@ export class TimeFlowCardBeta extends LitElement {
       expired_text = 'Completed! 🎉',
       width,
       height,
-      aspect_ratio
+      aspect_ratio,
+      show_progress_text = false // FIXED: Extract the boolean properly
     } = this._resolvedConfig;
 
     // FIXED: Ensure background color has a sensible default
@@ -381,6 +383,9 @@ export class TimeFlowCardBeta extends LitElement {
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
+    // FIXED: Debug logging to see what's happening
+    console.log('TimeFlowCard render - show_progress_text:', show_progress_text, typeof show_progress_text);
+
     return html`
       <ha-card class="${cardClasses}" style="${cardStyles}">
         <div class="card-content">
@@ -399,7 +404,7 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
-                show-progress-text="${this._resolvedConfig.show_progress_text ?? false}"
+                ?show-progress-text="${show_progress_text}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

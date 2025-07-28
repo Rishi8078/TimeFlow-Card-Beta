@@ -76,103 +76,102 @@ export class TimerEntityService {
     // Handle standard HA timers (existing logic)
     return this.getStandardTimerData(entityId, entity);
   }
-/**
- * Handles Alexa timer data extraction
- * @param entityId - Alexa timer entity ID
- * @param entity - Entity state object
- * @param hass - Home Assistant object
- * @returns TimerData for Alexa timer
- */
-private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssistant): TimerData | null {
-  const state = entity.state;
-  const attributes = entity.attributes;
 
-  // Alexa timers might be stored as timestamps or duration strings
-  let remaining = 0;
-  let duration = 0;
-  let finishesAt: Date | null = null;
-  let isActive = false;
-  
-  // Handle different Alexa timer formats
-  if (state && state !== 'unavailable' && state !== 'unknown') {
-    // Case 1: State is a timestamp (end time)
-    if (this.isISOTimestamp(state)) {
-      finishesAt = new Date(state);
-      if (!isNaN(finishesAt.getTime())) {
-        const now = Date.now();
-        remaining = Math.max(0, Math.floor((finishesAt.getTime() - now) / 1000));
+  /**
+   * Handles Alexa timer data extraction
+   * @param entityId - Alexa timer entity ID
+   * @param entity - Entity state object
+   * @param hass - Home Assistant object
+   * @returns TimerData for Alexa timer
+   */
+  private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssistant): TimerData | null {
+    const state = entity.state;
+    const attributes = entity.attributes;
+
+    // Alexa timers might be stored as timestamps or duration strings
+    let remaining = 0;
+    let duration = 0;
+    let finishesAt: Date | null = null;
+    let isActive = false;
+    
+    // Handle different Alexa timer formats
+    if (state && state !== 'unavailable' && state !== 'unknown') {
+      // Case 1: State is a timestamp (end time)
+      if (this.isISOTimestamp(state)) {
+        finishesAt = new Date(state);
+        if (!isNaN(finishesAt.getTime())) {
+          const now = Date.now();
+          remaining = Math.max(0, Math.floor((finishesAt.getTime() - now) / 1000));
+          isActive = remaining > 0;
+        }
+      }
+      // Case 2: State is duration in seconds
+      else if (!isNaN(parseFloat(state))) {
+        remaining = Math.max(0, parseFloat(state));
+        isActive = remaining > 0;
+      }
+      // Case 3: State is duration string (HH:MM:SS)
+      else if (typeof state === 'string' && state.includes(':')) {
+        remaining = this.parseDuration(state);
         isActive = remaining > 0;
       }
     }
-    // Case 2: State is duration in seconds
-    else if (!isNaN(parseFloat(state))) {
-      remaining = Math.max(0, parseFloat(state));
-      isActive = remaining > 0;
-    }
-    // Case 3: State is duration string (HH:MM:SS)
-    else if (typeof state === 'string' && state.includes(':')) {
-      remaining = this.parseDuration(state);
-      isActive = remaining > 0;
-    }
-  }
 
-  // Try to get duration from attributes
-  let hasOriginalDuration = false;
-  if (attributes.original_duration) {
-    duration = this.parseDuration(attributes.original_duration);
-    hasOriginalDuration = true;
-  } else if (attributes.duration) {
-    duration = this.parseDuration(attributes.duration);
-    hasOriginalDuration = true;
-  } else {
-    // If no original duration, we can't calculate meaningful progress
-    // For display purposes, we'll use remaining as duration, but handle progress specially
-    duration = remaining > 0 ? remaining : 0;
-    hasOriginalDuration = false;
-  }
-
-  // Calculate progress - FIXED LOGIC
-  let progress = 0;
-  if (hasOriginalDuration && duration > 0) {
-    // We have a real original duration, calculate normal progress
-    if (isActive) {
-      const elapsed = duration - remaining;
-      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (remaining === 0) {
-      progress = 100; // Timer finished
-    }
-  } else {
-    // No original duration available - use time-based progress estimation
-    if (isActive && remaining > 0) {
-      // For active timers without original duration, show progress based on a reasonable assumption
-      // We'll show progress as if this is a "medium" timer to give visual feedback
-      // This is imperfect but better than showing 0% progress
-      const assumedTotalTime = Math.max(remaining * 2, 300); // Assume at least 5 minutes or double remaining
-      const elapsed = assumedTotalTime - remaining;
-      progress = Math.min(100, Math.max(0, (elapsed / assumedTotalTime) * 100));
-    } else if (!isActive && remaining === 0) {
-      progress = 100; // Timer finished
+    // Try to get duration from attributes
+    let hasOriginalDuration = false;
+    if (attributes.original_duration) {
+      duration = this.parseDuration(attributes.original_duration);
+      hasOriginalDuration = true;
+    } else if (attributes.duration) {
+      duration = this.parseDuration(attributes.duration);
+      hasOriginalDuration = true;
     } else {
-      progress = 0; // Timer not active
+      // If no original duration, we can't calculate meaningful progress
+      // For display purposes, we'll use remaining as duration, but handle progress specially
+      duration = remaining > 0 ? remaining : 0;
+      hasOriginalDuration = false;
     }
+
+    // Calculate progress - FIXED LOGIC
+    let progress = 0;
+    if (hasOriginalDuration && duration > 0) {
+      // We have a real original duration, calculate normal progress
+      if (isActive) {
+        const elapsed = duration - remaining;
+        progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+      } else if (remaining === 0) {
+        progress = 100; // Timer finished
+      }
+    } else {
+      // No original duration available - simplified approach
+      if (isActive && remaining > 0) {
+        // Since we don't know the original duration, start from 0% and let it progress
+        // This ensures all timers start from the same position (12 o'clock)
+        progress = 0;
+      } else if (!isActive && remaining === 0) {
+        progress = 100; // Timer finished
+      } else {
+        progress = 0; // Timer not active
+      }
+    }
+
+    // Extract Alexa-specific info
+    const alexaDevice = this.extractAlexaDevice(entityId, attributes);
+    const timerLabel = attributes.friendly_name || attributes.timer_label || this.formatAlexaTimerName(entityId);
+
+    return {
+      isActive,
+      isPaused: false, // Alexa timers don't typically pause
+      duration,
+      remaining,
+      finishesAt,
+      progress,
+      isAlexaTimer: true,
+      alexaDevice,
+      timerLabel
+    };
   }
 
-  // Extract Alexa-specific info
-  const alexaDevice = this.extractAlexaDevice(entityId, attributes);
-  const timerLabel = attributes.friendly_name || attributes.timer_label || this.formatAlexaTimerName(entityId);
-
-  return {
-    isActive,
-    isPaused: false, // Alexa timers don't typically pause
-    duration,
-    remaining,
-    finishesAt,
-    progress,
-    isAlexaTimer: true,
-    alexaDevice,
-    timerLabel
-  };
-}
   /**
    * Handles standard HA timer data extraction (existing logic)
    * @param entityId - Timer entity ID

@@ -14,7 +14,7 @@ export class ProgressCircleBeta extends LitElement {
   color: string = '#4CAF50';
   size: number = 100;
   strokeWidth: number = 15;
-  showProgressText: boolean = false;
+  showProgressText: boolean = false; // FIXED: Added missing initialization
 
   static get styles(): CSSResult {
     return css`
@@ -50,6 +50,7 @@ export class ProgressCircleBeta extends LitElement {
     this.color = '#4CAF50';
     this.size = 100;
     this.strokeWidth = 15;
+    this.showProgressText = false; // FIXED: Added missing initialization
   }
 
   updated(changed: PropertyValues): void {
@@ -90,6 +91,9 @@ export class ProgressCircleBeta extends LitElement {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (safeProgress / 100) * circumference;
 
+    // FIXED: Calculate responsive font size based on circle size
+    const fontSize = Math.max(10, Math.min(24, size * 0.16));
+
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">
         <svg
@@ -128,6 +132,7 @@ export class ProgressCircleBeta extends LitElement {
                   x="50%" y="50%"
                   class="progress-text"
                   dy="2"
+                  style="font-size: ${fontSize}px;"
                 >
                   ${Math.round(safeProgress)}%
                 </text>

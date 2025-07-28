@@ -158,7 +158,7 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
       .updating {
         transition: stroke-dashoffset 0.3s ease;
       }
-    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15}updated(t){var e;if(t.has("progress")){const t=null===(e=this.renderRoot)||void 0===e?void 0:e.querySelector(".progress-bar");t&&(t.classList.add("updating"),setTimeout(()=>{t&&t.classList.remove("updating")},400))}}updateProgress(t,e=!0){var i;if(e)this.progress=t;else{const e=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=t,e&&(e.style.transition="none"),setTimeout(()=>{e&&(e.style.transition="")},20)}}getProgress(){return this.progress}render(){const t=Math.max(0,Math.min(100,Number(this.progress)||0)),e=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(e-i)/2,r=2*Math.PI*s,n=r-t/100*r;return j`
+    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1}updated(t){var e;if(t.has("progress")){const t=null===(e=this.renderRoot)||void 0===e?void 0:e.querySelector(".progress-bar");t&&(t.classList.add("updating"),setTimeout(()=>{t&&t.classList.remove("updating")},400))}}updateProgress(t,e=!0){var i;if(e)this.progress=t;else{const e=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=t,e&&(e.style.transition="none"),setTimeout(()=>{e&&(e.style.transition="")},20)}}getProgress(){return this.progress}render(){const t=Math.max(0,Math.min(100,Number(this.progress)||0)),e=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(e-i)/2,r=2*Math.PI*s,n=r-t/100*r,o=Math.max(10,Math.min(24,.16*e));return j`
       <div class="progress-wrapper" style="width:${e}px; height:${e}px;">
         <svg
           class="progress-circle-beta"
@@ -195,6 +195,7 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
                   x="50%" y="50%"
                   class="progress-text"
                   dy="2"
+                  style="font-size: ${o}px;"
                 >
                   ${Math.round(t)}%
                 </text>

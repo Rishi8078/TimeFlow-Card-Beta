@@ -201,7 +201,7 @@ export class TimeFlowCardBeta extends LitElement {
       // FIXED: Trigger immediate update after config change
       this._updateCountdownAndRender().then(() => {
         this._initialized = true;
-        //this.requestUpdate();
+        this.requestUpdate();
       });
     } catch (err) {
       this._error = (err as Error).message || 'Invalid configuration';
@@ -404,7 +404,7 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
-                ?show-progress-text="${show_progress_text}"
+                ?show-progress-text="${Boolean(show_progress_text)}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

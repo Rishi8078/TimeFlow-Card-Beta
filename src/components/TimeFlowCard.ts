@@ -201,7 +201,7 @@ export class TimeFlowCardBeta extends LitElement {
       // FIXED: Trigger immediate update after config change
       this._updateCountdownAndRender().then(() => {
         this._initialized = true;
-        this.requestUpdate();
+        //this.requestUpdate();
       });
     } catch (err) {
       this._error = (err as Error).message || 'Invalid configuration';

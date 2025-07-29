@@ -127,3 +127,4 @@ __tests__/
 .jest-cache/
 junit.xml
 coverage.xml
+verify-fixes.js

@@ -7,12 +7,7 @@ export class ProgressCircleBeta extends LitElement {
     color: { type: String },
     size: { type: Number },
     strokeWidth: { type: Number },
-    // FIXED: Proper boolean property definition with correct attribute mapping
-    showProgressText: { 
-      type: Boolean, 
-      attribute: 'show-progress-text',
-      reflect: true // IMPORTANT: This helps with debugging
-    }
+    showProgressText: { type: Boolean }
   };
 
   progress: number = 0;

@@ -404,7 +404,7 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
-                ?show-progress-text="${Boolean(show_progress_text)}"
+                .showProgressText="${Boolean(show_progress_text)}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

@@ -277,7 +277,8 @@ export class TimeFlowCardBeta extends LitElement {
       'background_color',
       'progress_color',
       'primary_color',
-      'secondary_color'
+      'secondary_color',
+      'expired_text'
     ] as const;
 
     // Resolve templates where applicable

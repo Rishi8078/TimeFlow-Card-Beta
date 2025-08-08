@@ -45,7 +45,7 @@ export class ConfigValidator {
       };
     }
     
-    // Validate target_date (required field, unless using timer_entity)
+    // Validate target_date (required field, unless using timer_entity or auto_discover_alexa)
     if (config.target_date) {
       if (!this.isValidDateInput(config.target_date)) {
         errors.push({
@@ -56,13 +56,13 @@ export class ConfigValidator {
           value: config.target_date
         });
       }
-    } else if (!config.timer_entity) {
-      // target_date is only required if timer_entity is not provided
+    } else if (!config.timer_entity && !config.auto_discover_alexa) {
+      // target_date is only required if timer_entity and auto_discover_alexa are not provided
       errors.push({
         field: 'target_date',
-        message: 'Either "target_date" or "timer_entity" must be provided',
+        message: 'Either "target_date", "timer_entity", or "auto_discover_alexa" must be provided',
         severity: 'critical',
-        suggestion: 'Add target_date field with a valid date value like "2025-12-31T23:59:59" OR specify a timer_entity like "timer.my_timer".',
+        suggestion: 'Add target_date field with a valid date value like "2025-12-31T23:59:59" OR specify a timer_entity like "timer.my_timer" OR enable auto_discover_alexa.',
         value: undefined
       });
     }

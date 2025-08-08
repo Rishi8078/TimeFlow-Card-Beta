@@ -34,8 +34,8 @@ export class TemplateService {
     const cacheKey = template;
     if (this.templateResults.has(cacheKey)) {
       const cached = this.templateResults.get(cacheKey);
-      // Use longer cache for date templates to prevent oscillation near expiration
-      const cacheTimeout = this.isDateTemplate(template) ? 30000 : 5000; // 30s for dates, 5s for others
+      // Use much longer cache for date templates to prevent oscillation near expiration
+      const cacheTimeout = this.isDateTemplate(template) ? 60000 : 5000; // 60s for dates, 5s for others
       if (cached && Date.now() - cached.timestamp < cacheTimeout) {
         return cached.result;
       }

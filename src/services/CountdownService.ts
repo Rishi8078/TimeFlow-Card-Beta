@@ -78,13 +78,7 @@ export class CountdownService {
       
       const difference = targetDate - now;
 
-      // Add a small stability buffer (5 seconds) to prevent flickering between expired/not expired
-      // This prevents template evaluation timing differences from causing oscillation
-      const stabilityBuffer = 5000; // 5 seconds in milliseconds
-      const isStablyExpired = difference < -stabilityBuffer;
-      const isStablyActive = difference > stabilityBuffer;
-
-      if (isStablyActive || (!isStablyExpired && !this.expired)) {
+      if (difference > 0) {
         // Calculate time units based on what's enabled - cascade disabled units into enabled ones
         const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
         
@@ -155,11 +149,11 @@ export class CountdownService {
 
         this.timeRemaining = { months, days, hours, minutes, seconds, total: difference };
         this.expired = false;
-      } else if (isStablyExpired) {
+      } else {
+        // Countdown has reached zero or passed - mark as expired
         this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
         this.expired = true;
       }
-      // If we're in the buffer zone (-5s to +5s), maintain current state to prevent flickering
       
       return this.timeRemaining;
     } catch (error) {

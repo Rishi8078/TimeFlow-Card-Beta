@@ -11,11 +11,19 @@ export class ConfigValidator {
   static validateConfig(config: any): void {
     const errors = [];
     
+    // Check if config is null or undefined
+    if (!config) {
+      throw new Error('Configuration object is missing or empty');
+    }
+    
     // Validate target_date
     if (config.target_date) {
       if (!this.isValidDateInput(config.target_date)) {
         errors.push('Invalid target_date format. Use ISO date string, entity ID, or template.');
       }
+    } else {
+      // target_date is required
+      errors.push('Required field "target_date" is missing.');
     }
     
     // Validate creation_date if provided
@@ -72,7 +80,7 @@ export class ConfigValidator {
     
     // Throw error if validation fails
     if (errors.length > 0) {
-      throw new Error(`Configuration validation failed:\n${errors.join('\n')}`);
+      throw new Error(`Configuration validation failed:\n• ${errors.join('\n• ')}`);
     }
   }
   

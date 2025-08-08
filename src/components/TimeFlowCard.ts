@@ -63,6 +63,15 @@ export class TimeFlowCardBeta extends LitElement {
         min-height: 120px; /* Prevent layout shift */
       }
       
+      /* Error message styling */
+      .error {
+        color: #721c24;
+        padding: 12px;
+        border-radius: 16px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      
       /* FIXED: Only show card after initialization to prevent white flash */
       ha-card:not(.initialized) {
         opacity: 0;
@@ -189,23 +198,31 @@ export class TimeFlowCardBeta extends LitElement {
 
   setConfig(config: CardConfig): void {
     try {
+      // Validate the config first
       ConfigValidator.validateConfig(config);
+      
+      // If validation passed, update config state
       this.config = { ...config };
-      // FIXED: Immediately update resolved config to prevent empty state
+      // Immediately update resolved config to prevent empty state
       this._resolvedConfig = { ...config };
       this._error = null;
       this._initialized = false; // Reset initialization flag
       this.templateService.clearTemplateCache();
       this.styleManager.clearCache();
       
-      // FIXED: Trigger immediate update after config change
+      // Trigger immediate update after config change
       this._updateCountdownAndRender().then(() => {
         this._initialized = true;
         this.requestUpdate();
       });
     } catch (err) {
+      // Handle validation errors with proper error message
       this._error = (err as Error).message || 'Invalid configuration';
+      this._initialized = true; // Make sure we're initialized to render the error
       console.error('TimeFlow Card: Configuration error:', err);
+      
+      // Force update to show error message
+      this.requestUpdate();
     }
   }
 
@@ -307,7 +324,15 @@ export class TimeFlowCardBeta extends LitElement {
 
   render(): TemplateResult {
     if (this._error) {
-      return html`<ha-card><div class="error">Configuration Error: ${this._error}</div></ha-card>`;
+      // Improved error display with proper styling
+      return html`
+        <ha-card style="padding: 16px; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 22px;">
+          <div class="error" style="padding: 10px; font-weight: 500;">
+            <div style="font-size: 1.2em; margin-bottom: 8px;">⚠️ Configuration Error</div>
+            <pre style="white-space: pre-wrap; word-break: break-word; margin: 0; font-family: monospace; font-size: 0.9em;">${this._error}</pre>
+          </div>
+        </ha-card>
+      `;
     }
 
     const {

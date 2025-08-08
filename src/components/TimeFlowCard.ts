@@ -464,16 +464,30 @@ export class TimeFlowCardBeta extends LitElement {
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
-    // Check if any actions are configured
-    const hasActions = this._resolvedConfig.tap_action || this._resolvedConfig.hold_action || this._resolvedConfig.double_tap_action;
+    // Create resolved config with default actions for timer entities
+    const configWithDefaults = { ...this._resolvedConfig };
+    
+    // Add default tap action for timer entities if none is configured
+    if (!configWithDefaults.tap_action) {
+      const currentTimerEntity = this.countdownService.getCurrentTimerEntity(configWithDefaults, this.hass);
+      if (currentTimerEntity) {
+        configWithDefaults.tap_action = {
+          action: 'more-info',
+          entity: currentTimerEntity
+        };
+      }
+    }
+
+    // Check if any actions are configured (including defaults)
+    const hasActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
 
     return html`
       <ha-card 
         class="${cardClasses}" 
         style="${cardStyles}"
         ?actionHandler=${hasActions}
-        .actionHandler=${hasActions ? createActionHandler(this._resolvedConfig) : undefined}
-        @action=${hasActions && this.hass ? createHandleAction(this.hass, this._resolvedConfig) : undefined}
+        .actionHandler=${hasActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${hasActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content">
           <header class="header">

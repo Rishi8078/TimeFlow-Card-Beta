@@ -439,4 +439,32 @@ export class CountdownService {
     if (!hass) return [];
     return TimerEntityService.discoverAlexaTimers(hass);
   }
+
+  /**
+   * Get the current timer entity being used (for default actions)
+   */
+  getCurrentTimerEntity(config: any, hass: any): string | null {
+    // If explicit timer entity is configured, use it
+    if (config.timer_entity) {
+      return config.timer_entity;
+    }
+
+    // If auto-discovery is enabled, try to find the best Alexa timer
+    if (config.auto_discover_alexa && hass) {
+      const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
+      if (alexaTimers.length > 0) {
+        // Find the first active timer, or return the first timer if none are active
+        for (const entityId of alexaTimers) {
+          const timerData = TimerEntityService.getTimerData(entityId, hass);
+          if (timerData && timerData.isActive) {
+            return entityId;
+          }
+        }
+        // No active timers found, return the first one
+        return alexaTimers[0];
+      }
+    }
+
+    return null;
+  }
 }

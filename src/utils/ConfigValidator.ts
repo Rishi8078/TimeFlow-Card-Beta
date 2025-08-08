@@ -223,7 +223,9 @@ export class ConfigValidator {
       'show_months', 'show_days', 'show_hours', 'show_minutes', 'show_seconds',
       'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color',
       'stroke_width', 'icon_size', 'width', 'height', 'aspect_ratio',
-      'expired_animation', 'expired_text', 'show_progress_text', 'styles'
+      'expired_animation', 'expired_text', 'show_progress_text', 'styles',
+      'card_mod', 'auto_discover_alexa', 'alexa_device_filter', 'prefer_labeled_timers',
+      'alexa_color', 'show_alexa_device', 'alexa_icon', 'debug', 'show_timer_info'
     ];
 
     Object.keys(config).forEach(field => {

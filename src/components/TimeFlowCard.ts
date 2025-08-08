@@ -209,9 +209,12 @@ export class TimeFlowCardBeta extends LitElement {
         this.config = validationResult.safeConfig || this.getStubConfig();
         this._resolvedConfig = { ...this.config };
       } else if (validationResult.hasWarnings) {
-        // Configuration has warnings but can be used
+        // Configuration has warnings - don't proceed with normal flow
         this.config = { ...config };
         this._resolvedConfig = { ...config };
+        this._initialized = true; // Set as initialized to show the warning
+        this.requestUpdate();
+        return; // Don't proceed with countdown updates
       } else {
         // Configuration is valid
         this.config = { ...config };
@@ -354,31 +357,16 @@ export class TimeFlowCardBeta extends LitElement {
   render(): TemplateResult {
     // Handle validation errors and configuration issues
     if (this._validationResult && !this._validationResult.isValid) {
-      // If we have critical errors, show error display
-      if (this._validationResult.hasCriticalErrors) {
-        return html`
-          <error-display
-            .errors="${this._validationResult.errors}"
-            .title="${'Configuration Error'}"
-          ></error-display>
-        `;
-      }
-      
-      // If we only have warnings, show them but render the card
-      if (this._validationResult.hasWarnings) {
-        return html`
-          <div>
-            <error-display
-              .errors="${this._validationResult.errors.filter(e => e.severity === 'warning' || e.severity === 'info')}"
-              .title="${'Configuration Warnings'}"
-            ></error-display>
-            ${this._renderCard()}
-          </div>
-        `;
-      }
+      // Show error display for any validation issues (critical errors or warnings)
+      return html`
+        <error-display
+          .errors="${this._validationResult.errors}"
+          .title="${this._validationResult.hasCriticalErrors ? 'Configuration Error' : 'Configuration Issues'}"
+        ></error-display>
+      `;
     }
 
-    // Render normal card
+    // Render normal card only if validation passed completely
     return this._renderCard();
   }
 

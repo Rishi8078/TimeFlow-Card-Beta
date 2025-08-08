@@ -1,20 +1,13 @@
 // ProgressCircleBeta.ts
 import { LitElement, html, css, CSSResult, TemplateResult, PropertyValues } from 'lit';
+import { property } from 'lit/decorators.js';
 
 export class ProgressCircleBeta extends LitElement {
-  static properties = {
-    progress: { type: Number },
-    color: { type: String },
-    size: { type: Number },
-    strokeWidth: { type: Number },
-    showProgressText: { type: Boolean }
-  };
-
-  progress: number = 0;
-  color: string = '#4CAF50';
-  size: number = 100;
-  strokeWidth: number = 15;
-  showProgressText: boolean = false;
+  @property({ type: Number }) progress: number = 0;
+  @property({ type: String }) color: string = '#4CAF50';
+  @property({ type: Number }) size: number = 100;
+  @property({ type: Number }) strokeWidth: number = 15;
+  @property({ type: Boolean }) showProgressText: boolean = false;
 
   static get styles(): CSSResult {
     return css`
@@ -32,14 +25,11 @@ export class ProgressCircleBeta extends LitElement {
       .progress-text {
         font-size: 16px;  
         font-weight: bold;
-        fill: var(--progress-text-color, currentColor);
+        fill: var(--progress-text-color, #f4f5f4ff);
         dominant-baseline: middle;
         text-anchor: middle;
         pointer-events: none;
         user-select: none;
-        /* Ensure visibility */
-        opacity: 1;
-        visibility: visible;
       }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
@@ -75,11 +65,9 @@ export class ProgressCircleBeta extends LitElement {
     }
   }
 
-  // FIXED: Enhanced willUpdate to ensure boolean property types
+  // FIXED: Add property change handler for better debugging
   willUpdate(changed: PropertyValues): void {
     if (changed.has('showProgressText')) {
-      // Force to boolean in case a string or other type is passed
-      this.showProgressText = this.showProgressText === true;
       console.log('ProgressCircle willUpdate - showProgressText:', this.showProgressText);
     }
   }
@@ -153,7 +141,7 @@ export class ProgressCircleBeta extends LitElement {
                   x="50%" y="50%"
                   class="progress-text"
                   dy="2"
-                  style="font-size: ${fontSize}px; fill: var(--progress-text-color, ${this.color}); z-index: 10;"
+                  style="font-size: ${fontSize}px;"
                 >
                   ${Math.round(safeProgress)}%
                 </text>

@@ -8,6 +8,7 @@ import { TemplateService } from '../services/TemplateService';
 import { CountdownService } from '../services/CountdownService';
 import { StyleManager } from '../utils/StyleManager';
 import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
+import { createActionHandler, createHandleAction } from '../utils/ActionHandler';
 import '../utils/ErrorDisplay';
 
 export class TimeFlowCardBeta extends LitElement {
@@ -62,6 +63,23 @@ export class TimeFlowCardBeta extends LitElement {
         /* REMOVED: transition that causes flash - only animate specific properties if needed */
         /* transition: background-color 0.3s ease; */
         min-height: 120px; /* Prevent layout shift */
+        user-select: none; /* Prevent text selection during interactions */
+      }
+      
+      /* Make card interactive when actions are configured */
+      ha-card[actionHandler] {
+        cursor: pointer;
+      }
+      
+      ha-card[actionHandler]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      
+      ha-card[actionHandler]:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       }
       
       /* Error message styling */
@@ -446,8 +464,17 @@ export class TimeFlowCardBeta extends LitElement {
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
+    // Check if any actions are configured
+    const hasActions = this._resolvedConfig.tap_action || this._resolvedConfig.hold_action || this._resolvedConfig.double_tap_action;
+
     return html`
-      <ha-card class="${cardClasses}" style="${cardStyles}">
+      <ha-card 
+        class="${cardClasses}" 
+        style="${cardStyles}"
+        ?actionHandler=${hasActions}
+        .actionHandler=${hasActions ? createActionHandler(this._resolvedConfig) : undefined}
+        @action=${hasActions && this.hass ? createHandleAction(this.hass, this._resolvedConfig) : undefined}
+      >
         <div class="card-content">
           <header class="header">
             <div class="title-section">

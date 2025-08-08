@@ -352,6 +352,7 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-card-stroke-width: ${dynamicStroke}`,
       `--timeflow-title-size: ${proportionalSizes.titleSize}rem`,
       `--timeflow-subtitle-size: ${proportionalSizes.subtitleSize}rem`,
+      `--progress-text-color: ${textColor}`,
       ...dimensionStyles
     ].join('; ');
 
@@ -405,7 +406,7 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
-                .showProgressText="${Boolean(show_progress_text)}"
+                .showProgressText="${show_progress_text === true}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

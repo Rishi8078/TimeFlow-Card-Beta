@@ -34,9 +34,8 @@ export class TemplateService {
     const cacheKey = template;
     if (this.templateResults.has(cacheKey)) {
       const cached = this.templateResults.get(cacheKey);
-      // Use much longer cache for date templates to prevent oscillation near expiration
-      const cacheTimeout = this.isDateTemplate(template) ? 60000 : 5000; // 60s for dates, 5s for others
-      if (cached && Date.now() - cached.timestamp < cacheTimeout) {
+      // Check if cache is still valid (within 5 seconds)
+      if (cached && Date.now() - cached.timestamp < 5000) {
         return cached.result;
       }
     }
@@ -146,24 +145,6 @@ export class TemplateService {
     } catch (error) {
       return 'Template Error';
     }
-  }
-
-  /**
-   * Detects if a template is likely calculating dates/times
-   * @param {string} template - Template to check
-   * @returns {boolean} - Whether template appears to be date-related
-   */
-  isDateTemplate(template: string): boolean {
-    if (!template || typeof template !== 'string') return false;
-    
-    // Look for common date/time functions and keywords
-    const dateKeywords = [
-      'as_datetime', 'timedelta', 'isoformat', 'strftime',
-      'now()', 'today', 'utcnow', 'timestamp',
-      'days=', 'hours=', 'minutes=', 'seconds='
-    ];
-    
-    return dateKeywords.some(keyword => template.includes(keyword));
   }
 
   /**

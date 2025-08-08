@@ -150,7 +150,6 @@ export class CountdownService {
         this.timeRemaining = { months, days, hours, minutes, seconds, total: difference };
         this.expired = false;
       } else {
-        // Countdown has reached zero or passed - mark as expired
         this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
         this.expired = true;
       }

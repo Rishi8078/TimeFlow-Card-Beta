@@ -86,12 +86,6 @@ export class ErrorDisplay extends LitElement {
         color: #92400e;
       }
 
-      .error-item.info {
-        --error-color: #2563eb;
-        background: rgba(37, 99, 235, 0.1);
-        color: #1e40af;
-      }
-
       .error-field {
         font-weight: 600;
         font-family: 'Courier New', monospace;
@@ -185,11 +179,6 @@ export class ErrorDisplay extends LitElement {
         color: white;
       }
 
-      .severity-info {
-        background: #2563eb;
-        color: white;
-      }
-
       .no-errors {
         text-align: center;
         color: #22c55e;
@@ -219,9 +208,15 @@ export class ErrorDisplay extends LitElement {
       return html``;
     }
 
-    const criticalErrors = this.errors.filter(e => e.severity === 'critical');
-    const warningErrors = this.errors.filter(e => e.severity === 'warning');
-    const infoErrors = this.errors.filter(e => e.severity === 'info');
+    // Filter out info messages, only show critical and warning
+    const relevantErrors = this.errors.filter(e => e.severity === 'critical' || e.severity === 'warning');
+    
+    if (relevantErrors.length === 0) {
+      return html``;
+    }
+
+    const criticalErrors = relevantErrors.filter(e => e.severity === 'critical');
+    const warningErrors = relevantErrors.filter(e => e.severity === 'warning');
 
     return html`
       <div class="error-container">
@@ -230,7 +225,7 @@ export class ErrorDisplay extends LitElement {
             <span class="error-icon">⚠️</span>
             ${this.title}
           </h3>
-          ${this.errors.length > 3 ? html`
+          ${relevantErrors.length > 3 ? html`
             <button
               class="toggle-button"
               @click="${this._toggleDetails}"
@@ -241,14 +236,13 @@ export class ErrorDisplay extends LitElement {
         </div>
 
         <div class="error-summary">
-          <strong>Found ${this.errors.length} issue${this.errors.length !== 1 ? 's' : ''}:</strong>
+          <strong>Found ${relevantErrors.length} issue${relevantErrors.length !== 1 ? 's' : ''}:</strong>
           ${criticalErrors.length > 0 ? html`<br>• ${criticalErrors.length} critical error${criticalErrors.length !== 1 ? 's' : ''}` : ''}
           ${warningErrors.length > 0 ? html`<br>• ${warningErrors.length} warning${warningErrors.length !== 1 ? 's' : ''}` : ''}
-          ${infoErrors.length > 0 ? html`<br>• ${infoErrors.length} suggestion${infoErrors.length !== 1 ? 's' : ''}` : ''}
         </div>
 
         <ul class="error-list">
-          ${(this._showDetails ? this.errors : this.errors.slice(0, 3)).map(error => html`
+          ${(this._showDetails ? relevantErrors : relevantErrors.slice(0, 3)).map(error => html`
             <li class="error-item ${error.severity}">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                 <span class="severity-badge severity-${error.severity}">

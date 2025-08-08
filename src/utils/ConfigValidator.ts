@@ -188,7 +188,7 @@ export class ConfigValidator {
     const warnings = errors.filter(e => e.severity === 'warning');
 
     return {
-      isValid: errors.length === 0,
+      isValid: criticalErrors.length === 0 && warnings.length === 0,
       errors,
       hasCriticalErrors: criticalErrors.length > 0,
       hasWarnings: warnings.length > 0,
@@ -200,23 +200,8 @@ export class ConfigValidator {
    * Add additional helpful validations and suggestions
    */
   private static _addHelpfulValidations(config: any, errors: ValidationError[]): void {
-    // Check for common mistakes
-    if (config.target_date && typeof config.target_date === 'string') {
-      const targetDate = new Date(config.target_date);
-      if (!isNaN(targetDate.getTime())) {
-        const now = new Date();
-        if (targetDate < now) {
-          errors.push({
-            field: 'target_date',
-            message: 'Target date is in the past',
-            severity: 'info',
-            suggestion: 'Consider setting a future date for countdown functionality.',
-            value: config.target_date
-          });
-        }
-      }
-    }
-
+    // Only check for unknown fields, skip past date info messages
+    
     // Check for deprecated or unknown fields
     const knownFields = [
       'type', 'target_date', 'creation_date', 'timer_entity', 'title', 'subtitle',
@@ -233,7 +218,7 @@ export class ConfigValidator {
         errors.push({
           field,
           message: `Unknown configuration field "${field}"`,
-          severity: 'info',
+          severity: 'warning', // Changed from 'info' to 'warning' so it gets handled properly
           suggestion: 'This field may be ignored or cause unexpected behavior. Check documentation for valid fields.',
           value: config[field]
         });

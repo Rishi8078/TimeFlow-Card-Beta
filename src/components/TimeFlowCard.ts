@@ -232,7 +232,6 @@ export class TimeFlowCardBeta extends LitElement {
       });
     } catch (err) {
       // Handle unexpected validation errors
-      console.error('TimeFlow Card: Unexpected configuration error:', err);
       
       // Create a validation result for unexpected errors
       this._validationResult = {
@@ -291,7 +290,7 @@ export class TimeFlowCardBeta extends LitElement {
   _startCountdownUpdates(): void {
     this._stopCountdownUpdates(); // clear previous interval
     this._timerId = setInterval(() => {
-      this._updateCountdownAndRender().catch(console.error);
+      this._updateCountdownAndRender();
     }, 1000);
   }
 
@@ -446,9 +445,6 @@ export class TimeFlowCardBeta extends LitElement {
       this._initialized ? 'initialized' : '',
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
-
-    // FIXED: Debug logging to see what's happening
-    console.log('TimeFlowCard render - show_progress_text:', show_progress_text, typeof show_progress_text);
 
     return html`
       <ha-card class="${cardClasses}" style="${cardStyles}">

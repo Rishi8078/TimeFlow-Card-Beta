@@ -66,7 +66,6 @@ export class CountdownService {
       const targetDateValue = await this.templateService.resolveValue(config.target_date);
       
       if (!targetDateValue) {
-        console.warn('TimeFlow Card: Target date could not be resolved. Check your entity or date format.');
         return this.timeRemaining;
       }
       
@@ -74,7 +73,6 @@ export class CountdownService {
       const targetDate = this.dateParser.parseISODate(targetDateValue);
       
       if (isNaN(targetDate)) {
-        console.warn('TimeFlow Card: Invalid target date format:', targetDateValue);
         return this.timeRemaining;
       }
       
@@ -158,7 +156,6 @@ export class CountdownService {
       
       return this.timeRemaining;
     } catch (error) {
-      console.error('TimeFlow Card: Error in updateCountdown:', error);
       return this.timeRemaining;
     }
   }

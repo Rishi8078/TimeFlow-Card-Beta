@@ -46,13 +46,7 @@ export class ProgressCircleBeta extends LitElement {
     this.showProgressText = false;
   }
 
-  // FIXED: Add debugging to see when properties change
   updated(changed: PropertyValues): void {
-    // Debug logging
-    if (changed.has('showProgressText')) {
-      console.log('ProgressCircle - showProgressText changed to:', this.showProgressText, typeof this.showProgressText);
-    }
-
     // Animate stroke-dashoffset if progress changes
     if (changed.has('progress')) {
       const circle = this.renderRoot?.querySelector('.progress-bar') as HTMLElement;
@@ -62,13 +56,6 @@ export class ProgressCircleBeta extends LitElement {
           if (circle) circle.classList.remove('updating');
         }, 400);
       }
-    }
-  }
-
-  // FIXED: Add property change handler for better debugging
-  willUpdate(changed: PropertyValues): void {
-    if (changed.has('showProgressText')) {
-      console.log('ProgressCircle willUpdate - showProgressText:', this.showProgressText);
     }
   }
 
@@ -99,9 +86,6 @@ export class ProgressCircleBeta extends LitElement {
 
     // Calculate responsive font size based on circle size
     const fontSize = Math.max(10, Math.min(24, size * 0.16));
-
-    // FIXED: Debug log in render to see current state
-    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress);
 
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">

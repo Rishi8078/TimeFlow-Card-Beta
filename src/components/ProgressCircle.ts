@@ -23,15 +23,9 @@ export class ProgressCircleBeta extends LitElement {
         margin: 0 auto;
       }
       .progress-text {
-        font-weight: bold;
-        dominant-baseline: central;
-        text-anchor: middle;
+        /* Minimal CSS - most styling is inline to avoid conflicts */
         pointer-events: none;
         user-select: none;
-        /* Ensure text is always visible with high contrast */
-        fill: var(--progress-text-color, #ffffff);
-        /* Add text shadow for better visibility */
-        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
       }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
@@ -90,19 +84,21 @@ export class ProgressCircleBeta extends LitElement {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (safeProgress / 100) * circumference;
 
-    // Calculate responsive font size based on circle size with better scaling
-    const fontSize = Math.max(8, Math.min(28, size * 0.18));
+    // Calculate responsive font size with better minimum and scaling
+    const fontSize = Math.max(14, Math.min(32, size * 0.25));
     
     // Calculate exact center coordinates
     const centerX = size / 2;
     const centerY = size / 2;
 
     // Debug logging to help troubleshoot
-    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress);
+    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress, 'size:', size);
     
     if (this.showProgressText) {
-      console.log('ProgressCircle - rendering text at:', centerX, centerY, 'fontSize:', fontSize);
+      console.log('ProgressCircle - rendering text at:', centerX, centerY, 'fontSize:', fontSize, 'text:', `${Math.round(safeProgress)}%`);
     }
+
+    const progressText = `${Math.round(safeProgress)}%`;
 
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">
@@ -140,17 +136,37 @@ export class ProgressCircleBeta extends LitElement {
             "
           ></circle>
 
-          <!-- Progress text - only render when showProgressText is true -->
+          <!-- Progress text - render when showProgressText is true -->
           ${this.showProgressText ? html`
             <text
               x="${centerX}"
               y="${centerY}"
               class="progress-text"
-              font-size="${fontSize}"
-              font-family="inherit"
+              font-size="${fontSize}px"
+              font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+              font-weight="bold"
+              fill="#ffffff"
+              dominant-baseline="central"
+              text-anchor="middle"
+              style="
+                filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
+                pointer-events: none;
+                user-select: none;
+              "
             >
-              ${Math.round(safeProgress)}%
+              ${progressText}
             </text>
+          ` : ''}
+          
+          <!-- Debug: Add a visible test element when showProgressText is true -->
+          ${this.showProgressText ? html`
+            <circle
+              cx="${centerX}"
+              cy="${centerY}"
+              r="2"
+              fill="red"
+              opacity="0.5"
+            />
           ` : ''}
         </svg>
       </div>

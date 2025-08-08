@@ -22,8 +22,8 @@ export class ErrorDisplay extends LitElement {
 
       .error-container {
         background: #332022;
-        border: 1px solid #D74133;
-        border-radius: 6px;
+        border: 1px solid #582533ff;
+        border-radius: 1px;
         padding: 16px;
         margin: 8px;
         color: #ffffff;

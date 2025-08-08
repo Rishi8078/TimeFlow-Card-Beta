@@ -200,30 +200,8 @@ export class ConfigValidator {
    * Add additional helpful validations and suggestions
    */
   private static _addHelpfulValidations(config: any, errors: ValidationError[]): void {
-    // Only check for unknown fields, skip past date info messages
-    
-    // Check for deprecated or unknown fields
-    const knownFields = [
-      'type', 'target_date', 'creation_date', 'timer_entity', 'title', 'subtitle',
-      'show_months', 'show_days', 'show_hours', 'show_minutes', 'show_seconds',
-      'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color',
-      'stroke_width', 'icon_size', 'width', 'height', 'aspect_ratio',
-      'expired_animation', 'expired_text', 'show_progress_text', 'styles',
-      'card_mod', 'auto_discover_alexa', 'alexa_device_filter', 'prefer_labeled_timers',
-      'alexa_color', 'show_alexa_device', 'alexa_icon', 'debug', 'show_timer_info'
-    ];
-
-    Object.keys(config).forEach(field => {
-      if (!knownFields.includes(field) && !field.startsWith('_')) {
-        errors.push({
-          field,
-          message: `Unknown configuration field "${field}"`,
-          severity: 'warning', // Changed from 'info' to 'warning' so it gets handled properly
-          suggestion: 'This field may be ignored or cause unexpected behavior. Check documentation for valid fields.',
-          value: config[field]
-        });
-      }
-    });
+    // No additional validations needed - only validate fields that exist in config
+    // Remove unknown field warnings as requested
   }
 
   /**

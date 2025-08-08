@@ -23,13 +23,15 @@ export class ProgressCircleBeta extends LitElement {
         margin: 0 auto;
       }
       .progress-text {
-        font-size: 16px;  
         font-weight: bold;
-        fill: red;
-        dominant-baseline: middle;
+        dominant-baseline: central;
         text-anchor: middle;
         pointer-events: none;
         user-select: none;
+        /* Ensure text is always visible with high contrast */
+        fill: var(--progress-text-color, #ffffff);
+        /* Add text shadow for better visibility */
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
       }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
@@ -88,8 +90,19 @@ export class ProgressCircleBeta extends LitElement {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (safeProgress / 100) * circumference;
 
-    // Calculate responsive font size based on circle size
-    const fontSize = Math.max(10, Math.min(24, size * 0.16));
+    // Calculate responsive font size based on circle size with better scaling
+    const fontSize = Math.max(8, Math.min(28, size * 0.18));
+    
+    // Calculate exact center coordinates
+    const centerX = size / 2;
+    const centerY = size / 2;
+
+    // Debug logging to help troubleshoot
+    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress);
+    
+    if (this.showProgressText) {
+      console.log('ProgressCircle - rendering text at:', centerX, centerY, 'fontSize:', fontSize);
+    }
 
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">
@@ -97,18 +110,22 @@ export class ProgressCircleBeta extends LitElement {
           class="progress-circle-beta"
           height="${size}" width="${size}"
           style="overflow:visible;"
+          viewBox="0 0 ${size} ${size}"
         >
+          <!-- Background circle -->
           <circle
             class="progress-bg"
-            cx="${size / 2}" cy="${size / 2}"
+            cx="${centerX}" cy="${centerY}"
             r="${radius}"
             fill="none"
             stroke="#FFFFFF1A"
             stroke-width="${stroke}"
           ></circle>
+          
+          <!-- Progress circle -->
           <circle
             class="progress-bar"
-            cx="${size / 2}" cy="${size / 2}"
+            cx="${centerX}" cy="${centerY}"
             r="${radius}"
             fill="none"
             stroke="${this.color}"
@@ -119,22 +136,22 @@ export class ProgressCircleBeta extends LitElement {
               stroke-dashoffset: ${offset};
               transition: stroke-dashoffset 0.3s ease;
               transform: rotate(-90deg);
-              transform-origin: ${size / 2}px ${size / 2}px;
+              transform-origin: ${centerX}px ${centerY}px;
             "
           ></circle>
 
-          ${this.showProgressText
-            ? html`
-                <text
-                  x="50%" y="50%"
-                  class="progress-text"
-                  dy="2"
-                  style="font-size: ${fontSize}px;"
-                >
-                  ${Math.round(safeProgress)}%
-                </text>
-              `
-            : html`<!-- showProgressText is false -->`}
+          <!-- Progress text - only render when showProgressText is true -->
+          ${this.showProgressText ? html`
+            <text
+              x="${centerX}"
+              y="${centerY}"
+              class="progress-text"
+              font-size="${fontSize}"
+              font-family="inherit"
+            >
+              ${Math.round(safeProgress)}%
+            </text>
+          ` : ''}
         </svg>
       </div>
     `;

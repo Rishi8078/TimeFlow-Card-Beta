@@ -147,35 +147,41 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
         margin: 0 auto;
       }
       .progress-text {
-        font-size: 16px;  
         font-weight: bold;
-        fill: red;
-        dominant-baseline: middle;
+        dominant-baseline: central;
         text-anchor: middle;
         pointer-events: none;
         user-select: none;
+        /* Ensure text is always visible with high contrast */
+        fill: var(--progress-text-color, #ffffff);
+        /* Add text shadow for better visibility */
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
       }
       .updating {
         transition: stroke-dashoffset 0.3s ease;
       }
-    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1}updated(t){var e;if(t.has("progress")){const t=null===(e=this.renderRoot)||void 0===e?void 0:e.querySelector(".progress-bar");t&&(t.classList.add("updating"),setTimeout(()=>{t&&t.classList.remove("updating")},400))}}willUpdate(t){}updateProgress(t,e=!0){var i;if(e)this.progress=t;else{const e=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=t,e&&(e.style.transition="none"),setTimeout(()=>{e&&(e.style.transition="")},20)}}getProgress(){return this.progress}render(){const t=Math.max(0,Math.min(100,Number(this.progress)||0)),e=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(e-i)/2,r=2*Math.PI*s,n=r-t/100*r,o=Math.max(10,Math.min(24,.16*e));return j`
+    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1}updated(t){var e;if(t.has("progress")){const t=null===(e=this.renderRoot)||void 0===e?void 0:e.querySelector(".progress-bar");t&&(t.classList.add("updating"),setTimeout(()=>{t&&t.classList.remove("updating")},400))}}willUpdate(t){}updateProgress(t,e=!0){var i;if(e)this.progress=t;else{const e=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=t,e&&(e.style.transition="none"),setTimeout(()=>{e&&(e.style.transition="")},20)}}getProgress(){return this.progress}render(){const t=Math.max(0,Math.min(100,Number(this.progress)||0)),e=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(e-i)/2,r=2*Math.PI*s,n=r-t/100*r,o=Math.max(8,Math.min(28,.18*e)),a=e/2,l=e/2;return console.log("ProgressCircle render - showProgressText:",this.showProgressText,"progress:",t),this.showProgressText&&console.log("ProgressCircle - rendering text at:",a,l,"fontSize:",o),j`
       <div class="progress-wrapper" style="width:${e}px; height:${e}px;">
         <svg
           class="progress-circle-beta"
           height="${e}" width="${e}"
           style="overflow:visible;"
+          viewBox="0 0 ${e} ${e}"
         >
+          <!-- Background circle -->
           <circle
             class="progress-bg"
-            cx="${e/2}" cy="${e/2}"
+            cx="${a}" cy="${l}"
             r="${s}"
             fill="none"
             stroke="#FFFFFF1A"
             stroke-width="${i}"
           ></circle>
+          
+          <!-- Progress circle -->
           <circle
             class="progress-bar"
-            cx="${e/2}" cy="${e/2}"
+            cx="${a}" cy="${l}"
             r="${s}"
             fill="none"
             stroke="${this.color}"
@@ -186,20 +192,22 @@ function t(t,e,i,s){var r,n=arguments.length,o=n<3?e:null===s?s=Object.getOwnPro
               stroke-dashoffset: ${n};
               transition: stroke-dashoffset 0.3s ease;
               transform: rotate(-90deg);
-              transform-origin: ${e/2}px ${e/2}px;
+              transform-origin: ${a}px ${l}px;
             "
           ></circle>
 
+          <!-- Progress text - only render when showProgressText is true -->
           ${this.showProgressText?j`
-                <text
-                  x="50%" y="50%"
-                  class="progress-text"
-                  dy="2"
-                  style="font-size: ${o}px;"
-                >
-                  ${Math.round(t)}%
-                </text>
-              `:j`<!-- showProgressText is false -->`}
+            <text
+              x="${a}"
+              y="${l}"
+              class="progress-text"
+              font-size="${o}"
+              font-family="inherit"
+            >
+              ${Math.round(t)}%
+            </text>
+          `:""}
         </svg>
       </div>
     `}}t([ht({type:Number})],vt.prototype,"progress",void 0),t([ht({type:String})],vt.prototype,"color",void 0),t([ht({type:Number})],vt.prototype,"size",void 0),t([ht({type:Number})],vt.prototype,"strokeWidth",void 0),t([ht({type:Boolean})],vt.prototype,"showProgressText",void 0),customElements.get("progress-circle-beta")?console.debug("TimeFlow Card: progress-circle-beta component already registered"):(customElements.define("progress-circle-beta",vt),console.debug("TimeFlow Card: Registered progress-circle-beta component")),customElements.get("timeflow-card-beta")?console.debug("TimeFlow Card: timeflow-card-beta component already registered"):(customElements.define("timeflow-card-beta",yt),console.debug("TimeFlow Card: Registered timeflow-card-beta component")),window.customCards=window.customCards||[],window.customCards.push({type:"timeflow-card-beta",name:"TimeFlow Card (Lit Version)",description:"A beautiful countdown timer card with progress circle for Home Assistant, using Lit",preview:!0,documentationURL:"https://github.com/Rishi8078/TimeFlow-Card"}),console.info("%c TIMEFLOW-CARD (Lit) \n%c Version 1.2.0 ","color: orange; font-weight: bold; background: black","color: white; font-weight: bold; background: dimgray");export{vt as ProgressCircleBeta,yt as TimeFlowCardBeta};

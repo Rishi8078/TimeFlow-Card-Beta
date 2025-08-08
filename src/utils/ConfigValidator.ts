@@ -45,7 +45,7 @@ export class ConfigValidator {
       };
     }
     
-    // Validate target_date (required field)
+    // Validate target_date (required field, unless using timer_entity)
     if (config.target_date) {
       if (!this.isValidDateInput(config.target_date)) {
         errors.push({
@@ -56,13 +56,25 @@ export class ConfigValidator {
           value: config.target_date
         });
       }
-    } else {
+    } else if (!config.timer_entity) {
+      // target_date is only required if timer_entity is not provided
       errors.push({
         field: 'target_date',
-        message: 'Required field "target_date" is missing',
+        message: 'Either "target_date" or "timer_entity" must be provided',
         severity: 'critical',
-        suggestion: 'Add target_date field with a valid date value like "2025-12-31T23:59:59".',
+        suggestion: 'Add target_date field with a valid date value like "2025-12-31T23:59:59" OR specify a timer_entity like "timer.my_timer".',
         value: undefined
+      });
+    }
+    
+    // Validate timer_entity if provided
+    if (config.timer_entity && !this.isValidEntityId(config.timer_entity)) {
+      errors.push({
+        field: 'timer_entity',
+        message: 'Invalid timer_entity format',
+        severity: 'warning',
+        suggestion: 'Use a valid entity ID like "timer.my_timer" or "sensor.alexa_timer".',
+        value: config.timer_entity
       });
     }
     
@@ -238,7 +250,8 @@ export class ConfigValidator {
       if (error.severity === 'critical' || error.severity === 'warning') {
         switch (error.field) {
           case 'target_date':
-            if (!safeConfig.target_date || !this.isValidDateInput(safeConfig.target_date)) {
+            if (!safeConfig.target_date && !safeConfig.timer_entity) {
+              // Only set a default target_date if no timer_entity is provided
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
               safeConfig.target_date = tomorrow.toISOString();
@@ -497,5 +510,21 @@ export class ConfigValidator {
     return typeof value === 'string' && 
            value.includes('{{') && 
            value.includes('}}');
+  }
+
+  /**
+   * Validates entity ID format
+   * @param {*} value - Value to validate
+   * @returns {boolean} - Whether the value is a valid entity ID
+   */
+  static isValidEntityId(value: any): boolean {
+    if (!value || typeof value !== 'string') return false;
+    
+    // Allow templates
+    if (this.isTemplate(value)) return true;
+    
+    // Basic entity ID format: domain.entity_name
+    const entityPattern = /^[a-z_]+\.[a-z0-9_]+$/;
+    return entityPattern.test(value);
   }
 }

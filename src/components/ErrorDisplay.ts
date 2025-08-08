@@ -11,12 +11,9 @@ export interface ValidationError {
 
 export class ErrorDisplay extends LitElement {
   @property({ type: Array }) errors: ValidationError[] = [];
-  @property({ type: String }) title: string = 'Configuration Error';
-  @property({ type: Boolean }) allowReset: boolean = true;
-  @property({ type: Boolean }) allowSafeMode: boolean = true;
+  @property({ type: String }) title: string = 'Configuration Issues';
   
   @state() private _showDetails: boolean = false;
-  @state() private _showSuggestions: boolean = true;
 
   static get styles(): CSSResult {
     return css`
@@ -26,13 +23,13 @@ export class ErrorDisplay extends LitElement {
       }
 
       .error-container {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        border: 2px solid #f87171;
-        border-radius: 16px;
-        padding: 20px;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #f59e0b;
+        border-radius: 12px;
+        padding: 16px;
         margin: 8px;
-        box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
-        color: #7f1d1d;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+        color: #92400e;
       }
 
       .error-header {
@@ -46,10 +43,10 @@ export class ErrorDisplay extends LitElement {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 600;
         margin: 0;
-        color: #991b1b;
+        color: #b45309;
       }
 
       .error-icon {
@@ -60,8 +57,8 @@ export class ErrorDisplay extends LitElement {
         background: rgba(255, 255, 255, 0.7);
         border-radius: 8px;
         padding: 12px;
-        margin-bottom: 16px;
-        border-left: 4px solid #ef4444;
+        margin-bottom: 12px;
+        border-left: 3px solid #f59e0b;
       }
 
       .error-list {
@@ -134,63 +131,19 @@ export class ErrorDisplay extends LitElement {
         word-break: break-all;
       }
 
-      .error-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 16px;
-        flex-wrap: wrap;
-      }
-
-      .error-button {
-        background: #dc2626;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .error-button:hover {
-        background: #b91c1c;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
-      }
-
-      .error-button.secondary {
-        background: #6b7280;
-      }
-
-      .error-button.secondary:hover {
-        background: #4b5563;
-      }
-
-      .error-button.safe-mode {
-        background: #059669;
-      }
-
-      .error-button.safe-mode:hover {
-        background: #047857;
-      }
-
       .toggle-button {
         background: transparent;
-        border: 1px solid #dc2626;
-        color: #dc2626;
-        padding: 6px 12px;
-        border-radius: 6px;
+        border: 1px solid #f59e0b;
+        color: #f59e0b;
+        padding: 4px 8px;
+        border-radius: 4px;
         cursor: pointer;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         transition: all 0.2s ease;
       }
 
       .toggle-button:hover {
-        background: #dc2626;
+        background: #f59e0b;
         color: white;
       }
 
@@ -263,13 +216,7 @@ export class ErrorDisplay extends LitElement {
 
   render(): TemplateResult {
     if (!this.errors || this.errors.length === 0) {
-      return html`
-        <div class="error-container">
-          <div class="no-errors">
-            ✅ Configuration is valid
-          </div>
-        </div>
-      `;
+      return html``;
     }
 
     const criticalErrors = this.errors.filter(e => e.severity === 'critical');
@@ -283,23 +230,25 @@ export class ErrorDisplay extends LitElement {
             <span class="error-icon">⚠️</span>
             ${this.title}
           </h3>
-          <button
-            class="toggle-button"
-            @click="${this._toggleDetails}"
-          >
-            ${this._showDetails ? 'Hide Details' : 'Show Details'}
-          </button>
+          ${this.errors.length > 3 ? html`
+            <button
+              class="toggle-button"
+              @click="${this._toggleDetails}"
+            >
+              ${this._showDetails ? 'Less' : 'More'}
+            </button>
+          ` : ''}
         </div>
 
         <div class="error-summary">
           <strong>Found ${this.errors.length} issue${this.errors.length !== 1 ? 's' : ''}:</strong>
-          ${criticalErrors.length > 0 ? html`<br>• ${criticalErrors.length} critical error${criticalErrors.length !== 1 ? 's' : ''} (prevents card from loading)` : ''}
-          ${warningErrors.length > 0 ? html`<br>• ${warningErrors.length} warning${warningErrors.length !== 1 ? 's' : ''} (may cause unexpected behavior)` : ''}
-          ${infoErrors.length > 0 ? html`<br>• ${infoErrors.length} info message${infoErrors.length !== 1 ? 's' : ''} (recommendations)` : ''}
+          ${criticalErrors.length > 0 ? html`<br>• ${criticalErrors.length} critical error${criticalErrors.length !== 1 ? 's' : ''}` : ''}
+          ${warningErrors.length > 0 ? html`<br>• ${warningErrors.length} warning${warningErrors.length !== 1 ? 's' : ''}` : ''}
+          ${infoErrors.length > 0 ? html`<br>• ${infoErrors.length} suggestion${infoErrors.length !== 1 ? 's' : ''}` : ''}
         </div>
 
         <ul class="error-list">
-          ${this.errors.map(error => html`
+          ${(this._showDetails ? this.errors : this.errors.slice(0, 3)).map(error => html`
             <li class="error-item ${error.severity}">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                 <span class="severity-badge severity-${error.severity}">
@@ -308,79 +257,18 @@ export class ErrorDisplay extends LitElement {
                 <span class="error-field">${error.field}</span>
               </div>
               <div class="error-message">${error.message}</div>
-              ${error.value !== undefined ? html`
-                <div class="error-value">
-                  Current value: ${typeof error.value === 'object' ? JSON.stringify(error.value) : String(error.value)}
-                </div>
-              ` : ''}
-              ${error.suggestion && this._showSuggestions ? html`
+              ${error.suggestion ? html`
                 <div class="error-suggestion">${error.suggestion}</div>
               ` : ''}
             </li>
           `)}
         </ul>
-
-        ${this._showDetails ? html`
-          <div class="details-section">
-            <h4>Technical Details:</h4>
-            <div class="technical-details">${this._getTechnicalDetails()}</div>
-          </div>
-        ` : ''}
-
-        <div class="error-actions">
-          ${this.allowReset ? html`
-            <button
-              class="error-button"
-              @click="${this._handleReset}"
-            >
-              🔄 Reset to Default
-            </button>
-          ` : ''}
-          
-          ${this.allowSafeMode && criticalErrors.length === 0 ? html`
-            <button
-              class="error-button safe-mode"
-              @click="${this._handleSafeMode}"
-            >
-              🛡️ Load Safe Mode
-            </button>
-          ` : ''}
-          
-          <button
-            class="error-button secondary"
-            @click="${() => this._showSuggestions = !this._showSuggestions}"
-          >
-            ${this._showSuggestions ? '🙈 Hide' : '💡 Show'} Suggestions
-          </button>
-        </div>
       </div>
     `;
   }
 
   private _toggleDetails(): void {
     this._showDetails = !this._showDetails;
-  }
-
-  private _handleReset(): void {
-    this.dispatchEvent(new CustomEvent('config-reset', {
-      bubbles: true,
-      composed: true
-    }));
-  }
-
-  private _handleSafeMode(): void {
-    this.dispatchEvent(new CustomEvent('config-safe-mode', {
-      bubbles: true,
-      composed: true
-    }));
-  }
-
-  private _getTechnicalDetails(): string {
-    return this.errors.map(error => 
-      `[${error.severity.toUpperCase()}] ${error.field}: ${error.message}\n` +
-      (error.value !== undefined ? `  Value: ${JSON.stringify(error.value)}\n` : '') +
-      (error.suggestion ? `  Suggestion: ${error.suggestion}\n` : '')
-    ).join('\n');
   }
 }
 

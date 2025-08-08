@@ -28,7 +28,6 @@ export class TimeFlowCardBeta extends LitElement {
   };
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
-  @state() private _safeMode: boolean = false;
   @state() private _initialized: boolean = false; // Track initialization
 
   // Timer ID
@@ -82,11 +81,6 @@ export class TimeFlowCardBeta extends LitElement {
       ha-card.initialized {
         opacity: 1;
         transition: opacity 0.2s ease-in;
-      }
-      
-      ha-card.safe-mode {
-        border: 2px solid #059669;
-        box-shadow: 0 2px 10px rgba(5, 150, 105, 0.2);
       }
       
       ha-card.expired {
@@ -214,17 +208,14 @@ export class TimeFlowCardBeta extends LitElement {
         // Use safe config if available, otherwise use stub config
         this.config = validationResult.safeConfig || this.getStubConfig();
         this._resolvedConfig = { ...this.config };
-        this._safeMode = false; // Can't use safe mode with critical errors
       } else if (validationResult.hasWarnings) {
         // Configuration has warnings but can be used
         this.config = { ...config };
         this._resolvedConfig = { ...config };
-        this._safeMode = false; // Using original config despite warnings
       } else {
         // Configuration is valid
         this.config = { ...config };
         this._resolvedConfig = { ...config };
-        this._safeMode = false;
       }
       
       this._initialized = false; // Reset initialization flag
@@ -257,7 +248,6 @@ export class TimeFlowCardBeta extends LitElement {
       
       this.config = this.getStubConfig();
       this._resolvedConfig = { ...this.config };
-      this._safeMode = false;
       this._initialized = true; // Make sure we're initialized to render the error
       
       // Force update to show error message
@@ -369,25 +359,18 @@ export class TimeFlowCardBeta extends LitElement {
         return html`
           <error-display
             .errors="${this._validationResult.errors}"
-            .title="${'TimeFlow Card Configuration Error'}"
-            .allowReset="${true}"
-            .allowSafeMode="${false}"
-            @config-reset="${this._handleConfigReset}"
+            .title="${'Configuration Error'}"
           ></error-display>
         `;
       }
       
       // If we only have warnings, show them but render the card
-      if (this._validationResult.hasWarnings && !this._safeMode) {
+      if (this._validationResult.hasWarnings) {
         return html`
           <div>
             <error-display
               .errors="${this._validationResult.errors.filter(e => e.severity === 'warning' || e.severity === 'info')}"
               .title="${'Configuration Warnings'}"
-              .allowReset="${true}"
-              .allowSafeMode="${true}"
-              @config-reset="${this._handleConfigReset}"
-              @config-safe-mode="${this._handleSafeMode}"
             ></error-display>
             ${this._renderCard()}
           </div>
@@ -473,8 +456,7 @@ export class TimeFlowCardBeta extends LitElement {
     // FIXED: Determine card classes including initialization state
     const cardClasses = [
       this._initialized ? 'initialized' : '',
-      (this._expired && expired_animation) ? 'expired' : '',
-      this._safeMode ? 'safe-mode' : ''
+      (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
     // FIXED: Debug logging to see what's happening
@@ -482,12 +464,6 @@ export class TimeFlowCardBeta extends LitElement {
 
     return html`
       <ha-card class="${cardClasses}" style="${cardStyles}">
-        ${this._safeMode ? html`
-          <div style="position: absolute; top: 8px; right: 8px; background: #059669; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-            🛡️ SAFE MODE
-          </div>
-        ` : ''}
-        
         <div class="card-content">
           <header class="header">
             <div class="title-section">
@@ -512,34 +488,6 @@ export class TimeFlowCardBeta extends LitElement {
         </div>
       </ha-card>
     `;
-  }
-
-  /**
-   * Handle configuration reset event
-   */
-  private _handleConfigReset(): void {
-    console.log('Resetting TimeFlow Card configuration to default');
-    const defaultConfig = this.getStubConfig();
-    this.setConfig(defaultConfig);
-  }
-
-  /**
-   * Handle safe mode activation
-   */
-  private _handleSafeMode(): void {
-    console.log('Activating TimeFlow Card safe mode');
-    if (this._validationResult?.safeConfig) {
-      this._safeMode = true;
-      this.config = { ...this._validationResult.safeConfig };
-      this._resolvedConfig = { ...this._validationResult.safeConfig };
-      this.templateService.clearTemplateCache();
-      this.styleManager.clearCache();
-      
-      // Update countdown with safe config
-      this._updateCountdownAndRender().then(() => {
-        this.requestUpdate();
-      });
-    }
   }
 
   /**

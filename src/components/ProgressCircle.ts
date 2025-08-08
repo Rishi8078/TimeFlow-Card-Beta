@@ -23,7 +23,11 @@ export class ProgressCircleBeta extends LitElement {
         margin: 0 auto;
       }
       .progress-text {
-        /* Minimal CSS - most styling is inline to avoid conflicts */
+        font-size: 16px;  
+        font-weight: bold;
+        fill: var(--progress-text-color, #f4f5f4ff);
+        dominant-baseline: middle;
+        text-anchor: middle;
         pointer-events: none;
         user-select: none;
       }
@@ -42,7 +46,13 @@ export class ProgressCircleBeta extends LitElement {
     this.showProgressText = false;
   }
 
+  // FIXED: Add debugging to see when properties change
   updated(changed: PropertyValues): void {
+    // Debug logging
+    if (changed.has('showProgressText')) {
+      console.log('ProgressCircle - showProgressText changed to:', this.showProgressText, typeof this.showProgressText);
+    }
+
     // Animate stroke-dashoffset if progress changes
     if (changed.has('progress')) {
       const circle = this.renderRoot?.querySelector('.progress-bar') as HTMLElement;
@@ -55,8 +65,11 @@ export class ProgressCircleBeta extends LitElement {
     }
   }
 
-  willUpdate(_changed: PropertyValues): void {
-    // Lifecycle hook for future use
+  // FIXED: Add property change handler for better debugging
+  willUpdate(changed: PropertyValues): void {
+    if (changed.has('showProgressText')) {
+      console.log('ProgressCircle willUpdate - showProgressText:', this.showProgressText);
+    }
   }
 
   // Expose imperative API for external modules, as before
@@ -84,31 +97,11 @@ export class ProgressCircleBeta extends LitElement {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (safeProgress / 100) * circumference;
 
-    // Force a larger font size to ensure visibility - debug version
-    const calculatedFontSize = size * 0.25;
-    const fontSize = Math.max(16, Math.min(36, calculatedFontSize));
-    
-    console.log('ProgressCircle - size calculation debug:', {
-      originalSize: this.size,
-      processedSize: size,
-      calculatedFontSize,
-      finalFontSize: fontSize,
-      sizeType: typeof this.size,
-      sizeValue: this.size
-    });
-    
-    // Calculate exact center coordinates
-    const centerX = size / 2;
-    const centerY = size / 2;
+    // Calculate responsive font size based on circle size
+    const fontSize = Math.max(10, Math.min(24, size * 0.16));
 
-    // Debug logging to help troubleshoot
-    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress, 'size:', size);
-    
-    if (this.showProgressText) {
-      console.log('ProgressCircle - rendering text at:', centerX, centerY, 'fontSize:', fontSize, 'text:', `${Math.round(safeProgress)}%`);
-    }
-
-    const progressText = `${Math.round(safeProgress)}%`;
+    // FIXED: Debug log in render to see current state
+    console.log('ProgressCircle render - showProgressText:', this.showProgressText, 'progress:', safeProgress);
 
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">
@@ -116,22 +109,18 @@ export class ProgressCircleBeta extends LitElement {
           class="progress-circle-beta"
           height="${size}" width="${size}"
           style="overflow:visible;"
-          viewBox="0 0 ${size} ${size}"
         >
-          <!-- Background circle -->
           <circle
             class="progress-bg"
-            cx="${centerX}" cy="${centerY}"
+            cx="${size / 2}" cy="${size / 2}"
             r="${radius}"
             fill="none"
             stroke="#FFFFFF1A"
             stroke-width="${stroke}"
           ></circle>
-          
-          <!-- Progress circle -->
           <circle
             class="progress-bar"
-            cx="${centerX}" cy="${centerY}"
+            cx="${size / 2}" cy="${size / 2}"
             r="${radius}"
             fill="none"
             stroke="${this.color}"
@@ -142,44 +131,22 @@ export class ProgressCircleBeta extends LitElement {
               stroke-dashoffset: ${offset};
               transition: stroke-dashoffset 0.3s ease;
               transform: rotate(-90deg);
-              transform-origin: ${centerX}px ${centerY}px;
+              transform-origin: ${size / 2}px ${size / 2}px;
             "
           ></circle>
 
-          <!-- Progress text with forced visibility -->
-          ${this.showProgressText ? html`
-            <text
-              x="${centerX}"
-              y="${centerY}"
-              font-size="18px"
-              font-family="Arial, sans-serif"
-              font-weight="bold"
-              fill="#ff0000"
-              dominant-baseline="central"
-              text-anchor="middle"
-              style="
-                filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
-                pointer-events: none;
-                user-select: none;
-                z-index: 1000;
-              "
-            >
-              ${progressText}
-            </text>
-          ` : ''}
-          
-          <!-- Debug: Larger, more visible test dot -->
-          ${this.showProgressText ? html`
-            <circle
-              cx="${centerX}"
-              cy="${centerY}"
-              r="5"
-              fill="#ff0000"
-              opacity="1"
-              stroke="#ffffff"
-              stroke-width="2"
-            />
-          ` : ''}
+          ${this.showProgressText
+            ? html`
+                <text
+                  x="50%" y="50%"
+                  class="progress-text"
+                  dy="2"
+                  style="font-size: ${fontSize}px;"
+                >
+                  ${Math.round(safeProgress)}%
+                </text>
+              `
+            : html`<!-- showProgressText is false -->`}
         </svg>
       </div>
     `;

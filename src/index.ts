@@ -18,7 +18,7 @@ declare global {
 
 import { TimeFlowCardBeta } from './components/TimeFlowCard';
 import { ProgressCircleBeta } from './components/ProgressCircle';
-import { ErrorDisplay } from './components/ErrorDisplay';
+import { ErrorDisplay } from './utils/ErrorDisplay';
 
 // Register Lit custom elements with duplicate protection
 if (!customElements.get('error-display')) {

@@ -8,7 +8,7 @@ import { TemplateService } from '../services/TemplateService';
 import { CountdownService } from '../services/CountdownService';
 import { StyleManager } from '../utils/StyleManager';
 import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
-import './ErrorDisplay';
+import '../utils/ErrorDisplay';
 
 export class TimeFlowCardBeta extends LitElement {
   // Reactive properties to trigger updates

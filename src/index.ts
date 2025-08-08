@@ -18,8 +18,16 @@ declare global {
 
 import { TimeFlowCardBeta } from './components/TimeFlowCard';
 import { ProgressCircleBeta } from './components/ProgressCircle';
+import { ErrorDisplay } from './components/ErrorDisplay';
 
 // Register Lit custom elements with duplicate protection
+if (!customElements.get('error-display')) {
+  customElements.define('error-display', ErrorDisplay);
+  console.debug('TimeFlow Card: Registered error-display component');
+} else {
+  console.debug('TimeFlow Card: error-display component already registered');
+}
+
 if (!customElements.get('progress-circle-beta')) {
   customElements.define('progress-circle-beta', ProgressCircleBeta);
   console.debug('TimeFlow Card: Registered progress-circle-beta component');
@@ -51,4 +59,4 @@ console.info(
 );
 
 // Export main classes for external use or testing
-export { TimeFlowCardBeta, ProgressCircleBeta };
+export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplay };

@@ -84,8 +84,18 @@ export class ProgressCircleBeta extends LitElement {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (safeProgress / 100) * circumference;
 
-    // Calculate responsive font size with better minimum and scaling
-    const fontSize = Math.max(14, Math.min(32, size * 0.25));
+    // Force a larger font size to ensure visibility - debug version
+    const calculatedFontSize = size * 0.25;
+    const fontSize = Math.max(16, Math.min(36, calculatedFontSize));
+    
+    console.log('ProgressCircle - size calculation debug:', {
+      originalSize: this.size,
+      processedSize: size,
+      calculatedFontSize,
+      finalFontSize: fontSize,
+      sizeType: typeof this.size,
+      sizeValue: this.size
+    });
     
     // Calculate exact center coordinates
     const centerX = size / 2;
@@ -136,36 +146,38 @@ export class ProgressCircleBeta extends LitElement {
             "
           ></circle>
 
-          <!-- Progress text - render when showProgressText is true -->
+          <!-- Progress text with forced visibility -->
           ${this.showProgressText ? html`
             <text
               x="${centerX}"
               y="${centerY}"
-              class="progress-text"
-              font-size="${fontSize}px"
-              font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+              font-size="18px"
+              font-family="Arial, sans-serif"
               font-weight="bold"
-              fill="#ffffff"
+              fill="#ff0000"
               dominant-baseline="central"
               text-anchor="middle"
               style="
-                filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
+                filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
                 pointer-events: none;
                 user-select: none;
+                z-index: 1000;
               "
             >
               ${progressText}
             </text>
           ` : ''}
           
-          <!-- Debug: Add a visible test element when showProgressText is true -->
+          <!-- Debug: Larger, more visible test dot -->
           ${this.showProgressText ? html`
             <circle
               cx="${centerX}"
               cy="${centerY}"
-              r="2"
-              fill="red"
-              opacity="0.5"
+              r="5"
+              fill="#ff0000"
+              opacity="1"
+              stroke="#ffffff"
+              stroke-width="2"
             />
           ` : ''}
         </svg>

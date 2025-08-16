@@ -180,18 +180,19 @@ function t(t,e,i,s){var r,n=arguments.length,a=n<3?e:null===s?s=Object.getOwnPro
           .errors="${this._validationResult.errors}"
           .title="${this._validationResult.hasCriticalErrors?"Configuration Error":"Configuration Issues"}"
         ></error-display-beta>
-      `:this._renderCard()}_renderCard(){const{title:t,subtitle:e,color:i,background_color:s,progress_color:r,stroke_width:n,icon_size:a,expired_animation:o=!0,expired_text:l="Completed! 🎉",width:c,height:h,aspect_ratio:d,show_progress_text:u=!1}=this._resolvedConfig,p=s||"var(--card-background, var(--primary-background-color, #1a1a1a))",m=i||"var(--primary-text-color, #fff)",f=r||i||"var(--progress-color, #4caf50)",g=this.styleManager.calculateDynamicIconSize(c,h,d,a),_=this.styleManager.calculateDynamicStrokeWidth(g,n),y=this.styleManager.calculateProportionalSizes(c,h,d),v=this.styleManager.generateCardDimensionStyles(c,h,d),$=[`background: ${p}`,`color: ${m}`,`--timeflow-card-background-color: ${p}`,`--timeflow-card-text-color: ${m}`,`--timeflow-card-progress-color: ${f}`,`--timeflow-card-icon-size: ${g}px`,`--timeflow-card-stroke-width: ${_}`,`--timeflow-title-size: ${y.titleSize}rem`,`--timeflow-subtitle-size: ${y.subtitleSize}rem`,`--progress-text-color: ${m}`,...v].join("; "),b=this._expired?l:e||(this._resolvedConfig.timer_entity&&this.hass?ut.getTimerSubtitle(ut.getTimerData(this._resolvedConfig.timer_entity,this.hass),!1!==this._resolvedConfig.show_seconds):this.countdownService.getSubtitle(this._resolvedConfig,this.hass));let w=t;(null==w||"string"==typeof w&&""===w.trim())&&(w=this._resolvedConfig.timer_entity&&this.hass?ut.getTimerTitle(this._resolvedConfig.timer_entity,this.hass):this._expired?l:"Countdown Timer");const x=[this._initialized?"initialized":"",this._expired&&o?"expired":""].filter(Boolean).join(" "),S={...this._resolvedConfig},A=S.tap_action||S.hold_action||S.double_tap_action||S.entity;return j`
+      `:this._renderCard()}_renderCard(){var t;const{title:e,subtitle:i,color:s,background_color:r,progress_color:n,stroke_width:a,icon_size:o,expired_animation:l=!0,expired_text:c="Completed! 🎉",width:h,height:d,aspect_ratio:u,show_progress_text:p=!1}=this._resolvedConfig,m=r||"var(--card-background, var(--primary-background-color, #1a1a1a))",f=s||"var(--primary-text-color, #fff)",g=n||s||"var(--progress-color, #4caf50)",_=this.styleManager.calculateDynamicIconSize(h,d,u,o),y=this.styleManager.calculateDynamicStrokeWidth(_,a),v=this.styleManager.calculateProportionalSizes(h,d,u),$=this.styleManager.generateCardDimensionStyles(h,d,u),b=[`background: ${m}`,`color: ${f}`,`--timeflow-card-background-color: ${m}`,`--timeflow-card-text-color: ${f}`,`--timeflow-card-progress-color: ${g}`,`--timeflow-card-icon-size: ${_}px`,`--timeflow-card-stroke-width: ${y}`,`--timeflow-title-size: ${v.titleSize}rem`,`--timeflow-subtitle-size: ${v.subtitleSize}rem`,`--progress-text-color: ${f}`,...$].join("; "),w=this._expired?c:i||(this._resolvedConfig.timer_entity&&this.hass?ut.getTimerSubtitle(ut.getTimerData(this._resolvedConfig.timer_entity,this.hass),!1!==this._resolvedConfig.show_seconds):this.countdownService.getSubtitle(this._resolvedConfig,this.hass));let x=e;(null==x||"string"==typeof x&&""===x.trim())&&(x=this._resolvedConfig.timer_entity&&this.hass?ut.getTimerTitle(this._resolvedConfig.timer_entity,this.hass):this._expired?c:"Countdown Timer");const S=[this._initialized?"initialized":"",this._expired&&l?"expired":""].filter(Boolean).join(" "),A={...this._resolvedConfig};A.entity&&!A.tap_action&&(A.tap_action={action:"more-info"}),null===(t=A.tap_action)||void 0===t||t.action;const C=A.tap_action||A.hold_action||A.double_tap_action;return j`
       <ha-card 
-        class="${x}" 
-        style="${$}"
-        .actionHandler=${A?(C=S,$t({hasHold:wt(C.hold_action),hasDoubleClick:wt(C.double_tap_action)})):void 0}
-        @action=${A&&this.hass?function(t,e){return t=>{bt(t.target,0,e,t.detail.action)}}(this.hass,S):void 0}
+        class="${S}" 
+        style="${b}"
+        ?actionHandler=${C}
+        .actionHandler=${C?(T=A,$t({hasHold:wt(T.hold_action),hasDoubleClick:wt(T.double_tap_action)})):void 0}
+        @action=${C&&this.hass?function(t,e){return t=>{bt(t.target,0,e,t.detail.action)}}(this.hass,A):void 0}
       >
         <div class="card-content">
           <header class="header">
             <div class="title-section">
-              <h2 class="title" aria-live="polite">${w}</h2>
-              <p class="subtitle" aria-live="polite">${b}</p>
+              <h2 class="title" aria-live="polite">${x}</h2>
+              <p class="subtitle" aria-live="polite">${w}</p>
             </div>
           </header>
           
@@ -200,17 +201,17 @@ function t(t,e,i,s){var r,n=arguments.length,a=n<3?e:null===s?s=Object.getOwnPro
               <progress-circle-beta
                 class="progress-circle"
                 .progress="${this._progress}"
-                .color="${f}"
-                .size="${g}"
-                .strokeWidth="${_}"
-                .showProgressText="${!0===u}"
+                .color="${g}"
+                .size="${_}"
+                .strokeWidth="${y}"
+                .showProgressText="${!0===p}"
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>
           </div>
         </div>
       </ha-card>
-    `;var C}getCardSize(){const{aspect_ratio:t="2/1",height:e}=this.config;if(e){const t=parseInt("string"==typeof e?e:e.toString());return t<=100?1:t<=150?2:t<=200?3:4}if(t){const[e,i]=t.split("/").map(Number);if(!e||!i)return 3;const s=i/e;return s>=1.5?4:s>=1?3:2}return 3}static get version(){return"1.2.0-lit"}}t([ht({type:Object})],St.prototype,"hass",void 0),t([ht({type:Object})],St.prototype,"config",void 0),t([dt()],St.prototype,"_resolvedConfig",void 0),t([dt()],St.prototype,"_progress",void 0),t([dt()],St.prototype,"_countdown",void 0),t([dt()],St.prototype,"_expired",void 0),t([dt()],St.prototype,"_validationResult",void 0),t([dt()],St.prototype,"_initialized",void 0);class At extends at{static get styles(){return a`
+    `;var T}getCardSize(){const{aspect_ratio:t="2/1",height:e}=this.config;if(e){const t=parseInt("string"==typeof e?e:e.toString());return t<=100?1:t<=150?2:t<=200?3:4}if(t){const[e,i]=t.split("/").map(Number);if(!e||!i)return 3;const s=i/e;return s>=1.5?4:s>=1?3:2}return 3}static get version(){return"1.2.0-lit"}}t([ht({type:Object})],St.prototype,"hass",void 0),t([ht({type:Object})],St.prototype,"config",void 0),t([dt()],St.prototype,"_resolvedConfig",void 0),t([dt()],St.prototype,"_progress",void 0),t([dt()],St.prototype,"_countdown",void 0),t([dt()],St.prototype,"_expired",void 0),t([dt()],St.prototype,"_validationResult",void 0),t([dt()],St.prototype,"_initialized",void 0);class At extends at{static get styles(){return a`
       :host {
         display: inline-block;
         vertical-align: middle;

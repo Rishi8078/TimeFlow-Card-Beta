@@ -467,21 +467,22 @@ export class TimeFlowCardBeta extends LitElement {
     // Create resolved config 
     const configWithDefaults = { ...this._resolvedConfig };
     
-    // Note: Following timer-bar-card pattern - if no tap action is explicitly configured,
-    // Home Assistant will automatically default to more-info action for the entity.
-    // This provides the expected behavior without needing to set explicit defaults.
+    // Following timer-bar-card pattern: Set default tap action if entity exists but no tap action defined
+    if (configWithDefaults.entity && !configWithDefaults.tap_action) {
+      configWithDefaults.tap_action = { action: 'more-info' };
+    }
 
-    // Check if any actions are configured
-    const hasActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
+    // Check if tap action should show pointer cursor (following timer-bar-card logic)
+    const shouldShowPointer = configWithDefaults.tap_action?.action !== "none";
     
-    // Always enable action handlers if there's an entity, even without explicit actions
-    // This allows Home Assistant to provide default more-info behavior
-    const shouldEnableActions = hasActions || configWithDefaults.entity;
+    // Enable action handlers when we have actions (following timer-bar-card pattern)
+    const shouldEnableActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
 
     return html`
       <ha-card 
         class="${cardClasses}" 
         style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
         .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >

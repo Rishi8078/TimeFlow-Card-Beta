@@ -7,7 +7,7 @@ import { ConfigValidator, ValidationResult, ValidationError } from '../utils/Con
 import { TemplateService } from '../services/TemplateService';
 import { CountdownService } from '../services/CountdownService';
 import { StyleManager } from '../utils/StyleManager';
-import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
+import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/ActionHandler';
 import '../utils/ErrorDisplay';
 

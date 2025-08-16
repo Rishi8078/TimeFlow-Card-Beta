@@ -467,18 +467,23 @@ export class TimeFlowCardBeta extends LitElement {
     // Create resolved config 
     const configWithDefaults = { ...this._resolvedConfig };
     
-    // Note: Removed automatic default tap actions to allow custom actions to work
-    // Users can explicitly configure more-info actions if needed
+    // Note: Following timer-bar-card pattern - if no tap action is explicitly configured,
+    // Home Assistant will automatically default to more-info action for the entity.
+    // This provides the expected behavior without needing to set explicit defaults.
 
-    // Check if any actions are configured (including defaults)
+    // Check if any actions are configured
     const hasActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
+    
+    // Always enable action handlers if there's an entity, even without explicit actions
+    // This allows Home Assistant to provide default more-info behavior
+    const shouldEnableActions = hasActions || configWithDefaults.entity;
 
     return html`
       <ha-card 
         class="${cardClasses}" 
         style="${cardStyles}"
-        .actionHandler=${hasActions ? createActionHandler(configWithDefaults) : undefined}
-        @action=${hasActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content">
           <header class="header">

@@ -45,7 +45,7 @@ export default {
   output: {
     file: 'timeflow-card-beta.js',
     format: 'es',
-    sourcemap: true
+    sourcemap: dev
   },
   plugins
 };

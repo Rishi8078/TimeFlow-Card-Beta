@@ -9,7 +9,7 @@ export interface ValidationError {
   value?: any;
 }
 
-export class ErrorDisplay extends LitElement {
+export class ErrorDisplayBeta extends LitElement {
   @property({ type: Array }) errors: ValidationError[] = [];
   @property({ type: String }) title: string = 'Configuration Issues';
 
@@ -74,4 +74,4 @@ export class ErrorDisplay extends LitElement {
 }
 
 // Register the custom element
-customElements.define('error-display', ErrorDisplay);
+customElements.define('error-display-beta', ErrorDisplayBeta);

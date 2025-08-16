@@ -38,7 +38,7 @@ function t(t,e,i,s){var r,n=arguments.length,a=n<3?e:null===s?s=Object.getOwnPro
           `)}
         </ul>
       </div>
-    `}}t([ht({type:Array})],St.prototype,"errors",void 0),t([ht({type:String})],St.prototype,"title",void 0),customElements.define("error-display",St);class xt extends at{static get styles(){return a`
+    `}}t([ht({type:Array})],St.prototype,"errors",void 0),t([ht({type:String})],St.prototype,"title",void 0),customElements.define("error-display-beta",St);class xt extends at{static get styles(){return a`
       :host {
         display: block;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -279,5 +279,4 @@ function t(t,e,i,s){var r,n=arguments.length,a=n<3?e:null===s?s=Object.getOwnPro
               `:F`<!-- showProgressText is false -->`}
         </svg>
       </div>
-    `}}t([ht({type:Number})],At.prototype,"progress",void 0),t([ht({type:String})],At.prototype,"color",void 0),t([ht({type:Number})],At.prototype,"size",void 0),t([ht({type:Number})],At.prototype,"strokeWidth",void 0),t([ht({type:Boolean})],At.prototype,"showProgressText",void 0),customElements.get("error-display-beta")||customElements.define("error-display-beta",St),customElements.get("progress-circle-beta")||customElements.define("progress-circle-beta",At),customElements.get("timeflow-card-beta")||customElements.define("timeflow-card-beta",xt),window.customCards=window.customCards||[],window.customCards.push({type:"timeflow-card-beta",name:"TimeFlow Card (Lit Version)",description:"A beautiful countdown timer card with progress circle for Home Assistant, using Lit",preview:!0,documentationURL:"https://github.com/Rishi8078/TimeFlow-Card"});export{St as ErrorDisplay,At as ProgressCircleBeta,xt as TimeFlowCardBeta};
-//# sourceMappingURL=timeflow-card-beta.js.map
+    `}}t([ht({type:Number})],At.prototype,"progress",void 0),t([ht({type:String})],At.prototype,"color",void 0),t([ht({type:Number})],At.prototype,"size",void 0),t([ht({type:Number})],At.prototype,"strokeWidth",void 0),t([ht({type:Boolean})],At.prototype,"showProgressText",void 0),customElements.get("error-display-beta")||customElements.define("error-display-beta",St),customElements.get("progress-circle-beta")||customElements.define("progress-circle-beta",At),customElements.get("timeflow-card-beta")||customElements.define("timeflow-card-beta",xt),window.customCards=window.customCards||[],window.customCards.push({type:"timeflow-card-beta",name:"TimeFlow Card (Lit Version)",description:"A beautiful countdown timer card with progress circle for Home Assistant, using Lit",preview:!0,documentationURL:"https://github.com/Rishi8078/TimeFlow-Card"});export{St as ErrorDisplayBeta,At as ProgressCircleBeta,xt as TimeFlowCardBeta};

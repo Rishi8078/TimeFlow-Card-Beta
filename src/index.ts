@@ -18,11 +18,11 @@ declare global {
 
 import { TimeFlowCardBeta } from './components/TimeFlowCard';
 import { ProgressCircleBeta } from './components/ProgressCircle';
-import { ErrorDisplay } from './utils/ErrorDisplay';
+import { ErrorDisplayBeta } from './utils/ErrorDisplay';
 
 // Register Lit custom elements with duplicate protection
 if (!customElements.get('error-display-beta')) {
-  customElements.define('error-display-beta', ErrorDisplay);
+  customElements.define('error-display-beta', ErrorDisplayBeta);
 } else {
   // Component already registered
 }
@@ -50,4 +50,4 @@ window.customCards.push({
 });
 
 // Export main classes for external use or testing
-export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplay };
+export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplayBeta };

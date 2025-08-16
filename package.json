@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "type": "module",
   "description": "TimeFlow Card Beta - Modern modular architecture",
-  "main": "timeflow-card-modular.js",
+  "main": "timeflow-card-beta.js",
   "scripts": {
     "lint": "eslint *.js",
     "build": "rollup -c",
@@ -53,7 +53,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "lit": "^3.3.1",
-    "preact": "^10.27.0"
+    "lit": "^3.3.1"
   }
 }

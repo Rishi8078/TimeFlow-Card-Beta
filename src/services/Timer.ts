@@ -421,7 +421,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
       } else if (timerData.remaining === 0 && timerData.progress >= 100) {
         return `Timer finished${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
       } else {
-        return `Timer ready${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+        return `No timers${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
       }
     }
 

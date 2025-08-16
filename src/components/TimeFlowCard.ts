@@ -467,8 +467,8 @@ export class TimeFlowCardBeta extends LitElement {
     // Create resolved config with default actions for timer entities
     const configWithDefaults = { ...this._resolvedConfig };
     
-    // Add default tap action for timer entities if none is configured
-    if (!configWithDefaults.tap_action) {
+    // Add default tap action for timer entities if none is configured AND timer_entity is specified
+    if (!configWithDefaults.tap_action && configWithDefaults.timer_entity) {
       const currentTimerEntity = this.countdownService.getCurrentTimerEntity(configWithDefaults, this.hass);
       if (currentTimerEntity) {
         configWithDefaults.tap_action = {

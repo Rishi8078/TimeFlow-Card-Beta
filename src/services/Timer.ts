@@ -147,8 +147,8 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     if (isActive && remaining >= 0) {
       const elapsed = duration - remaining;
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (remaining === 0) {
-      progress = 100; // Timer finished
+    } else if (remaining === 0 && duration > 0) {
+      progress = 100; // Timer finished (only if we had a real duration)
     }
   } else {
     // No original duration available - handle differently for better accuracy
@@ -169,10 +169,18 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         // This prevents the "75%" issue you're experiencing
         progress = 0;
       }
-    } else if (!isActive && remaining === 0) {
-      progress = 100; // Timer finished
     } else {
-      progress = 0; // Timer not active or idle
+      // No active timer OR no remaining time
+      // Check if this is actually a "no timer" state vs "timer finished" state
+      if (state === 'unavailable' || state === 'unknown' || state === 'none' || state === null || state === '') {
+        progress = 0; // No timer present - show empty progress
+      } else if (remaining === 0 && (isActive === false)) {
+        // This could be a finished timer, but without original duration we can't be sure
+        // Default to empty progress to avoid showing full progress incorrectly
+        progress = 0;
+      } else {
+        progress = 0; // Default case
+      }
     }
   }
 

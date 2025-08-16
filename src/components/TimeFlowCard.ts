@@ -376,10 +376,10 @@ export class TimeFlowCardBeta extends LitElement {
     if (this._validationResult && !this._validationResult.isValid) {
       // Show error display for any validation issues (critical errors or warnings)
       return html`
-        <error-display
+        <error-display-beta
           .errors="${this._validationResult.errors}"
           .title="${this._validationResult.hasCriticalErrors ? 'Configuration Error' : 'Configuration Issues'}"
-        ></error-display>
+        ></error-display-beta>
       `;
     }
 

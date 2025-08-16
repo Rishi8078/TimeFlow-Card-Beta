@@ -21,8 +21,8 @@ import { ProgressCircleBeta } from './components/ProgressCircle';
 import { ErrorDisplay } from './utils/ErrorDisplay';
 
 // Register Lit custom elements with duplicate protection
-if (!customElements.get('error-display')) {
-  customElements.define('error-display', ErrorDisplay);
+if (!customElements.get('error-display-beta')) {
+  customElements.define('error-display-beta', ErrorDisplay);
 } else {
   // Component already registered
 }

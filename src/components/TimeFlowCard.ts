@@ -464,19 +464,11 @@ export class TimeFlowCardBeta extends LitElement {
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
-    // Create resolved config with default actions for timer entities
+    // Create resolved config 
     const configWithDefaults = { ...this._resolvedConfig };
     
-    // Add default tap action for timer entities if none is configured AND timer_entity is specified
-    if (!configWithDefaults.tap_action && configWithDefaults.timer_entity) {
-      const currentTimerEntity = this.countdownService.getCurrentTimerEntity(configWithDefaults, this.hass);
-      if (currentTimerEntity) {
-        configWithDefaults.tap_action = {
-          action: 'more-info',
-          entity: currentTimerEntity
-        };
-      }
-    }
+    // Note: Removed automatic default tap actions to allow custom actions to work
+    // Users can explicitly configure more-info actions if needed
 
     // Check if any actions are configured (including defaults)
     const hasActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
@@ -485,7 +477,6 @@ export class TimeFlowCardBeta extends LitElement {
       <ha-card 
         class="${cardClasses}" 
         style="${cardStyles}"
-        ?actionHandler=${hasActions}
         .actionHandler=${hasActions ? createActionHandler(configWithDefaults) : undefined}
         @action=${hasActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >

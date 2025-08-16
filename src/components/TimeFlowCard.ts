@@ -467,6 +467,11 @@ export class TimeFlowCardBeta extends LitElement {
     // Create resolved config 
     const configWithDefaults = { ...this._resolvedConfig };
     
+    // Map timer_entity to entity field for action handling compatibility
+    if (configWithDefaults.timer_entity && !configWithDefaults.entity) {
+      configWithDefaults.entity = configWithDefaults.timer_entity;
+    }
+    
     // Following timer-bar-card pattern: Set default tap action if entity exists but no tap action defined
     if (configWithDefaults.entity && !configWithDefaults.tap_action) {
       configWithDefaults.tap_action = { action: 'more-info' };

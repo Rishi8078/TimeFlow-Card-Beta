@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Tap Action Test</title>
+    <script type="module" src="./timeflow-card-beta.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .pass { background: #1b5e20; }
+        .fail { background: #b71c1c; }
+        .card-container {
+            max-width: 400px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Complete TimeFlow Card Tap Action Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Card with timer_entity (should show pointer and work on tap)</h2>
+        <div class="card-container">
+            <timeflow-card-beta id="test1"></timeflow-card-beta>
+        </div>
+        <div id="result1" class="test-result">Hover to check pointer, then tap to test action</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Card with explicit tap_action=none (no pointer, no action)</h2>
+        <div class="card-container">
+            <timeflow-card-beta id="test2"></timeflow-card-beta>
+        </div>
+        <div id="result2" class="test-result">Should show normal cursor (no pointer)</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Card with no entity (no pointer, no action)</h2>
+        <div class="card-container">
+            <timeflow-card-beta id="test3"></timeflow-card-beta>
+        </div>
+        <div id="result3" class="test-result">Should show normal cursor (no pointer)</div>
+    </div>
+
+    <script>
+        // Mock hass object
+        const mockHass = {
+            language: 'en',
+            states: {
+                'timer.test_timer_1': {
+                    entity_id: 'timer.test_timer_1',
+                    state: 'active',
+                    attributes: {
+                        friendly_name: 'Test Timer 1',
+                        duration: '00:05:00',
+                        finishes_at: new Date(Date.now() + 300000).toISOString()
+                    }
+                },
+                'timer.test_timer_2': {
+                    entity_id: 'timer.test_timer_2',
+                    state: 'idle',
+                    attributes: {
+                        friendly_name: 'Test Timer 2',
+                        duration: '00:10:00'
+                    }
+                }
+            },
+            localize: (key) => key,
+            formatTime: (time) => new Date(time).toLocaleTimeString(),
+            formatDate: (date) => new Date(date).toLocaleDateString(),
+            callService: (domain, service, data) => {
+                console.log(`Mock service call: ${domain}.${service}`, data);
+            }
+        };
+
+        // Configure cards
+        window.addEventListener('DOMContentLoaded', () => {
+            // Test 1: Card with timer_entity (should have default more-info action)
+            const card1 = document.getElementById('test1');
+            card1.hass = mockHass;
+            card1.setConfig({
+                type: 'custom:timeflow-card-beta',
+                timer_entity: 'timer.test_timer_1',
+                title: 'Active Timer',
+                target_date: new Date(Date.now() + 300000).toISOString()
+            });
+
+            // Test 2: Card with tap_action = none
+            const card2 = document.getElementById('test2');
+            card2.hass = mockHass;
+            card2.setConfig({
+                type: 'custom:timeflow-card-beta',
+                timer_entity: 'timer.test_timer_2',
+                title: 'No Action Timer',
+                target_date: new Date(Date.now() + 600000).toISOString(),
+                tap_action: { action: 'none' }
+            });
+
+            // Test 3: Card with no entity
+            const card3 = document.getElementById('test3');
+            card3.hass = mockHass;
+            card3.setConfig({
+                type: 'custom:timeflow-card-beta',
+                title: 'No Entity Timer',
+                target_date: new Date(Date.now() + 300000).toISOString()
+            });
+
+            // Listen for action events on all cards
+            [card1, card2, card3].forEach((card, index) => {
+                card.addEventListener('hass-action', (event) => {
+                    const resultDiv = document.getElementById(`result${index + 1}`);
+                    const detail = event.detail;
+                    
+                    if (detail.action === 'tap' && detail.config.entity) {
+                        resultDiv.textContent = `✅ PASS: Tap action triggered for entity: ${detail.config.entity}`;
+                        resultDiv.className = 'test-result pass';
+                    } else {
+                        resultDiv.textContent = `❌ Action event: ${JSON.stringify(detail)}`;
+                        resultDiv.className = 'test-result fail';
+                    }
+                    
+                    console.log(`Card ${index + 1} action:`, detail);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

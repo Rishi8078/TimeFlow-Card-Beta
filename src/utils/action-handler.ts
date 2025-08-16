@@ -1,10 +1,12 @@
 /**
- * Action handler directive for Home Assistant
- * Simplified version based on Home Assistant's action-handler
+ * Consolidated action handler for Home Assistant
+ * Combines directive and helper functions
  */
 
 import { noChange } from "lit";
 import { AttributePart, directive, Directive, DirectiveParameters } from "lit/directive.js";
+import { ActionHandlerEvent, HomeAssistant, CardConfig } from '../types/index';
+import { handleAction } from './handle-action';
 
 interface ActionHandler extends HTMLElement {
   holdTime: number;
@@ -60,3 +62,29 @@ export const actionHandler = directive(
     }
   }
 );
+
+/**
+ * Check if an action is configured
+ */
+export function hasAction(config?: any): boolean {
+  return config !== undefined && config.action !== 'none';
+}
+
+/**
+ * Create action handler with proper options
+ */
+export function createActionHandler(config: CardConfig) {
+  return actionHandler({
+    hasHold: hasAction(config.hold_action),
+    hasDoubleClick: hasAction(config.double_tap_action),
+  });
+}
+
+/**
+ * Create handle action function for events
+ */
+export function createHandleAction(hass: HomeAssistant, config: CardConfig) {
+  return (ev: ActionHandlerEvent) => {
+    handleAction(ev.target as any, hass, config, ev.detail.action);
+  };
+}

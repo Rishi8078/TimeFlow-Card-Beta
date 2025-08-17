@@ -246,7 +246,7 @@ export class CountdownService {
         // Special handling for Alexa timers
         if (timerData.isAlexaTimer) {
           if (TimerEntityService.isTimerExpired(timerData)) {
-            return { value: '🔔', label: 'Timer finished!' };
+            return { value: '🔔', label: TimerEntityService.getTimerSubtitle(timerData, false) };
           }
           if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
           if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
@@ -279,7 +279,7 @@ export class CountdownService {
           if (timerData) {
             const { hours, minutes, seconds } = this.timeRemaining;
             if (TimerEntityService.isTimerExpired(timerData)) {
-              return { value: '🔔', label: 'Alexa timer finished!' };
+              return { value: '🔔', label: TimerEntityService.getTimerSubtitle(timerData, false) };
             }
             if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
             if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };

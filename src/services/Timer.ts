@@ -78,6 +78,21 @@ export class TimerEntityService {
     // Handle standard HA timers (existing logic)
     return this.getStandardTimerData(entityId, entity);
   }
+
+  /**
+   * Refreshes timer data by forcing re-evaluation of timer state
+   * @param entityId - Timer entity ID
+   * @param hass - Home Assistant object
+   * @returns TimerData object with refreshed timer information
+   */
+  static refreshTimerData(entityId: string, hass: HomeAssistant): TimerData | null {
+    // Force re-evaluation of timer data
+    const entity = hass.states[entityId];
+    if (!entity) return null;
+    
+    // Clear any cached data by forcing a fresh parse
+    return this.getTimerData(entityId, hass);
+  }
 /**
  * Handles Alexa timer data extraction
  * @param entityId - Alexa timer entity ID
@@ -207,38 +222,33 @@ private static createTimerDataFromAttributes(
   let timerStatus: "ON" | "OFF" | "PAUSED" = "OFF";
 
   if (timerData) {
-    // Extract precise timing data
-    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000); // Convert ms to seconds
-    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000); // Convert ms to seconds
+    // Ensure we're using the latest remainingTime from attributes
+    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000);
+    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000);
     
-    // Calculate finish time for active timers
+    // Recalculate finish time for active timers
     if (isActive && remaining > 0) {
       finishesAt = new Date(Date.now() + (remaining * 1000));
     }
 
-    // Extract user-defined label
     userDefinedLabel = timerData.timerLabel || undefined;
-    
-    // Get precise status
     timerStatus = timerData.status || "OFF";
   }
 
-  // Calculate progress with precise values
+  // Ensure progress calculation accounts for current state
   let progress = 0;
-  if (duration > 0 && !isPaused) {
+  if (duration > 0) {
     if (isActive && remaining >= 0) {
       const elapsed = duration - remaining;
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (remaining === 0 && duration > 0) {
-      progress = 100; // Timer finished
+    } else if (isPaused) {
+      const elapsed = duration - remaining;
+      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+    } else if (remaining === 0) {
+      progress = 100;
     }
-  } else if (isPaused) {
-    // For paused timers, show progress where it was paused
-    const elapsed = duration - remaining;
-    progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
   }
 
-  // Extract device info from entity attributes
   const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
 
   return {
@@ -250,7 +260,7 @@ private static createTimerDataFromAttributes(
     progress,
     isAlexaTimer: true,
     alexaDevice,
-    timerLabel: this.formatAlexaTimerName(''), // Will be overridden by subtitle logic
+    timerLabel: userDefinedLabel || alexaDevice, // Use label if available
     timerStatus,
     userDefinedLabel
   };
@@ -766,16 +776,40 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
     for (const entityId in hass.states) {
       if (this.isAlexaTimer(entityId)) {
         const entity = hass.states[entityId];
-        // Only include if the entity has a meaningful state
-        if (entity.state && 
-            entity.state !== 'unavailable' && 
-            entity.state !== 'unknown' && 
-            entity.state !== 'none') {
-          alexaTimers.push(entityId);
+        
+        // Include entities that have timer data, including paused ones
+        if (entity.state && entity.state !== 'unavailable' && entity.state !== 'unknown') {
+          // Parse the timer data to check if there are any timers (active or paused)
+          const timerData = this.getTimerData(entityId, hass);
+          if (timerData) {
+            alexaTimers.push(entityId);
+          }
         }
       }
     }
     
     return alexaTimers;
+  }
+
+  /**
+   * Helper method to check for any timers (including paused)
+   * @param entityId - Entity ID
+   * @param entity - Entity object
+   * @returns boolean - Whether entity has any timers
+   */
+  private static hasAnyTimers(entityId: string, entity: any): boolean {
+    try {
+      const attributes = entity.attributes;
+      
+      // Parse JSON arrays
+      const sortedActive = this.parseJsonArray(attributes.sorted_active) || [];
+      const sortedAll = this.parseJsonArray(attributes.sorted_all) || [];
+      
+      // Check for any timers (active, paused, or inactive)
+      return sortedActive.length > 0 || sortedAll.length > 0;
+      
+    } catch (error) {
+      return false;
+    }
   }
 }

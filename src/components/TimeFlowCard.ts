@@ -298,6 +298,13 @@ export class TimeFlowCardBeta extends LitElement {
     if (changedProperties.has('hass') || changedProperties.has('config')) {
       // Clear template caches on hass or config changes
       this.templateService.clearTemplateCache();
+      
+      // For timer entities, force refresh the timer data when hass changes
+      if (changedProperties.has('hass') && this._resolvedConfig.timer_entity && this.hass) {
+        // Force refresh timer data when hass changes to ensure countdown updates properly
+        TimerEntityService.refreshTimerData(this._resolvedConfig.timer_entity, this.hass);
+      }
+      
       this._updateCountdownAndRender();
     }
   }
@@ -357,6 +364,11 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Store resolved config in reactive state
     this._resolvedConfig = resolvedConfig;
+
+    // For timer entities, ensure we refresh the timer data before calculating countdown
+    if (resolvedConfig.timer_entity && this.hass) {
+      TimerEntityService.refreshTimerData(resolvedConfig.timer_entity, this.hass);
+    }
 
     // Calculate countdown data
     await this.countdownService.updateCountdown(resolvedConfig, this.hass);

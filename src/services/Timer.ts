@@ -88,62 +88,106 @@ export class TimerEntityService {
 private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssistant): TimerData | null {
   const { state, attributes } = entity;
 
-  /* 1. Legacy progress & remaining (state attribute) ----------------- */
-  let remaining = 0, duration = 0, finishesAt: Date | null = null, progress = 0;
+  // 1) Parse rich JSON first (status authority comes from attributes, not entity.state)
+  const activeTimers = this.parseJson(attributes.sorted_active) ?? [];
+  const allTimers    = this.parseJson(attributes.sorted_all)    ?? [];
+  const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
+  const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
 
-  // use entity.state (timestamp, seconds, or HH:MM:SS) for live countdown
-  if (state && state !== 'unavailable' && state !== 'unknown') {
-    if (this.isISOTimestamp(state)) {
-      finishesAt = new Date(state);
-      if (!isNaN(finishesAt.getTime()))
-        remaining = Math.max(0, Math.floor((finishesAt.getTime() - Date.now()) / 1000));
-    } else if (!isNaN(parseFloat(state))) {
-      remaining = Math.max(0, parseFloat(state));
-    } else if (typeof state === 'string' && state.includes(':')) {
-      remaining = this.parseDuration(state);
+  // Determine state: Active > Paused > None, using your rule about the last item in sorted_all
+  let isActive = false;
+  let isPaused = false;
+  let primaryTimer: any | null = null;
+
+  if (totalActive > 0 && activeTimers.length > 0) {
+    // Choose the active timer (prefer the one with shortest remainingTime)
+    if (activeTimers.length === 1) {
+      primaryTimer = activeTimers[0]?.[1] ?? null;
+    } else {
+      let best: any = null;
+      let shortest = Number.POSITIVE_INFINITY;
+      for (const t of activeTimers) {
+        const data = t?.[1];
+        if (data && typeof data.remainingTime === 'number' && data.remainingTime < shortest) {
+          shortest = data.remainingTime;
+          best = data;
+        }
+      }
+      primaryTimer = best;
+    }
+    isActive = !!primaryTimer;
+  } else if (totalAll > 0 && allTimers.length > 0) {
+    // Check the last timer in sorted_all for paused state as per requirement
+    const lastTimer = allTimers[allTimers.length - 1]?.[1];
+    if (lastTimer?.status === 'PAUSED') {
+      primaryTimer = lastTimer;
+      isPaused = true;
+    } else {
+      // Optionally pick a paused timer anywhere in the list as a fallback
+      const anyPaused = allTimers.find((t: any) => t?.[1]?.status === 'PAUSED')?.[1];
+      if (anyPaused) {
+        primaryTimer = anyPaused;
+        isPaused = true;
+      }
     }
   }
 
-  if (attributes.original_duration) {
-    duration = this.parseDuration(attributes.original_duration);
-  } else if (attributes.duration) {
-    duration = this.parseDuration(attributes.duration);
-  } else if (finishesAt && entity.last_changed) {
-    const start = new Date(entity.last_changed).getTime();
-    const end   = finishesAt.getTime();
-    if (!isNaN(start) && end > start) duration = Math.floor((end - start) / 1000);
+  // 2) Compute duration/remaining/progress, preferring rich data; fallback to legacy entity.state
+  let remaining = 0;
+  let duration = 0;
+  let finishesAt: Date | null = null;
+  let progress = 0;
+
+  if (primaryTimer) {
+    const rt = typeof primaryTimer.remainingTime === 'number' ? primaryTimer.remainingTime : 0; // ms
+    const od = typeof primaryTimer.originalDurationInMillis === 'number' ? primaryTimer.originalDurationInMillis : 0; // ms
+    remaining = Math.max(0, Math.floor(rt / 1000));
+    duration  = Math.max(0, Math.floor(od / 1000));
+
+    if (isActive && remaining > 0) {
+      finishesAt = new Date(Date.now() + remaining * 1000);
+    }
+
+    if (duration > 0) {
+      const elapsed = duration - remaining;
+      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+    }
+  } else {
+    // Legacy fallback for remaining/duration when no rich item is available
+    if (state && state !== 'unavailable' && state !== 'unknown') {
+      if (this.isISOTimestamp(state)) {
+        finishesAt = new Date(state);
+        if (!isNaN(finishesAt.getTime())) {
+          remaining = Math.max(0, Math.floor((finishesAt.getTime() - Date.now()) / 1000));
+        }
+      } else if (!isNaN(parseFloat(state))) {
+        remaining = Math.max(0, parseFloat(state));
+      } else if (typeof state === 'string' && state.includes(':')) {
+        remaining = this.parseDuration(state);
+      }
+    }
+
+    if (attributes.original_duration) {
+      duration = this.parseDuration(attributes.original_duration);
+    } else if (attributes.duration) {
+      duration = this.parseDuration(attributes.duration);
+    } else if (finishesAt && entity.last_changed) {
+      const start = new Date(entity.last_changed).getTime();
+      const end   = finishesAt.getTime();
+      if (!isNaN(start) && end > start) duration = Math.floor((end - start) / 1000);
+    }
+
+    if (duration > 0) {
+      const elapsed = duration - remaining;
+      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+    }
   }
 
-  if (duration > 0) {
-    const elapsed = duration - remaining;
-    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-  }
+  // 3) Label selection (prefer label from primary timer)
+  let label: string | undefined = primaryTimer?.timerLabel;
+  if (!label && activeTimers.length > 0) label = activeTimers[0]?.[1]?.timerLabel;
+  if (!label && allTimers.length > 0)    label = allTimers[0]?.[1]?.timerLabel;
 
-  /* 2. Status & label from rich JSON arrays ------------------------- */
-  let isActive = false, isPaused = false, label: string | undefined;
-  const activeTimers = this.parseJson(attributes.sorted_active) ?? [];
-  const allTimers    = this.parseJson(attributes.sorted_all)    ?? [];
-
-  // decide if we have any timer at all
-  const totalActive = (attributes.total_active as number) ?? activeTimers.length;
-  const totalAll    = (attributes.total_all    as number) ?? allTimers.length;
-
-  if (totalActive > 0) {
-    // running timer exists
-    isActive = true;
-  } else if (totalAll > 0) {
-    // no active timers, check last entry in sorted_all
-    const lastTimer = allTimers[allTimers.length - 1]?.[1];
-    if (lastTimer?.status === 'PAUSED') isPaused = true;
-  }
-
-  // pick user label from the *first* timer we can reach
-  const richTimer = activeTimers[0]?.[1]
-                 ?? allTimers.find((t: any) => t[1]?.status === 'PAUSED')?.[1]
-                 ?? allTimers[0]?.[1];
-  if (richTimer) label = richTimer.timerLabel;
-
-  /* 3. Build result ------------------------------------------------ */
   return {
     isActive,
     isPaused,
@@ -152,9 +196,9 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     finishesAt,
     progress,
     isAlexaTimer: true,
-    alexaDevice : this.extractAlexaDevice(entityId, attributes),
-    timerLabel  : label ?? this.extractAlexaDevice(entityId, attributes),
-    timerStatus : isPaused ? 'PAUSED' : (isActive ? 'ON' : 'OFF'),
+    alexaDevice: this.extractAlexaDevice(entityId, attributes),
+    timerLabel: label ?? this.extractAlexaDevice(entityId, attributes),
+    timerStatus: isPaused ? 'PAUSED' : (isActive ? 'ON' : 'OFF'),
     userDefinedLabel: label,
   };
 }
@@ -687,15 +731,20 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
     for (const entityId in hass.states) {
       if (this.isAlexaTimer(entityId)) {
         const entity = hass.states[entityId];
-        
-        // Include entities that have timer data, including paused ones
-        if (entity.state && entity.state !== 'unavailable' && entity.state !== 'unknown') {
-          // Parse the timer data to check if there are any timers (active or paused)
-          const timerData = this.getTimerData(entityId, hass);
-          if (timerData) {
-            alexaTimers.push(entityId);
-          }
+        // Include if rich attributes indicate any timers, regardless of entity.state
+        const attributes = entity.attributes || {};
+        const activeTimers = this.parseJson(attributes.sorted_active) ?? [];
+        const allTimers    = this.parseJson(attributes.sorted_all)    ?? [];
+        const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
+        const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
+
+        if (totalActive > 0 || totalAll > 0) {
+          alexaTimers.push(entityId);
+          continue;
         }
+        // Fallback: try building timer data
+        const timerData = this.getTimerData(entityId, hass);
+        if (timerData) alexaTimers.push(entityId);
       }
     }
     

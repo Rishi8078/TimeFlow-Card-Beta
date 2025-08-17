@@ -22,6 +22,8 @@ export interface TimerData {
  * Handles Home Assistant timer entity integration including Alexa Media Player timers
  */
 export class TimerEntityService {
+  // Per-entity cache to track Alexa timer IDs and transitions
+  private static alexaIdCache: Map<string, { finishedWhileActiveId?: string }> = new Map();
   
   /**
    * Checks if an entity ID is a timer entity (including Alexa timers)
@@ -95,76 +97,101 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
   const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
 
+  // Build quick lookups keyed by the short ID (first tuple element)
+  const activeMap = new Map<string, any>();
+  for (const t of activeTimers) {
+    if (Array.isArray(t) && t.length >= 2 && t[0] && t[1]) {
+      activeMap.set(String(t[0]), t[1]);
+    }
+  }
+  const allMap = new Map<string, any>();
+  for (const t of allTimers) {
+    if (Array.isArray(t) && t.length >= 2 && t[0] && t[1]) {
+      allMap.set(String(t[0]), t[1]);
+    }
+  }
+
+  // ID-based finished tracking: if an active timer's triggerTime has passed, remember that ID
+  const nowTs = Date.now();
+  let cache = this.alexaIdCache.get(entityId);
+  if (!cache) { cache = {}; this.alexaIdCache.set(entityId, cache); }
+  // Determine candidates that have finished but are still listed as active
+  const finishedActiveIds: Array<{ id: string; trig: number }> = [];
+  for (const [id, data] of activeMap.entries()) {
+    const trig = typeof data?.triggerTime === 'number' ? data.triggerTime : 0;
+    if (trig && trig <= nowTs) {
+      finishedActiveIds.push({ id, trig });
+    }
+  }
+  if (finishedActiveIds.length > 0) {
+    // Choose the one that should have finished earliest
+    finishedActiveIds.sort((a, b) => a.trig - b.trig);
+    cache.finishedWhileActiveId = finishedActiveIds[0].id;
+  } else if (cache.finishedWhileActiveId && !activeMap.has(cache.finishedWhileActiveId)) {
+    // Clear once the finished item leaves the active list
+    delete cache.finishedWhileActiveId;
+  }
+
   // Determine state: Active > Paused > Finished > None
   let isActive = false;
   let isPaused = false;
   let isFinished = false;
   let primaryTimer: any | null = null;
+  let primaryId: string | undefined;
 
   if (totalActive > 0 && activeTimers.length > 0) {
-    // Choose the active timer (prefer the one with shortest remainingTime)
-    if (activeTimers.length === 1) {
-      primaryTimer = activeTimers[0]?.[1] ?? null;
+    // Prefer the ID we know just finished while still listed as active
+    if (cache.finishedWhileActiveId && activeMap.has(cache.finishedWhileActiveId)) {
+      primaryId = cache.finishedWhileActiveId;
+      primaryTimer = activeMap.get(primaryId) ?? null;
+      isActive = !!primaryTimer;
+      isFinished = true; // enforce finished view for this ID
     } else {
-      let best: any = null;
-      let shortest = Number.POSITIVE_INFINITY;
-      for (const t of activeTimers) {
-        const data = t?.[1];
-        if (data && typeof data.remainingTime === 'number' && data.remainingTime < shortest) {
-          shortest = data.remainingTime;
-          best = data;
+      // Choose the active timer (prefer the one with shortest remainingTime)
+      if (activeTimers.length === 1) {
+        primaryId = String(activeTimers[0]?.[0]);
+        primaryTimer = activeTimers[0]?.[1] ?? null;
+      } else {
+        let bestId: string | undefined;
+        let best: any = null;
+        let shortest = Number.POSITIVE_INFINITY;
+        for (const t of activeTimers) {
+          const id = String(t?.[0]);
+          const data = t?.[1];
+          if (data && typeof data.remainingTime === 'number' && data.remainingTime < shortest) {
+            shortest = data.remainingTime;
+            best = data;
+            bestId = id;
+          }
         }
+        primaryId = bestId;
+        primaryTimer = best;
       }
-      primaryTimer = best;
-    }
-    isActive = !!primaryTimer;
-    // Edge: total_active might still show 1 right after finish; if triggerTime has passed, mark finished
-    if (isActive && primaryTimer && typeof primaryTimer.triggerTime === 'number') {
-      const nowEdge = Date.now();
-      if (primaryTimer.triggerTime <= nowEdge) {
-        // Keep the active record (to preserve label), but mark as finished until it leaves sorted_active
+      isActive = !!primaryTimer;
+      // Edge: if the selected active timer is actually past its trigger, mark finished
+      if (isActive && primaryTimer && typeof primaryTimer.triggerTime === 'number' && primaryTimer.triggerTime <= nowTs) {
         isFinished = true;
+        cache.finishedWhileActiveId = primaryId; // remember which one
       }
     }
   } else if (totalAll > 0 && allTimers.length > 0) {
-    // Pick the most recently updated timer to decide the overall state
-    let mostRecent: any = null;
+    // No active timers: prefer a paused timer if any; do not show finished based solely on sorted_all
+    // Find the most recently updated paused timer
+    let mostRecentPaused: any = null;
     let latest = -Infinity;
-    for (const t of allTimers) {
-      const data = t?.[1];
-      if (!data) continue;
-      const updated = typeof data.lastUpdatedDate === 'number' ? data.lastUpdatedDate : -Infinity;
-      if (updated > latest) {
-        latest = updated;
-        mostRecent = data;
-      }
-    }
-
-    if (mostRecent) {
-      if (mostRecent.status === 'PAUSED') {
-        primaryTimer = mostRecent;
-        isPaused = true;
-      } else if (mostRecent.status === 'OFF' && typeof mostRecent.remainingTime === 'number' && mostRecent.remainingTime === 0) {
-        // Consider finished timer
-        primaryTimer = mostRecent;
-        isPaused = false;
-        isActive = false;
-        isFinished = true;
-      } else {
-        // Fallback: show paused if any paused exists
-        const anyPaused = allTimers.find((t: any) => t?.[1]?.status === 'PAUSED')?.[1];
-        if (anyPaused) {
-          primaryTimer = anyPaused;
-          isPaused = true;
-        } else {
-          // Check for any OFF + remainingTime=0 entries in allTimers to mark finished
-          const anyFinished = allTimers.find((t: any) => t?.[1]?.status === 'OFF' && t?.[1]?.remainingTime === 0)?.[1];
-          if (anyFinished) {
-            primaryTimer = anyFinished;
-            isFinished = true;
-          }
+    for (const [id, data] of allMap.entries()) {
+      if (data?.status === 'PAUSED') {
+        const updated = typeof data.lastUpdatedDate === 'number' ? data.lastUpdatedDate : -Infinity;
+        if (updated > latest) {
+          latest = updated;
+          mostRecentPaused = data;
+          primaryId = id;
         }
       }
+    }
+    if (mostRecentPaused) {
+      primaryTimer = mostRecentPaused;
+      isPaused = true;
     }
   }
 
@@ -204,8 +231,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
       remaining = Math.max(0, Math.floor(rtMs / 1000));
       finishesAt = null;
     } else {
-      // Possibly a finished timer (primaryTimer chosen from OFF state)
-      // Not active/paused: try remainingTime if any
+      // Idle/none selected in no-active case: leave remaining at 0
       remaining = Math.max(0, Math.floor(rtMs / 1000));
       finishesAt = null;
     }
@@ -213,12 +239,6 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   if (duration > 0) {
       const elapsed = Math.max(0, duration - remaining);
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-      // If status was OFF and remainingTime is 0, mark as finished explicitly
-      if (!isActive && !isPaused && typeof primaryTimer.remainingTime === 'number' && primaryTimer.remainingTime === 0) {
-        remaining = 0;
-        progress = 100;
-        isFinished = true;
-      }
       // If still in active list but progress reached 100, enforce finished view
       if (isActive && progress >= 100) {
         remaining = 0;

@@ -11,6 +11,9 @@ export interface TimerData {
   isAlexaTimer?: boolean;
   alexaDevice?: string;
   timerLabel?: string;
+  // Enhanced Alexa properties
+  timerStatus?: "ON" | "OFF" | "PAUSED"; // Precise status from attributes
+  userDefinedLabel?: string; // User-defined timer label (e.g., "Pizza")
 }
 
 /**
@@ -86,6 +89,193 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   const state = entity.state;
   const attributes = entity.attributes;
 
+  // Try to extract data from rich attributes first (sorted_active and sorted_all)
+  const richTimerData = this.parseAlexaTimerAttributes(attributes);
+  if (richTimerData) {
+    return richTimerData;
+  }
+
+  // Fallback to legacy parsing if rich attributes not available
+  return this.parseLegacyAlexaTimer(entityId, entity, state, attributes);
+}
+
+/**
+ * Parses rich Alexa timer data from sorted_active and sorted_all attributes
+ * @param attributes - Entity attributes containing timer data
+ * @returns TimerData object or null if parsing fails
+ */
+private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
+  try {
+    const sortedActive = attributes.sorted_active || [];
+    const sortedAll = attributes.sorted_all || [];
+
+    // Check for active timers first
+    if (sortedActive.length > 0) {
+      // Get the first active timer (or shortest remaining time)
+      const activeTimerData = this.selectPrimaryTimer(sortedActive);
+      if (activeTimerData) {
+        return this.createTimerDataFromAttributes(activeTimerData, attributes, true);
+      }
+    }
+
+    // Check for paused timers in sorted_all
+    const pausedTimers = sortedAll.filter((timerArray: any[]) => {
+      const timerData = timerArray[1];
+      return timerData && timerData.status === "PAUSED";
+    });
+
+    if (pausedTimers.length > 0) {
+      const pausedTimerData = pausedTimers[0][1]; // Get first paused timer
+      return this.createTimerDataFromAttributes(pausedTimerData, attributes, false, true);
+    }
+
+    // No active or paused timers - check if we have any timers at all
+    if (sortedAll.length > 0) {
+      // Return inactive state but with device info
+      return this.createTimerDataFromAttributes(null, attributes, false, false);
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Failed to parse Alexa timer attributes:', error);
+    return null;
+  }
+}
+
+/**
+ * Selects the primary timer from active timers (shortest remaining time)
+ * @param activeTimers - Array of active timer data
+ * @returns Primary timer data object
+ */
+private static selectPrimaryTimer(activeTimers: any[]): any {
+  if (activeTimers.length === 1) {
+    return activeTimers[0][1]; // Return timer data from [id, timerData] array
+  }
+
+  // Multiple timers - select one with shortest remaining time
+  let primaryTimer = null;
+  let shortestRemaining = Infinity;
+
+  for (const timerArray of activeTimers) {
+    const timerData = timerArray[1];
+    if (timerData && timerData.remainingTime < shortestRemaining) {
+      shortestRemaining = timerData.remainingTime;
+      primaryTimer = timerData;
+    }
+  }
+
+  return primaryTimer;
+}
+
+/**
+ * Creates TimerData object from parsed attributes
+ * @param timerData - Individual timer data from attributes
+ * @param entityAttributes - Full entity attributes for device info
+ * @param isActive - Whether timer is active
+ * @param isPaused - Whether timer is paused
+ * @returns TimerData object
+ */
+private static createTimerDataFromAttributes(
+  timerData: any, 
+  entityAttributes: any, 
+  isActive: boolean = false, 
+  isPaused: boolean = false
+): TimerData {
+  let remaining = 0;
+  let duration = 0;
+  let finishesAt: Date | null = null;
+  let userDefinedLabel: string | undefined;
+  let timerStatus: "ON" | "OFF" | "PAUSED" = "OFF";
+
+  if (timerData) {
+    // Extract precise timing data
+    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000); // Convert ms to seconds
+    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000); // Convert ms to seconds
+    
+    // Calculate finish time for active timers
+    if (isActive && remaining > 0) {
+      finishesAt = new Date(Date.now() + (remaining * 1000));
+    }
+
+    // Extract user-defined label
+    userDefinedLabel = timerData.timerLabel || undefined;
+    
+    // Get precise status
+    timerStatus = timerData.status || "OFF";
+  }
+
+  // Calculate progress with precise values
+  let progress = 0;
+  if (duration > 0 && !isPaused) {
+    if (isActive && remaining >= 0) {
+      const elapsed = duration - remaining;
+      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+    } else if (remaining === 0 && duration > 0) {
+      progress = 100; // Timer finished
+    }
+  } else if (isPaused) {
+    // For paused timers, show progress where it was paused
+    const elapsed = duration - remaining;
+    progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
+  }
+
+  // Extract device info from entity attributes
+  const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
+
+  return {
+    isActive,
+    isPaused,
+    duration,
+    remaining,
+    finishesAt,
+    progress,
+    isAlexaTimer: true,
+    alexaDevice,
+    timerLabel: this.formatAlexaTimerName(''), // Will be overridden by subtitle logic
+    timerStatus,
+    userDefinedLabel
+  };
+}
+
+/**
+ * Extracts clean device name from entity attributes
+ * @param entityAttributes - Entity attributes
+ * @returns Clean device name
+ */
+private static extractAlexaDeviceFromEntity(entityAttributes: any): string {
+  // Try friendly_name first, but clean it up
+  if (entityAttributes.friendly_name) {
+    let deviceName = entityAttributes.friendly_name;
+    
+    // Remove common suffixes that clutter the display
+    deviceName = deviceName
+      .replace(/\s*next\s*timer$/i, '')
+      .replace(/\s*timer$/i, '')
+      .replace(/\s*echo\s*timer$/i, '')
+      .trim();
+    
+    if (deviceName) return deviceName;
+  }
+
+  // Fallback to parsing entity ID or other attributes
+  return 'Alexa Device';
+}
+
+/**
+ * Legacy fallback for Alexa timer parsing (when rich attributes unavailable)
+ * @param entityId - Entity ID
+ * @param entity - Entity object
+ * @param state - Entity state
+ * @param attributes - Entity attributes
+/**
+ * Legacy fallback for Alexa timer parsing (when rich attributes unavailable)
+ * @param entityId - Entity ID
+ * @param entity - Entity object
+ * @param state - Entity state
+ * @param attributes - Entity attributes
+ * @returns TimerData object
+ */
+private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, attributes: any): TimerData | null {
   // Alexa timers might be stored as timestamps or duration strings
   let remaining = 0;
   let duration = 0;
@@ -184,20 +374,22 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     }
   }
 
-  // Extract Alexa-specific info
+  // Extract Alexa-specific info using legacy methods
   const alexaDevice = this.extractAlexaDevice(entityId, attributes);
   const timerLabel = attributes.friendly_name || attributes.timer_label || this.formatAlexaTimerName(entityId);
 
   return {
     isActive,
-    isPaused: false, // Alexa timers don't typically pause
+    isPaused: false, // Alexa timers don't typically pause in legacy mode
     duration,
     remaining,
     finishesAt,
     progress,
     isAlexaTimer: true,
     alexaDevice,
-    timerLabel
+    timerLabel,
+    timerStatus: isActive ? "ON" : "OFF",
+    userDefinedLabel: undefined // Not available in legacy mode
   };
 }
 
@@ -279,13 +471,33 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
    * @returns string - Device name
    */
   private static extractAlexaDevice(entityId: string, attributes: any): string {
-    // Try to extract from entity ID
-    if (entityId.includes('echo')) {
-      const match = entityId.match(/echo[^_]*(?:_\w+)*/);
-      if (match) return match[0].replace(/_/g, ' ');
+    // First try to clean up friendly_name if it exists
+    if (attributes.friendly_name) {
+      let deviceName = attributes.friendly_name;
+      
+      // Remove common timer-related suffixes that clutter the display
+      deviceName = deviceName
+        .replace(/\s*next\s*timer$/i, '')
+        .replace(/\s*timer$/i, '')
+        .replace(/\s*echo\s*timer$/i, '')
+        .replace(/\s*alexa\s*timer$/i, '')
+        .trim();
+      
+      if (deviceName) return deviceName;
+    }
+
+    // Try to extract from entity ID pattern: sensor.device_name_next_timer
+    if (entityId.includes('_next_timer')) {
+      const devicePart = entityId
+        .replace(/^sensor\./, '')
+        .replace(/_next_timer$/, '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+      
+      if (devicePart) return devicePart;
     }
     
-    // Try from attributes
+    // Try from other attributes
     if (attributes.device_name) return attributes.device_name;
     if (attributes.device) return attributes.device;
     
@@ -417,11 +629,39 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     if (timerData.isAlexaTimer) {
       if (timerData.isActive && timerData.remaining > 0) {
         const remainingText = this.formatRemainingTime(timerData.remaining, showSeconds);
-        return `${remainingText} remaining${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+        
+        // Enhanced labeling: prefer user-defined label, then device name
+        if (timerData.userDefinedLabel) {
+          return `${remainingText} remaining on ${timerData.userDefinedLabel} timer`;
+        } else if (timerData.alexaDevice) {
+          return `${remainingText} remaining on ${timerData.alexaDevice}`;
+        } else {
+          return `${remainingText} remaining`;
+        }
+      } else if (timerData.isPaused && timerData.remaining > 0) {
+        const remainingText = this.formatRemainingTime(timerData.remaining, showSeconds);
+        
+        if (timerData.userDefinedLabel) {
+          return `${timerData.userDefinedLabel} timer paused - ${remainingText} left`;
+        } else if (timerData.alexaDevice) {
+          return `Timer paused on ${timerData.alexaDevice} - ${remainingText} left`;
+        } else {
+          return `Timer paused - ${remainingText} left`;
+        }
       } else if (timerData.remaining === 0 && timerData.progress >= 100) {
-        return `Timer finished${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+        if (timerData.userDefinedLabel) {
+          return `${timerData.userDefinedLabel} timer finished`;
+        } else if (timerData.alexaDevice) {
+          return `Timer finished on ${timerData.alexaDevice}`;
+        } else {
+          return 'Timer finished';
+        }
       } else {
-        return `No timers${timerData.alexaDevice ? ` on ${timerData.alexaDevice}` : ''}`;
+        if (timerData.alexaDevice) {
+          return `No timers on ${timerData.alexaDevice}`;
+        } else {
+          return 'No timers';
+        }
       }
     }
 

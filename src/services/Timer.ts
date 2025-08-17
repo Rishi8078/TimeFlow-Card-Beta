@@ -86,54 +86,41 @@ export class TimerEntityService {
  * @returns TimerData for Alexa timer
  */
 private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssistant): TimerData | null {
-  const state = entity.state;
-  const attributes = entity.attributes;
+  const { state, attributes } = entity;
 
-  /* 1. Pull status & label from rich JSON if present ---------------- */
+  /* 1. Grab status & label from the rich JSON if it exists ---------- */
   let status: 'ON' | 'OFF' | 'PAUSED' = 'OFF';
-  let timerLabel: string | undefined;
+  let label: string | undefined;
 
-  const active = this.parseJson(attributes.sorted_active);
-  const all    = this.parseJson(attributes.sorted_all);
+  const active = this.parseJson(attributes.sorted_active) ?? [];
+  const all    = this.parseJson(attributes.sorted_all)    ?? [];
 
-  // Helper to extract first timer object if JSON arrays exist
-  const firstTimer = () => {
-    if (Array.isArray(active) && active.length) return active[0][1];
-    if (Array.isArray(all)    && all.length)    return all[0][1];
-    return null;
-  };
+  const richTimer = active[0]?.[1]               // first active
+                 ?? all.find((t: any) => t[1]?.status === 'PAUSED')?.[1] // paused
+                 ?? all[0]?.[1];                  // any timer
 
-  const rich = firstTimer();
-  if (rich) {
-    status     = rich.status;                    // ON / OFF / PAUSED
-    timerLabel = rich.timerLabel || undefined;   // user label
+  if (richTimer) {
+    status = richTimer.status ?? 'OFF';
+    label  = richTimer.timerLabel;
   }
 
   /* 2. Legacy calculation for progress & remaining ------------------ */
-  let remaining = 0;
-  let duration  = 0;
-  let finishesAt: Date | null = null;
-  let progress  = 0;
-  let isActive  = false;
+  let remaining = 0, duration = 0, finishesAt: Date | null = null, progress = 0;
 
-  // --- your existing legacy logic (unchanged) ----------------------
+  // --- your unchanged legacy code ----------------------------------
   if (state && state !== 'unavailable' && state !== 'unknown') {
     if (this.isISOTimestamp(state)) {
       finishesAt = new Date(state);
       if (!isNaN(finishesAt.getTime())) {
         remaining = Math.max(0, Math.floor((finishesAt.getTime() - Date.now()) / 1000));
-        isActive  = remaining > 0;
       }
     } else if (!isNaN(parseFloat(state))) {
       remaining = Math.max(0, parseFloat(state));
-      isActive  = remaining > 0;
     } else if (typeof state === 'string' && state.includes(':')) {
       remaining = this.parseDuration(state);
-      isActive  = remaining > 0;
     }
   }
 
-  // original duration from attributes
   if (attributes.original_duration) {
     duration = this.parseDuration(attributes.original_duration);
   } else if (attributes.duration) {
@@ -141,118 +128,37 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   } else if (finishesAt && entity.last_changed) {
     const start = new Date(entity.last_changed).getTime();
     const end   = finishesAt.getTime();
-    if (!isNaN(start) && end > start) {
-      duration = Math.floor((end - start) / 1000);
-    }
+    if (!isNaN(start) && end > start) duration = Math.floor((end - start) / 1000);
   }
 
-  // progress calculation (same as before)
   if (duration > 0) {
     const elapsed = duration - remaining;
     progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
   }
 
-  /* 3. Build result ------------------------------------------------ */
+  /* 3. Return combined result -------------------------------------- */
   return {
-    isActive : status === 'ON' || isActive,   // legacy + status
-    isPaused : status === 'PAUSED',
+    isActive   : status === 'ON',
+    isPaused   : status === 'PAUSED',
     duration,
     remaining,
     finishesAt,
     progress,
     isAlexaTimer: true,
-    alexaDevice: this.extractAlexaDevice(entityId, attributes),
-    timerLabel: timerLabel ?? this.extractAlexaDevice(entityId, attributes),
-    timerStatus: status,
-    userDefinedLabel: timerLabel,
+    alexaDevice : this.extractAlexaDevice(entityId, attributes),
+    timerLabel  : label ?? this.extractAlexaDevice(entityId, attributes),
+    timerStatus : status,
+    userDefinedLabel: label,
   };
 }
 
-/* tiny JSON parser helper */
+/* JSON helper (keep it) */
 private static parseJson(src: any): any[] | null {
   if (Array.isArray(src)) return src;
-  if (typeof src === 'string') {
-    try { return JSON.parse(src); } catch { /* ignore */ }
-  }
+  if (typeof src === 'string') { try { return JSON.parse(src); } catch {} }
   return null;
 }
 
-
-/**
- * Parses rich Alexa timer data from sorted_active and sorted_all attributes
- * @param attributes - Entity attributes containing timer data
- * @returns TimerData object or null if parsing fails
- */
-// Add these helper methods to support the rich data parsing
-private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
-  try {
-    // Parse JSON strings to arrays
-    const sortedActive = this.parseJsonArray(attributes.sorted_active) || [];
-    const sortedAll = this.parseJsonArray(attributes.sorted_all) || [];
-
-    // Check for active timers first
-    if (sortedActive.length > 0) {
-      const activeTimerData = this.selectPrimaryTimer(sortedActive);
-      if (activeTimerData) {
-        return this.createRichTimerData(activeTimerData, attributes, true);
-      }
-    }
-
-    // Check for paused timers in sorted_all
-    const pausedTimers = sortedAll.filter((timerArray: any[]) => {
-      const timerData = timerArray[1];
-      return timerData && timerData.status === "PAUSED";
-    });
-
-    if (pausedTimers.length > 0) {
-      const pausedTimerData = pausedTimers[0][1];
-      return this.createRichTimerData(pausedTimerData, attributes, false, true);
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Failed to parse Alexa timer attributes:', error);
-    return null;
-  }
-}
-
-private static createRichTimerData(
-  timerData: any, 
-  entityAttributes: any, 
-  isActive: boolean = false, 
-  isPaused: boolean = false
-): TimerData {
-  const remaining = Math.max(0, (timerData.remainingTime || 0) / 1000);
-  const duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000);
-  const finishesAt = isActive ? new Date(Date.now() + (remaining * 1000)) : null;
-
-  // Calculate progress with actual remaining time
-  let progress = 0;
-  if (duration > 0 && !isPaused) {
-    const elapsed = duration - remaining;
-    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-  } else if (isPaused) {
-    const elapsed = duration - remaining;
-    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-  }
-
-  const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
-  const timerLabel = timerData.timerLabel || this.extractAlexaDeviceFromEntity(entityAttributes);
-
-  return {
-    isActive,
-    isPaused,
-    duration,
-    remaining,
-    finishesAt,
-    progress,
-    isAlexaTimer: true,
-    alexaDevice,
-    timerLabel,
-    timerStatus: timerData.status || "OFF",
-    userDefinedLabel: timerData.timerLabel
-  };
-}
 
 // Helper method to parse JSON strings
 private static parseJsonArray(jsonData: any): any[] | null {
@@ -271,101 +177,6 @@ private static parseJsonArray(jsonData: any): any[] | null {
   }
   
   return null;
-}
-
-/**
- * Selects the primary timer from active timers (shortest remaining time)
- * @param activeTimers - Array of active timer data
- * @returns Primary timer data object
- */
-private static selectPrimaryTimer(activeTimers: any[]): any {
-  if (activeTimers.length === 1) {
-    return activeTimers[0][1];
-  }
-
-  // Multiple timers - select one with shortest remaining time
-  let primaryTimer = null;
-  let shortestRemaining = Infinity;
-
-  for (const timerArray of activeTimers) {
-    const timerData = timerArray[1];
-    if (timerData && timerData.remainingTime < shortestRemaining) {
-      shortestRemaining = timerData.remainingTime;
-      primaryTimer = timerData;
-    }
-  }
-
-  return primaryTimer;
-}
-
-/**
- * Creates TimerData object from parsed attributes
- * @param timerData - Individual timer data from attributes
- * @param entityAttributes - Full entity attributes for device info
- * @param isActive - Whether timer is active
- * @param isPaused - Whether timer is paused
- * @returns TimerData object
- */
-private static createTimerDataFromAttributes(
-  timerData: any, 
-  entityAttributes: any, 
-  isActive: boolean = false, 
-  isPaused: boolean = false
-): TimerData {
-  let remaining = 0;
-  let duration = 0;
-  let finishesAt: Date | null = null;
-  let userDefinedLabel: string | undefined;
-  let timerStatus: "ON" | "OFF" | "PAUSED" = "OFF";
-
-  if (timerData) {
-    // Extract precise timing data
-    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000); // Convert ms to seconds
-    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000); // Convert ms to seconds
-    
-    // Calculate finish time for active timers
-    if (isActive && remaining > 0) {
-      finishesAt = new Date(Date.now() + (remaining * 1000));
-    }
-
-    // Extract user-defined label
-    userDefinedLabel = timerData.timerLabel || undefined;
-    
-    // Get precise status
-    timerStatus = timerData.status || "OFF";
-  }
-
-  // Calculate progress with precise values
-  let progress = 0;
-  if (duration > 0 && !isPaused) {
-    if (isActive && remaining >= 0) {
-      const elapsed = duration - remaining;
-      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (remaining === 0 && duration > 0) {
-      progress = 100; // Timer finished
-    }
-  } else if (isPaused) {
-    // For paused timers, show progress where it was paused
-    const elapsed = duration - remaining;
-    progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
-  }
-
-  // Extract device info from entity attributes
-  const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
-
-  return {
-    isActive,
-    isPaused,
-    duration,
-    remaining,
-    finishesAt,
-    progress,
-    isAlexaTimer: true,
-    alexaDevice,
-    timerLabel: this.formatAlexaTimerName(''), // Will be overridden by subtitle logic
-    timerStatus,
-    userDefinedLabel
-  };
 }
 
 /**

@@ -89,50 +89,46 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   const state = entity.state;
   const attributes = entity.attributes;
 
-  // Try to extract data from rich attributes first (sorted_active and sorted_all)
+  // First, try to parse rich timer data from sorted_active and sorted_all
   const richTimerData = this.parseAlexaTimerAttributes(attributes);
   if (richTimerData) {
     return richTimerData;
   }
 
-  // Fallback to legacy parsing if rich attributes not available
+  // Fallback to legacy parsing only if rich attributes aren't available
   return this.parseLegacyAlexaTimer(entityId, entity, state, attributes);
 }
+
 
 /**
  * Parses rich Alexa timer data from sorted_active and sorted_all attributes
  * @param attributes - Entity attributes containing timer data
  * @returns TimerData object or null if parsing fails
  */
+// Add these helper methods to support the rich data parsing
 private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
   try {
     // Parse JSON strings to arrays
     const sortedActive = this.parseJsonArray(attributes.sorted_active) || [];
     const sortedAll = this.parseJsonArray(attributes.sorted_all) || [];
 
-    // Check for active timers first - this takes priority over paused timers
+    // Check for active timers first
     if (sortedActive.length > 0) {
       const activeTimerData = this.selectPrimaryTimer(sortedActive);
       if (activeTimerData) {
-        return this.createTimerDataFromAttributes(activeTimerData, attributes, true, false);
+        return this.createRichTimerData(activeTimerData, attributes, true);
       }
     }
 
-    // Only check for paused timers if there are no active ones
-    // This ensures that when a timer resumes, it's treated as active, not paused
-    if (sortedAll.length > 0) {
-      const pausedTimers = sortedAll.filter((timerArray: any[]) => {
-        const timerData = timerArray[1];
-        return timerData && timerData.status === "PAUSED";
-      });
+    // Check for paused timers in sorted_all
+    const pausedTimers = sortedAll.filter((timerArray: any[]) => {
+      const timerData = timerArray[1];
+      return timerData && timerData.status === "PAUSED";
+    });
 
-      if (pausedTimers.length > 0) {
-        const pausedTimerData = pausedTimers[0][1];
-        return this.createTimerDataFromAttributes(pausedTimerData, attributes, false, true);
-      }
-
-      // No active or paused timers - return inactive state
-      return this.createTimerDataFromAttributes(null, attributes, false, false);
+    if (pausedTimers.length > 0) {
+      const pausedTimerData = pausedTimers[0][1];
+      return this.createRichTimerData(pausedTimerData, attributes, false, true);
     }
 
     return null;
@@ -140,6 +136,44 @@ private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
     console.warn('Failed to parse Alexa timer attributes:', error);
     return null;
   }
+}
+
+private static createRichTimerData(
+  timerData: any, 
+  entityAttributes: any, 
+  isActive: boolean = false, 
+  isPaused: boolean = false
+): TimerData {
+  const remaining = Math.max(0, (timerData.remainingTime || 0) / 1000);
+  const duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000);
+  const finishesAt = isActive ? new Date(Date.now() + (remaining * 1000)) : null;
+
+  // Calculate progress with actual remaining time
+  let progress = 0;
+  if (duration > 0 && !isPaused) {
+    const elapsed = duration - remaining;
+    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+  } else if (isPaused) {
+    const elapsed = duration - remaining;
+    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+  }
+
+  const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
+  const timerLabel = timerData.timerLabel || this.extractAlexaDeviceFromEntity(entityAttributes);
+
+  return {
+    isActive,
+    isPaused,
+    duration,
+    remaining,
+    finishesAt,
+    progress,
+    isAlexaTimer: true,
+    alexaDevice,
+    timerLabel,
+    timerStatus: timerData.status || "OFF",
+    userDefinedLabel: timerData.timerLabel
+  };
 }
 
 // Helper method to parse JSON strings
@@ -154,7 +188,6 @@ private static parseJsonArray(jsonData: any): any[] | null {
     try {
       return JSON.parse(jsonData);
     } catch (error) {
-      console.warn('Failed to parse JSON string:', jsonData);
       return null;
     }
   }
@@ -169,7 +202,7 @@ private static parseJsonArray(jsonData: any): any[] | null {
  */
 private static selectPrimaryTimer(activeTimers: any[]): any {
   if (activeTimers.length === 1) {
-    return activeTimers[0][1]; // Return timer data from [id, timerData] array
+    return activeTimers[0][1];
   }
 
   // Multiple timers - select one with shortest remaining time
@@ -263,21 +296,12 @@ private static createTimerDataFromAttributes(
  * @returns Clean device name
  */
 private static extractAlexaDeviceFromEntity(entityAttributes: any): string {
-  // Try friendly_name first, but clean it up
   if (entityAttributes.friendly_name) {
-    let deviceName = entityAttributes.friendly_name;
-    
-    // Remove common suffixes that clutter the display
-    deviceName = deviceName
+    return entityAttributes.friendly_name
       .replace(/\s*next\s*timer$/i, '')
       .replace(/\s*timer$/i, '')
-      .replace(/\s*echo\s*timer$/i, '')
       .trim();
-    
-    if (deviceName) return deviceName;
   }
-
-  // Fallback to parsing entity ID or other attributes
   return 'Alexa Device';
 }
 

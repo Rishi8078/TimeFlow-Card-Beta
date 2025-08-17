@@ -89,14 +89,92 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   const state = entity.state;
   const attributes = entity.attributes;
 
-  // First, try to parse rich timer data from sorted_active and sorted_all
-  const richTimerData = this.parseAlexaTimerAttributes(attributes);
-  if (richTimerData) {
-    return richTimerData;
+  /* 1. Pull status & label from rich JSON if present ---------------- */
+  let status: 'ON' | 'OFF' | 'PAUSED' = 'OFF';
+  let timerLabel: string | undefined;
+
+  const active = this.parseJson(attributes.sorted_active);
+  const all    = this.parseJson(attributes.sorted_all);
+
+  // Helper to extract first timer object if JSON arrays exist
+  const firstTimer = () => {
+    if (Array.isArray(active) && active.length) return active[0][1];
+    if (Array.isArray(all)    && all.length)    return all[0][1];
+    return null;
+  };
+
+  const rich = firstTimer();
+  if (rich) {
+    status     = rich.status;                    // ON / OFF / PAUSED
+    timerLabel = rich.timerLabel || undefined;   // user label
   }
 
-  // Fallback to legacy parsing only if rich attributes aren't available
-  return this.parseLegacyAlexaTimer(entityId, entity, state, attributes);
+  /* 2. Legacy calculation for progress & remaining ------------------ */
+  let remaining = 0;
+  let duration  = 0;
+  let finishesAt: Date | null = null;
+  let progress  = 0;
+  let isActive  = false;
+
+  // --- your existing legacy logic (unchanged) ----------------------
+  if (state && state !== 'unavailable' && state !== 'unknown') {
+    if (this.isISOTimestamp(state)) {
+      finishesAt = new Date(state);
+      if (!isNaN(finishesAt.getTime())) {
+        remaining = Math.max(0, Math.floor((finishesAt.getTime() - Date.now()) / 1000));
+        isActive  = remaining > 0;
+      }
+    } else if (!isNaN(parseFloat(state))) {
+      remaining = Math.max(0, parseFloat(state));
+      isActive  = remaining > 0;
+    } else if (typeof state === 'string' && state.includes(':')) {
+      remaining = this.parseDuration(state);
+      isActive  = remaining > 0;
+    }
+  }
+
+  // original duration from attributes
+  if (attributes.original_duration) {
+    duration = this.parseDuration(attributes.original_duration);
+  } else if (attributes.duration) {
+    duration = this.parseDuration(attributes.duration);
+  } else if (finishesAt && entity.last_changed) {
+    const start = new Date(entity.last_changed).getTime();
+    const end   = finishesAt.getTime();
+    if (!isNaN(start) && end > start) {
+      duration = Math.floor((end - start) / 1000);
+    }
+  }
+
+  // progress calculation (same as before)
+  if (duration > 0) {
+    const elapsed = duration - remaining;
+    progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+  }
+
+  /* 3. Build result ------------------------------------------------ */
+  return {
+    isActive : status === 'ON' || isActive,   // legacy + status
+    isPaused : status === 'PAUSED',
+    duration,
+    remaining,
+    finishesAt,
+    progress,
+    isAlexaTimer: true,
+    alexaDevice: this.extractAlexaDevice(entityId, attributes),
+    timerLabel: timerLabel ?? this.extractAlexaDevice(entityId, attributes),
+    timerStatus: status,
+    userDefinedLabel: timerLabel,
+  };
+}
+
+/* tiny JSON parser helper */
+private static parseJson(src: any): any[] | null {
+  if (Array.isArray(src)) return src;
+  if (typeof src === 'string') {
+    try { return JSON.parse(src); } catch { /* ignore */ }
+  }
+  return null;
 }
 
 

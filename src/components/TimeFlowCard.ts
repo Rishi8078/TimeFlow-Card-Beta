@@ -452,7 +452,12 @@ export class TimeFlowCardBeta extends LitElement {
         subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
       }
     } else {
-      subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+      // In auto-discovery, always defer to service subtitle (handles Alexa finished/none states)
+      if (this._resolvedConfig.auto_discover_alexa) {
+        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass);
+      } else {
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+      }
     }
 
     // Compose title text with fallback
@@ -464,7 +469,8 @@ export class TimeFlowCardBeta extends LitElement {
           this.hass
         );
       } else {
-        titleText = this._expired ? expired_text : 'Countdown Timer';
+        // For auto-discovery, avoid stale expired_text as title
+        titleText = this._resolvedConfig.auto_discover_alexa ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
       }
     }
 

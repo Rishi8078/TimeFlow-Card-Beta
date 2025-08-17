@@ -67,6 +67,17 @@ export class CountdownService {
               return this.timeRemaining;
             }
           }
+          // Nothing suitable selected despite candidates; treat as no timers
+          this.lastAlexaTimerData = null;
+          this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+          this.expired = false;
+          return this.timeRemaining;
+        } else {
+          // No Alexa timers at all; ensure we clear expired state so UI doesn't stick on Completed
+          this.lastAlexaTimerData = null;
+          this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+          this.expired = false;
+          return this.timeRemaining;
         }
       }
       

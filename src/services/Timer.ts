@@ -117,17 +117,35 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     }
     isActive = !!primaryTimer;
   } else if (totalAll > 0 && allTimers.length > 0) {
-    // Check the last timer in sorted_all for paused state as per requirement
-    const lastTimer = allTimers[allTimers.length - 1]?.[1];
-    if (lastTimer?.status === 'PAUSED') {
-      primaryTimer = lastTimer;
-      isPaused = true;
-    } else {
-      // Optionally pick a paused timer anywhere in the list as a fallback
-      const anyPaused = allTimers.find((t: any) => t?.[1]?.status === 'PAUSED')?.[1];
-      if (anyPaused) {
-        primaryTimer = anyPaused;
+    // Pick the most recently updated timer to decide the overall state
+    let mostRecent: any = null;
+    let latest = -Infinity;
+    for (const t of allTimers) {
+      const data = t?.[1];
+      if (!data) continue;
+      const updated = typeof data.lastUpdatedDate === 'number' ? data.lastUpdatedDate : -Infinity;
+      if (updated > latest) {
+        latest = updated;
+        mostRecent = data;
+      }
+    }
+
+    if (mostRecent) {
+      if (mostRecent.status === 'PAUSED') {
+        primaryTimer = mostRecent;
         isPaused = true;
+      } else if (mostRecent.status === 'OFF' && typeof mostRecent.remainingTime === 'number' && mostRecent.remainingTime === 0) {
+        // Consider finished timer: we'll compute remaining=0 and progress=100 later
+        primaryTimer = mostRecent;
+        isPaused = false;
+        isActive = false;
+      } else {
+        // Fallback: show paused if any paused exists
+        const anyPaused = allTimers.find((t: any) => t?.[1]?.status === 'PAUSED')?.[1];
+        if (anyPaused) {
+          primaryTimer = anyPaused;
+          isPaused = true;
+        }
       }
     }
   }
@@ -156,11 +174,20 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         remaining = Math.max(0, Math.floor(rtMs / 1000));
         if (remaining > 0) finishesAt = new Date(now + remaining * 1000);
       }
-    } else if (isPaused) {
+
+      // If we've passed triggerTime or remaining is zero, consider finished
+      if ((trig && trig <= now) || remaining <= 0 || (primaryTimer.status === 'OFF' && rtMs === 0)) {
+        isActive = false;
+        isPaused = false;
+        remaining = 0;
+        finishesAt = null;
+      }
+  } else if (isPaused) {
       // While paused, trust remainingTime snapshot and do not set finishesAt
       remaining = Math.max(0, Math.floor(rtMs / 1000));
       finishesAt = null;
     } else {
+      // Possibly a finished timer (primaryTimer chosen from OFF state)
       // Not active/paused: try remainingTime if any
       remaining = Math.max(0, Math.floor(rtMs / 1000));
       finishesAt = null;
@@ -169,6 +196,11 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     if (duration > 0) {
       const elapsed = Math.max(0, duration - remaining);
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+      // If status was OFF and remainingTime is 0, mark as finished explicitly
+      if (!isActive && !isPaused && typeof primaryTimer.remainingTime === 'number' && primaryTimer.remainingTime === 0) {
+        remaining = 0;
+        progress = 100;
+      }
     }
   } else {
     // Legacy fallback for remaining/duration when no rich item is available
@@ -216,7 +248,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     isAlexaTimer: true,
     alexaDevice: this.extractAlexaDevice(entityId, attributes),
     timerLabel: label ?? this.extractAlexaDevice(entityId, attributes),
-    timerStatus: isPaused ? 'PAUSED' : (isActive ? 'ON' : 'OFF'),
+  timerStatus: isPaused ? 'PAUSED' : (isActive ? 'ON' : 'OFF'),
     userDefinedLabel: label,
   };
 }

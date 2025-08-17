@@ -78,21 +78,6 @@ export class TimerEntityService {
     // Handle standard HA timers (existing logic)
     return this.getStandardTimerData(entityId, entity);
   }
-
-  /**
-   * Refreshes timer data by forcing re-evaluation of timer state
-   * @param entityId - Timer entity ID
-   * @param hass - Home Assistant object
-   * @returns TimerData object with refreshed timer information
-   */
-  static refreshTimerData(entityId: string, hass: HomeAssistant): TimerData | null {
-    // Force re-evaluation of timer data
-    const entity = hass.states[entityId];
-    if (!entity) return null;
-    
-    // Clear any cached data by forcing a fresh parse
-    return this.getTimerData(entityId, hass);
-  }
 /**
  * Handles Alexa timer data extraction
  * @param entityId - Alexa timer entity ID
@@ -125,27 +110,28 @@ private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
     const sortedActive = this.parseJsonArray(attributes.sorted_active) || [];
     const sortedAll = this.parseJsonArray(attributes.sorted_all) || [];
 
-    // Check for active timers first
+    // Check for active timers first - this takes priority over paused timers
     if (sortedActive.length > 0) {
       const activeTimerData = this.selectPrimaryTimer(sortedActive);
       if (activeTimerData) {
-        return this.createTimerDataFromAttributes(activeTimerData, attributes, true);
+        return this.createTimerDataFromAttributes(activeTimerData, attributes, true, false);
       }
     }
 
-    // Check for paused timers in sorted_all
-    const pausedTimers = sortedAll.filter((timerArray: any[]) => {
-      const timerData = timerArray[1];
-      return timerData && timerData.status === "PAUSED";
-    });
-
-    if (pausedTimers.length > 0) {
-      const pausedTimerData = pausedTimers[0][1];
-      return this.createTimerDataFromAttributes(pausedTimerData, attributes, false, true);
-    }
-
-    // No active or paused timers - check if we have any timers at all
+    // Only check for paused timers if there are no active ones
+    // This ensures that when a timer resumes, it's treated as active, not paused
     if (sortedAll.length > 0) {
+      const pausedTimers = sortedAll.filter((timerArray: any[]) => {
+        const timerData = timerArray[1];
+        return timerData && timerData.status === "PAUSED";
+      });
+
+      if (pausedTimers.length > 0) {
+        const pausedTimerData = pausedTimers[0][1];
+        return this.createTimerDataFromAttributes(pausedTimerData, attributes, false, true);
+      }
+
+      // No active or paused timers - return inactive state
       return this.createTimerDataFromAttributes(null, attributes, false, false);
     }
 
@@ -222,33 +208,38 @@ private static createTimerDataFromAttributes(
   let timerStatus: "ON" | "OFF" | "PAUSED" = "OFF";
 
   if (timerData) {
-    // Ensure we're using the latest remainingTime from attributes
-    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000);
-    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000);
+    // Extract precise timing data
+    remaining = Math.max(0, (timerData.remainingTime || 0) / 1000); // Convert ms to seconds
+    duration = Math.max(0, (timerData.originalDurationInMillis || 0) / 1000); // Convert ms to seconds
     
-    // Recalculate finish time for active timers
+    // Calculate finish time for active timers
     if (isActive && remaining > 0) {
       finishesAt = new Date(Date.now() + (remaining * 1000));
     }
 
+    // Extract user-defined label
     userDefinedLabel = timerData.timerLabel || undefined;
+    
+    // Get precise status
     timerStatus = timerData.status || "OFF";
   }
 
-  // Ensure progress calculation accounts for current state
+  // Calculate progress with precise values
   let progress = 0;
-  if (duration > 0) {
+  if (duration > 0 && !isPaused) {
     if (isActive && remaining >= 0) {
       const elapsed = duration - remaining;
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (isPaused) {
-      const elapsed = duration - remaining;
-      progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-    } else if (remaining === 0) {
-      progress = 100;
+    } else if (remaining === 0 && duration > 0) {
+      progress = 100; // Timer finished
     }
+  } else if (isPaused) {
+    // For paused timers, show progress where it was paused
+    const elapsed = duration - remaining;
+    progress = duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
   }
 
+  // Extract device info from entity attributes
   const alexaDevice = this.extractAlexaDeviceFromEntity(entityAttributes);
 
   return {
@@ -260,7 +251,7 @@ private static createTimerDataFromAttributes(
     progress,
     isAlexaTimer: true,
     alexaDevice,
-    timerLabel: userDefinedLabel || alexaDevice, // Use label if available
+    timerLabel: this.formatAlexaTimerName(''), // Will be overridden by subtitle logic
     timerStatus,
     userDefinedLabel
   };

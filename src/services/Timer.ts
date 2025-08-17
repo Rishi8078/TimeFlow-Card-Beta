@@ -147,6 +147,13 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         if (anyPaused) {
           primaryTimer = anyPaused;
           isPaused = true;
+        } else {
+          // Check for any OFF + remainingTime=0 entries in allTimers to mark finished
+          const anyFinished = allTimers.find((t: any) => t?.[1]?.status === 'OFF' && t?.[1]?.remainingTime === 0)?.[1];
+          if (anyFinished) {
+            primaryTimer = anyFinished;
+            isFinished = true;
+          }
         }
       }
     }
@@ -237,17 +244,8 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     }
   }
 
-  // After computing, if user has dismissed the alert, collapse to "no timers"
-  const dismissedTs = attributes.dismissed;
-  if (dismissedTs && !isActive && !isPaused) {
-    // Treat as no timers
-    isFinished = false;
-    primaryTimer = null;
-    duration = 0;
-    remaining = 0;
-    progress = 0;
-    finishesAt = null;
-  }
+  // Note: Do not collapse to "No timers" based solely on a dismissed flag.
+  // We'll show "timer complete" as long as a finished timer exists in sorted_all.
 
   // 3) Label selection (prefer label from primary timer)
   let label: string | undefined = primaryTimer?.timerLabel;

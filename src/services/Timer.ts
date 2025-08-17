@@ -7,6 +7,7 @@ export interface TimerData {
   remaining: number; // in seconds
   finishesAt: Date | null;
   progress: number; // 0-100
+  finished?: boolean; // explicit finished flag (Alexa)
   // NEW: Alexa-specific properties
   isAlexaTimer?: boolean;
   alexaDevice?: string;
@@ -117,6 +118,14 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
       primaryTimer = best;
     }
     isActive = !!primaryTimer;
+    // Edge: total_active might still show 1 right after finish; if triggerTime has passed, mark finished
+    if (isActive && primaryTimer && typeof primaryTimer.triggerTime === 'number') {
+      const nowEdge = Date.now();
+      if (primaryTimer.triggerTime <= nowEdge) {
+        // Keep the active record (to preserve label), but mark as finished until it leaves sorted_active
+        isFinished = true;
+      }
+    }
   } else if (totalAll > 0 && allTimers.length > 0) {
     // Pick the most recently updated timer to decide the overall state
     let mostRecent: any = null;
@@ -184,13 +193,11 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         if (remaining > 0) finishesAt = new Date(now + remaining * 1000);
       }
 
-      // If we've passed triggerTime or remaining is zero, consider finished
+      // If we've passed triggerTime or remaining is zero, mark as finished, but keep active until it leaves sorted_active
       if ((trig && trig <= now) || remaining <= 0 || (primaryTimer.status === 'OFF' && rtMs === 0)) {
-        isActive = false;
-        isPaused = false;
         remaining = 0;
         finishesAt = null;
-    isFinished = true;
+        isFinished = true;
       }
   } else if (isPaused) {
       // While paused, trust remainingTime snapshot and do not set finishesAt
@@ -210,7 +217,12 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
       if (!isActive && !isPaused && typeof primaryTimer.remainingTime === 'number' && primaryTimer.remainingTime === 0) {
         remaining = 0;
         progress = 100;
-    isFinished = true;
+        isFinished = true;
+      }
+      // If still in active list but progress reached 100, enforce finished view
+      if (isActive && progress >= 100) {
+        remaining = 0;
+        isFinished = true;
       }
     }
   } else {
@@ -259,6 +271,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     remaining,
     finishesAt,
   progress,
+  finished: isFinished,
     isAlexaTimer: true,
     alexaDevice: this.extractAlexaDevice(entityId, attributes),
     timerLabel: label ?? this.extractAlexaDevice(entityId, attributes),
@@ -675,7 +688,13 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
 
     // Handle Alexa timers
     if (timerData.isAlexaTimer) {
-      if (timerData.isActive && timerData.remaining > 0) {
+      if (timerData.finished) {
+        if (timerData.userDefinedLabel) {
+          return `${timerData.userDefinedLabel} timer complete`;
+        } else {
+          return 'Timer complete';
+        }
+      } else if (timerData.isActive && timerData.remaining > 0) {
         const remainingText = this.formatRemainingTime(timerData.remaining, showSeconds);
         
         // Enhanced labeling: prefer user-defined label, then device name
@@ -696,7 +715,7 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
         } else {
           return `Timer paused - ${remainingText} left`;
         }
-      } else if (timerData.remaining === 0 && timerData.progress >= 100) {
+  } else if (timerData.finished || (timerData.remaining === 0 && timerData.progress >= 100)) {
         if (timerData.userDefinedLabel) {
           return `${timerData.userDefinedLabel} timer complete`;
         } else {
@@ -739,7 +758,7 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
     
     // For Alexa timers, check if remaining time is 0 and progress is 100%
     if (timerData.isAlexaTimer) {
-      return timerData.remaining === 0 && timerData.progress >= 100;
+      return !!timerData.finished || (timerData.remaining === 0 && timerData.progress >= 100);
     }
     
     // For standard timers

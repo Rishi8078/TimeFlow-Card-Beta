@@ -94,9 +94,10 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
   const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
 
-  // Determine state: Active > Paused > None, using your rule about the last item in sorted_all
+  // Determine state: Active > Paused > Finished > None
   let isActive = false;
   let isPaused = false;
+  let isFinished = false;
   let primaryTimer: any | null = null;
 
   if (totalActive > 0 && activeTimers.length > 0) {
@@ -135,10 +136,11 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         primaryTimer = mostRecent;
         isPaused = true;
       } else if (mostRecent.status === 'OFF' && typeof mostRecent.remainingTime === 'number' && mostRecent.remainingTime === 0) {
-        // Consider finished timer: we'll compute remaining=0 and progress=100 later
+        // Consider finished timer
         primaryTimer = mostRecent;
         isPaused = false;
         isActive = false;
+        isFinished = true;
       } else {
         // Fallback: show paused if any paused exists
         const anyPaused = allTimers.find((t: any) => t?.[1]?.status === 'PAUSED')?.[1];
@@ -164,7 +166,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
 
     duration = Math.max(0, Math.floor(odMs / 1000));
 
-    if (isActive) {
+  if (isActive) {
       // Prefer triggerTime for live ticking
       if (trig && trig > now) {
         remaining = Math.max(0, Math.floor((trig - now) / 1000));
@@ -181,6 +183,7 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
         isPaused = false;
         remaining = 0;
         finishesAt = null;
+    isFinished = true;
       }
   } else if (isPaused) {
       // While paused, trust remainingTime snapshot and do not set finishesAt
@@ -193,13 +196,14 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
       finishesAt = null;
     }
 
-    if (duration > 0) {
+  if (duration > 0) {
       const elapsed = Math.max(0, duration - remaining);
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
       // If status was OFF and remainingTime is 0, mark as finished explicitly
       if (!isActive && !isPaused && typeof primaryTimer.remainingTime === 'number' && primaryTimer.remainingTime === 0) {
         remaining = 0;
         progress = 100;
+    isFinished = true;
       }
     }
   } else {
@@ -233,6 +237,18 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
     }
   }
 
+  // After computing, if user has dismissed the alert, collapse to "no timers"
+  const dismissedTs = attributes.dismissed;
+  if (dismissedTs && !isActive && !isPaused) {
+    // Treat as no timers
+    isFinished = false;
+    primaryTimer = null;
+    duration = 0;
+    remaining = 0;
+    progress = 0;
+    finishesAt = null;
+  }
+
   // 3) Label selection (prefer label from primary timer)
   let label: string | undefined = primaryTimer?.timerLabel;
   if (!label && activeTimers.length > 0) label = activeTimers[0]?.[1]?.timerLabel;
@@ -240,11 +256,11 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
 
   return {
     isActive,
-    isPaused,
+  isPaused,
     duration,
     remaining,
     finishesAt,
-    progress,
+  progress,
     isAlexaTimer: true,
     alexaDevice: this.extractAlexaDevice(entityId, attributes),
     timerLabel: label ?? this.extractAlexaDevice(entityId, attributes),
@@ -684,11 +700,9 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
         }
       } else if (timerData.remaining === 0 && timerData.progress >= 100) {
         if (timerData.userDefinedLabel) {
-          return `${timerData.userDefinedLabel} timer finished`;
-        } else if (timerData.alexaDevice) {
-          return `Timer finished on ${timerData.alexaDevice}`;
+          return `${timerData.userDefinedLabel} timer complete`;
         } else {
-          return 'Timer finished';
+          return 'Timer complete';
         }
       } else {
         if (timerData.alexaDevice) {

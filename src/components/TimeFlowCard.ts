@@ -436,14 +436,24 @@ export class TimeFlowCardBeta extends LitElement {
     ].join('; ');
 
     // Compose subtitle text
-    const subtitleText = this._expired
-      ? expired_text
-      : (subtitle || (this._resolvedConfig.timer_entity && this.hass
-          ? TimerEntityService.getTimerSubtitle(
-              TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass)!,
-              this._resolvedConfig.show_seconds !== false
-            )
-          : this.countdownService.getSubtitle(this._resolvedConfig, this.hass)));
+    let subtitleText: string;
+    if (this._resolvedConfig.timer_entity && this.hass) {
+      const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
+      if (timerData) {
+        // If expired and it's an Alexa timer, show dynamic "timer complete" text (with label when available)
+        if (this._expired && timerData.isAlexaTimer) {
+          subtitleText = TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);
+        } else if (!this._expired) {
+          subtitleText = subtitle || TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);
+        } else {
+          subtitleText = expired_text;
+        }
+      } else {
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+      }
+    } else {
+      subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+    }
 
     // Compose title text with fallback
     let titleText = title;

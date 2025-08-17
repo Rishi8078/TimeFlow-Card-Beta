@@ -43,14 +43,19 @@ export class CountdownService {
       if (!config.timer_entity && config.auto_discover_alexa && hass) {
         const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
         if (alexaTimers.length > 0) {
-          // Use the first active Alexa timer found
-          const firstActiveTimer = alexaTimers.find(entityId => {
-            const timerData = TimerEntityService.getTimerData(entityId, hass);
-            return timerData && timerData.isActive;
+          // Prefer an active timer; otherwise a paused timer
+          let chosen: string | undefined = alexaTimers.find(entityId => {
+            const t = TimerEntityService.getTimerData(entityId, hass);
+            return t && t.isActive;
           });
-          
-          if (firstActiveTimer) {
-            const timerData = TimerEntityService.getTimerData(firstActiveTimer, hass);
+          if (!chosen) {
+            chosen = alexaTimers.find(entityId => {
+              const t = TimerEntityService.getTimerData(entityId, hass);
+              return t && t.isPaused;
+            });
+          }
+          if (chosen) {
+            const timerData = TimerEntityService.getTimerData(chosen, hass);
             if (timerData) {
               this.timeRemaining = this._timerDataToCountdownState(timerData);
               this.expired = TimerEntityService.isTimerExpired(timerData);
@@ -178,13 +183,18 @@ export class CountdownService {
     if (!config.timer_entity && config.auto_discover_alexa && hass) {
       const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
       if (alexaTimers.length > 0) {
-        const firstActiveTimer = alexaTimers.find(entityId => {
-          const timerData = TimerEntityService.getTimerData(entityId, hass);
-          return timerData && timerData.isActive;
+        let chosen: string | undefined = alexaTimers.find(entityId => {
+          const t = TimerEntityService.getTimerData(entityId, hass);
+          return t && t.isActive;
         });
-        
-        if (firstActiveTimer) {
-          const timerData = TimerEntityService.getTimerData(firstActiveTimer, hass);
+        if (!chosen) {
+          chosen = alexaTimers.find(entityId => {
+            const t = TimerEntityService.getTimerData(entityId, hass);
+            return t && t.isPaused;
+          });
+        }
+        if (chosen) {
+          const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) return timerData.progress;
         }
       }
@@ -254,13 +264,18 @@ export class CountdownService {
     if (!config.timer_entity && config.auto_discover_alexa && hass) {
       const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
       if (alexaTimers.length > 0) {
-        const firstActiveTimer = alexaTimers.find(entityId => {
-          const timerData = TimerEntityService.getTimerData(entityId, hass);
-          return timerData && timerData.isActive;
+        let chosen: string | undefined = alexaTimers.find(entityId => {
+          const t = TimerEntityService.getTimerData(entityId, hass);
+          return t && t.isActive;
         });
-        
-        if (firstActiveTimer) {
-          const timerData = TimerEntityService.getTimerData(firstActiveTimer, hass);
+        if (!chosen) {
+          chosen = alexaTimers.find(entityId => {
+            const t = TimerEntityService.getTimerData(entityId, hass);
+            return t && t.isPaused;
+          });
+        }
+        if (chosen) {
+          const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
             const { hours, minutes, seconds } = this.timeRemaining;
             if (TimerEntityService.isTimerExpired(timerData)) {
@@ -317,24 +332,25 @@ export class CountdownService {
     if (!config.timer_entity && config.auto_discover_alexa && hass) {
       const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
       if (alexaTimers.length > 0) {
-        const firstActiveTimer = alexaTimers.find(entityId => {
-          const timerData = TimerEntityService.getTimerData(entityId, hass);
-          return timerData && timerData.isActive;
+        let chosen: string | undefined = alexaTimers.find(entityId => {
+          const t = TimerEntityService.getTimerData(entityId, hass);
+          return t && t.isActive;
         });
-        
-        if (firstActiveTimer) {
-          const timerData = TimerEntityService.getTimerData(firstActiveTimer, hass);
+        if (!chosen) {
+          chosen = alexaTimers.find(entityId => {
+            const t = TimerEntityService.getTimerData(entityId, hass);
+            return t && t.isPaused;
+          });
+        }
+        if (chosen) {
+          const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
             return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
           }
-        } else if (alexaTimers.length > 0) {
-          // Show info about available but inactive timers
-          return `${alexaTimers.length} Alexa timer${alexaTimers.length === 1 ? '' : 's'} available`;
         }
-      } else {
-        // No Alexa timers found at all
-        return 'No timers';
       }
+      // No active or paused timers
+      return 'No timers';
     }
     
     if (this.expired) {

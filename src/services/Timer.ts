@@ -836,16 +836,28 @@ private static parseLegacyAlexaTimer(entityId: string, entity: any, state: any, 
         const attributes = entity.attributes || {};
         const activeTimers = this.parseJson(attributes.sorted_active) ?? [];
         const allTimers    = this.parseJson(attributes.sorted_all)    ?? [];
-        const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
-        const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
 
-        if (totalActive > 0 || totalAll > 0) {
+        const hasActive = Array.isArray(activeTimers) && activeTimers.length > 0;
+        let hasPaused = false;
+        if (!hasActive && Array.isArray(allTimers) && allTimers.length > 0) {
+          for (const t of allTimers) {
+            const data = t?.[1];
+            if (data && data.status === 'PAUSED' && typeof data.remainingTime === 'number' && data.remainingTime > 0) {
+              hasPaused = true;
+              break;
+            }
+          }
+        }
+
+        if (hasActive || hasPaused) {
           alexaTimers.push(entityId);
           continue;
         }
-        // Fallback: try building timer data
+        // Fallback: compute and include only if active or paused according to parser
         const timerData = this.getTimerData(entityId, hass);
-        if (timerData) alexaTimers.push(entityId);
+        if (timerData && (timerData.isActive || timerData.isPaused)) {
+          alexaTimers.push(entityId);
+        }
       }
     }
     

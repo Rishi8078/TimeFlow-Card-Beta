@@ -139,17 +139,35 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
   let progress = 0;
 
   if (primaryTimer) {
-    const rt = typeof primaryTimer.remainingTime === 'number' ? primaryTimer.remainingTime : 0; // ms
-    const od = typeof primaryTimer.originalDurationInMillis === 'number' ? primaryTimer.originalDurationInMillis : 0; // ms
-    remaining = Math.max(0, Math.floor(rt / 1000));
-    duration  = Math.max(0, Math.floor(od / 1000));
+    const now = Date.now();
+    const rtMs = typeof primaryTimer.remainingTime === 'number' ? primaryTimer.remainingTime : 0; // ms
+    const odMs = typeof primaryTimer.originalDurationInMillis === 'number' ? primaryTimer.originalDurationInMillis : 0; // ms
+    const trig = typeof primaryTimer.triggerTime === 'number' ? primaryTimer.triggerTime : 0; // epoch ms
 
-    if (isActive && remaining > 0) {
-      finishesAt = new Date(Date.now() + remaining * 1000);
+    duration = Math.max(0, Math.floor(odMs / 1000));
+
+    if (isActive) {
+      // Prefer triggerTime for live ticking
+      if (trig && trig > now) {
+        remaining = Math.max(0, Math.floor((trig - now) / 1000));
+        finishesAt = new Date(trig);
+      } else {
+        // Fallback to remainingTime snapshot
+        remaining = Math.max(0, Math.floor(rtMs / 1000));
+        if (remaining > 0) finishesAt = new Date(now + remaining * 1000);
+      }
+    } else if (isPaused) {
+      // While paused, trust remainingTime snapshot and do not set finishesAt
+      remaining = Math.max(0, Math.floor(rtMs / 1000));
+      finishesAt = null;
+    } else {
+      // Not active/paused: try remainingTime if any
+      remaining = Math.max(0, Math.floor(rtMs / 1000));
+      finishesAt = null;
     }
 
     if (duration > 0) {
-      const elapsed = duration - remaining;
+      const elapsed = Math.max(0, duration - remaining);
       progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
     }
   } else {

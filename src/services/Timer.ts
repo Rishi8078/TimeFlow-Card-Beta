@@ -106,12 +106,12 @@ private static getAlexaTimerData(entityId: string, entity: any, hass: HomeAssist
  */
 private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
   try {
-    const sortedActive = attributes.sorted_active || [];
-    const sortedAll = attributes.sorted_all || [];
+    // Parse JSON strings to arrays
+    const sortedActive = this.parseJsonArray(attributes.sorted_active) || [];
+    const sortedAll = this.parseJsonArray(attributes.sorted_all) || [];
 
     // Check for active timers first
     if (sortedActive.length > 0) {
-      // Get the first active timer (or shortest remaining time)
       const activeTimerData = this.selectPrimaryTimer(sortedActive);
       if (activeTimerData) {
         return this.createTimerDataFromAttributes(activeTimerData, attributes, true);
@@ -125,13 +125,12 @@ private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
     });
 
     if (pausedTimers.length > 0) {
-      const pausedTimerData = pausedTimers[0][1]; // Get first paused timer
+      const pausedTimerData = pausedTimers[0][1];
       return this.createTimerDataFromAttributes(pausedTimerData, attributes, false, true);
     }
 
     // No active or paused timers - check if we have any timers at all
     if (sortedAll.length > 0) {
-      // Return inactive state but with device info
       return this.createTimerDataFromAttributes(null, attributes, false, false);
     }
 
@@ -140,6 +139,26 @@ private static parseAlexaTimerAttributes(attributes: any): TimerData | null {
     console.warn('Failed to parse Alexa timer attributes:', error);
     return null;
   }
+}
+
+// Helper method to parse JSON strings
+private static parseJsonArray(jsonData: any): any[] | null {
+  if (!jsonData) return null;
+  
+  if (Array.isArray(jsonData)) {
+    return jsonData;
+  }
+  
+  if (typeof jsonData === 'string') {
+    try {
+      return JSON.parse(jsonData);
+    } catch (error) {
+      console.warn('Failed to parse JSON string:', jsonData);
+      return null;
+    }
+  }
+  
+  return null;
 }
 
 /**

@@ -12,7 +12,7 @@ export class CountdownService {
   private dateParser: any;
   private timeRemaining: CountdownState;
   private expired: boolean;
-  // Cache last selected Alexa timer (for autodiscovery finished display)
+  // Cache last selected smart timer (for autodiscovery finished display - Alexa or Google)
   private lastAlexaTimerData: any | null;
 
   constructor(templateService: any, dateParser: any) {
@@ -20,7 +20,7 @@ export class CountdownService {
     this.dateParser = dateParser;
     this.timeRemaining = { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
     this.expired = false;
-  this.lastAlexaTimerData = null;
+    this.lastAlexaTimerData = null;
   }
 
   /**
@@ -72,7 +72,7 @@ export class CountdownService {
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
-            // cache for later finished display when list becomes empty
+            // cache for later finished display when list becomes empty (works for both Alexa and Google)
             this.lastAlexaTimerData = timerData;
             this.timeRemaining = this._timerDataToCountdownState(timerData);
             this.expired = TimerEntityService.isTimerExpired(timerData);
@@ -331,8 +331,10 @@ export class CountdownService {
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
-            // cache for finished view if list empties out later
+            // cache for finished view if list empties out later (works for both Alexa and Google)
             this.lastAlexaTimerData = timerData;
+            // Update time remaining for proper display calculation
+            this.timeRemaining = this._timerDataToCountdownState(timerData);
             const { hours, minutes, seconds } = this.timeRemaining;
             if (TimerEntityService.isTimerExpired(timerData)) {
               return { value: '🔔', label: TimerEntityService.getTimerSubtitle(timerData, false) };
@@ -412,7 +414,9 @@ export class CountdownService {
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
-            this.lastAlexaTimerData = timerData; // cache for finished fallback
+            this.lastAlexaTimerData = timerData; // cache for finished fallback (works for both Alexa and Google)
+            // Update time remaining for consistency
+            this.timeRemaining = this._timerDataToCountdownState(timerData);
             return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
           }
         }
@@ -536,6 +540,16 @@ export class CountdownService {
   getAvailableAlexaTimers(hass: HomeAssistant | null): string[] {
     if (!hass) return [];
     return TimerEntityService.discoverAlexaTimers(hass);
+  }
+
+  /**
+   * Gets available Google Home timers for debugging/info
+   * @param {Object} hass - Home Assistant object
+   * @returns {string[]} - Array of Google Home timer entity IDs
+   */
+  getAvailableGoogleTimers(hass: HomeAssistant | null): string[] {
+    if (!hass) return [];
+    return TimerEntityService.discoverGoogleTimers(hass);
   }
 
   /**

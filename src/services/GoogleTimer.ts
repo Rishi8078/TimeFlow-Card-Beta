@@ -8,8 +8,13 @@ import { TimerData } from './Timer';
  */
 export class GoogleTimerService {
   
-  // Cache for Google timer ID-based finished state persistence
-  private static googleIdCache = new Map<string, any>();
+  // Cache for Google timer ID-based finished state persistence and paused snapshots
+  private static googleIdCache = new Map<string, {
+    finishedTimerId?: string;
+    lastDuration?: number;
+    lastLabel?: string;
+    pausedSnapshots?: Map<string, { remaining: number; pausedAt: number }>;
+  }>();
 
   /**
    * Handles Google Home timer data extraction with timer ID tracking.
@@ -94,11 +99,11 @@ export class GoogleTimerService {
     if (entityCache.finishedTimerId && !activeTimers.has(entityCache.finishedTimerId)) {
       // Keep it for a short time, then clean up
       setTimeout(() => {
-        const cache = this.googleIdCache.get(entityId);
-        if (cache?.finishedTimerId === entityCache.finishedTimerId) {
-          delete cache.finishedTimerId;
-          delete cache.lastDuration;
-          delete cache.lastLabel;
+        const currentCache = this.googleIdCache.get(entityId);
+        if (currentCache && currentCache.finishedTimerId === entityCache.finishedTimerId) {
+          delete currentCache.finishedTimerId;
+          delete currentCache.lastDuration;
+          delete currentCache.lastLabel;
         }
       }, 5000); // 5 second display
     }
@@ -150,7 +155,7 @@ export class GoogleTimerService {
       return null;
     }
 
-    // --- Calculate timer properties ---
+    // --- Calculate timer properties using real-time logic like Alexa ---
     const isActive = primaryTimer.status === 'set' || primaryTimer.status === 'ringing';
     const isPaused = primaryTimer.status === 'paused';
     const isRinging = primaryTimer.status === 'ringing';
@@ -160,41 +165,137 @@ export class GoogleTimerService {
       ? primaryTimer.duration 
       : parseDuration(primaryTimer.duration || '0');
     
-    // Remaining time calculation
+    // Real-time calculation logic (similar to Alexa timer)
     let remaining = 0;
-    if (isActive && primaryTimer.fire_time) {
-      remaining = Math.max(0, Math.floor(primaryTimer.fire_time - now));
+    let finishesAt: Date | null = null;
+    let isFinished = false;
+
+    // Store paused snapshots in cache for accurate resumption
+    const cacheKey = `${entityId}_${primaryTimerId}`;
+    
+    if (isActive) {
+      // For active timers, prefer fire_time for live ticking (converted from seconds to ms)
+      const fireTimeMs = primaryTimer.fire_time ? primaryTimer.fire_time * 1000 : 0;
+      
+      if (fireTimeMs && fireTimeMs > now * 1000) {
+        remaining = Math.max(0, Math.floor((fireTimeMs - now * 1000) / 1000));
+        finishesAt = new Date(fireTimeMs);
+      } else {
+        // Fallback: if fire_time has passed or is invalid, timer is finished
+        remaining = 0;
+        finishesAt = null;
+        isFinished = true;
+      }
+
+      // If we've passed fire_time or remaining is zero, mark as finished
+      if ((fireTimeMs && fireTimeMs <= now * 1000) || remaining <= 0) {
+        remaining = 0;
+        finishesAt = null;
+        isFinished = true;
+      }
     } else if (isPaused) {
-      // For paused timers, we need to calculate remaining based on duration and elapsed time
-      // This might need adjustment based on actual Google Home behavior
-      remaining = duration; // Simplified - may need more complex logic
+      // For paused timers, we need to store/retrieve the remaining snapshot
+      // Initialize paused snapshots cache if needed
+      if (!entityCache.pausedSnapshots) {
+        entityCache.pausedSnapshots = new Map();
+      }
+
+      const pausedSnapshot = entityCache.pausedSnapshots.get(primaryTimerId!);
+      
+      // Try to get remaining time from timer attributes (if Google Home provides it)
+      if (typeof primaryTimer.remaining_time === 'number') {
+        remaining = Math.max(0, primaryTimer.remaining_time);
+        // Store this snapshot for consistency
+        entityCache.pausedSnapshots.set(primaryTimerId!, {
+          remaining,
+          pausedAt: now
+        });
+      } else if (typeof primaryTimer.remainingTime === 'number') {
+        remaining = Math.max(0, Math.floor(primaryTimer.remainingTime / 1000)); // Convert ms to seconds
+        // Store this snapshot for consistency
+        entityCache.pausedSnapshots.set(primaryTimerId!, {
+          remaining,
+          pausedAt: now
+        });
+      } else if (pausedSnapshot) {
+        // Use cached snapshot from when timer was paused
+        remaining = pausedSnapshot.remaining;
+      } else {
+        // Fallback: calculate from duration and elapsed time if available
+        const originalDuration = duration;
+        const fireTimeMs = primaryTimer.fire_time ? primaryTimer.fire_time * 1000 : 0;
+        
+        if (fireTimeMs && originalDuration > 0) {
+          // Calculate what the remaining time should have been when paused
+          const scheduledEndTime = fireTimeMs;
+          const pauseTime = now * 1000; // Current time as pause reference
+          const calculatedRemaining = Math.max(0, Math.floor((scheduledEndTime - pauseTime) / 1000));
+          remaining = Math.min(originalDuration, calculatedRemaining);
+          
+          // Store this calculated snapshot
+          entityCache.pausedSnapshots.set(primaryTimerId!, {
+            remaining,
+            pausedAt: now
+          });
+        } else {
+          // Last resort: assume full duration remaining (not ideal)
+          remaining = duration;
+          entityCache.pausedSnapshots.set(primaryTimerId!, {
+            remaining,
+            pausedAt: now
+          });
+        }
+      }
+      
+      // No finishesAt for paused timers
+      finishesAt = null;
+    } else {
+      // Timer is off/finished
+      remaining = 0;
+      finishesAt = null;
+      isFinished = true;
     }
 
-    // Parse local_time_iso for finishesAt
-    let finishesAt: Date | null = null;
-    if (primaryTimer.local_time_iso) {
+    // Parse local_time_iso as additional finishesAt source for active timers
+    if (isActive && !finishesAt && primaryTimer.local_time_iso) {
       try {
-        finishesAt = new Date(primaryTimer.local_time_iso);
-        if (isNaN(finishesAt.getTime())) {
-          finishesAt = null;
+        const localFinish = new Date(primaryTimer.local_time_iso);
+        if (!isNaN(localFinish.getTime())) {
+          finishesAt = localFinish;
+          // Recalculate remaining based on local_time_iso if more accurate
+          const localRemaining = Math.max(0, Math.floor((localFinish.getTime() - now * 1000) / 1000));
+          if (Math.abs(localRemaining - remaining) < 5) { // Within 5 seconds tolerance
+            remaining = localRemaining;
+          }
         }
       } catch {
-        finishesAt = null;
+        // Keep existing finishesAt calculation
       }
     }
 
     // Calculate progress
     let progress = 0;
     if (duration > 0) {
-      if (isRinging || (remaining === 0 && isActive)) {
+      if (isRinging || isFinished || (remaining === 0 && isActive)) {
         progress = 100;
       } else {
-        const elapsed = duration - remaining;
+        const elapsed = Math.max(0, duration - remaining);
         progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
       }
     }
     
-    const isFinished = isRinging || (remaining === 0 && primaryTimer.status !== 'paused');
+    // Final finished state determination
+    if (!isFinished) {
+      isFinished = isRinging || (remaining === 0 && primaryTimer.status !== 'paused');
+    }
+
+    // Cache cleanup: remove paused snapshots when timer resumes or finishes
+    if (entityCache.pausedSnapshots && primaryTimerId) {
+      if (isActive || isFinished) {
+        // Timer resumed or finished, clear the paused snapshot
+        entityCache.pausedSnapshots.delete(primaryTimerId);
+      }
+    }
 
     return {
       isActive: isActive && !isRinging,

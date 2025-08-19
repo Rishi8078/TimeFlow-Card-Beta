@@ -445,6 +445,16 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
+      // Don't use default expired text for smart assistant timers configured as timer_entity
+      // They should have been handled in the timer entity section above
+      if (config.timer_entity && hass) {
+        const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
+        if (timerData && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
+          // Force smart timer completion message instead of default
+          return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
+        }
+      }
+      
       const { expired_text = 'Completed! 🎉' } = config;
       return expired_text;
     }

@@ -382,13 +382,13 @@ export class CountdownService {
   }
 
   /**
-   * Gets the subtitle text showing time breakdown (enhanced for Alexa)
+   * Gets the subtitle text showing time breakdown (enhanced for Alexa and Google Home)
    * @param {Object} config - Card configuration
    * @param {Object} hass - Home Assistant object
    * @returns {string} - Formatted subtitle text
    */
   getSubtitle(config: CardConfig, hass: HomeAssistant | null): string {
-    // TIMER ENTITY SUPPORT (including Alexa timers)
+    // TIMER ENTITY SUPPORT (Handles explicit entity)
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
       if (timerData) {
@@ -397,46 +397,54 @@ export class CountdownService {
       return 'Timer not found';
     }
     
-    // AUTO-DISCOVERY: Try Alexa timers if enabled
-    if (!config.timer_entity && config.auto_discover_alexa && hass) {
-      const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
-      if (alexaTimers.length > 0) {
-        let chosen: string | undefined = alexaTimers.find(entityId => {
+    // --- REVISED AUTO-DISCOVERY LOGIC ---
+    if (!config.timer_entity && (config.auto_discover_alexa || config.auto_discover_google) && hass) {
+      let smartTimers: string[] = [];
+      if (config.auto_discover_alexa) smartTimers.push(...TimerEntityService.discoverAlexaTimers(hass));
+      if (config.auto_discover_google) smartTimers.push(...TimerEntityService.discoverGoogleTimers(hass));
+
+      if (smartTimers.length > 0) {
+        let chosen: string | undefined = smartTimers.find(entityId => {
           const t = TimerEntityService.getTimerData(entityId, hass);
           return t && t.isActive;
         });
         if (!chosen) {
-          chosen = alexaTimers.find(entityId => {
+          chosen = smartTimers.find(entityId => {
             const t = TimerEntityService.getTimerData(entityId, hass);
             return t && t.isPaused;
           });
         }
+
+        // Case 1: An active or paused timer was chosen
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
-            this.lastAlexaTimerData = timerData; // cache for finished fallback (works for both Alexa and Google)
-            // Update time remaining for consistency
+            this.lastAlexaTimerData = timerData; // Cache for finished fallback
             this.timeRemaining = this._timerDataToCountdownState(timerData);
             return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
           }
         }
-        // No chosen; if we have cached data and it’s finished, return finished label
+
+        // Case 2: No active timer, but we have a cached one that just finished
         if (this.lastAlexaTimerData && TimerEntityService.isTimerExpired(this.lastAlexaTimerData)) {
           return TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false);
         }
+
+        // Case 3: No active timer and no recently finished timer.
+        // This means the entity exists but has no running timers. Provide a specific message.
+        const firstDiscovered = TimerEntityService.getTimerData(smartTimers[0], hass);
+        if (firstDiscovered) {
+            // Return the "no timers" state from the specific service (Alexa or Google)
+            return TimerEntityService.getTimerSubtitle(firstDiscovered, config.show_seconds !== false);
+        }
       }
-      // No active or paused timers
-      return 'No timers';
+      
+      // Case 4: No smart timer entities were discovered at all.
+      return 'No timers found';
     }
     
+    // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      // For auto-discovered smart assistant timers, align expired text with timer semantics and cached label when available
-      if (config.auto_discover_alexa || config.auto_discover_google) {
-        if (this.lastAlexaTimerData) {
-          return TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false);
-        }
-        return 'Timer complete';
-      }
       const { expired_text = 'Completed! 🎉' } = config;
       return expired_text;
     }
@@ -446,63 +454,22 @@ export class CountdownService {
     
     const parts = [];
     
-    // Add each time unit based on configuration and if value > 0
-    if (show_months && months > 0) {
-      parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
-    }
+    if (show_months && months > 0) parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
+    if (show_days && days > 0) parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
+    if (show_hours && hours > 0) parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
+    if (show_minutes && minutes > 0) parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
+    if (show_seconds && seconds > 0) parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
     
-    if (show_days && days > 0) {
-      parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
-    }
-    
-    if (show_hours && hours > 0) {
-      parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
-    }
-    
-    if (show_minutes && minutes > 0) {
-      parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
-    }
-    
-    if (show_seconds && seconds > 0) {
-      parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
-    }
-    
-    // If no parts are shown or all values are 0, show the largest enabled unit
     if (parts.length === 0) {
-      if (show_months) {
-        parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
-      } else if (show_days) {
-        parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
-      } else if (show_hours) {
-        parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
-      } else if (show_minutes) {
-        parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
-      } else if (show_seconds) {
-        parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
-      }
+      if (show_seconds) return `0 seconds`;
+      return 'Starting...';
     }
     
-    // Count enabled units for formatting decision
-    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(Boolean).length;
+    if (parts.length === 1) return `${parts[0].value} ${parts[0].unit}`;
     
-    // Format based on number of enabled units
-    if (enabledUnits <= 2 && parts.length > 0) {
-      // Natural format for 1-2 enabled units: "1 month and 10 days"
-      if (parts.length === 1) {
-        return `${parts[0].value} ${parts[0].unit}`;
-      } else if (parts.length === 2) {
-        return `${parts[0].value} ${parts[0].unit} and ${parts[1].value} ${parts[1].unit}`;
-      }
-    }
-    
-    // Compact format for 3+ enabled units: "1mo 10d 5h"
-    return parts.map(part => {
-      const shortUnit = part.unit.charAt(0); // m, d, h, m, s
-      return `${part.value}${shortUnit}`;
-    }).join(' ') || '0s';
-  }
-
-  /**
+    const compact = parts.map(p => `${p.value}${p.unit.charAt(0)}`).join(' ');
+    return compact;
+  }  /**
    * Converts TimerData to CountdownState for unified interface
    */
   private _timerDataToCountdownState(timerData: any): CountdownState {

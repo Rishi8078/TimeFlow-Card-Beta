@@ -98,7 +98,11 @@ export class TimerEntityService {
    * @returns string[] - Array of potential Alexa timer entity IDs
    */
   static discoverAlexaTimers(hass: HomeAssistant): string[] {
-    return AlexaTimerService.discoverAlexaTimers(hass, this.isAlexaTimer, this.getTimerData);
+    return AlexaTimerService.discoverAlexaTimers(
+      hass, 
+      (entityId: string) => this.isAlexaTimer(entityId), 
+      (entityId: string, hass: HomeAssistant) => this.getTimerData(entityId, hass)
+    );
   }
 
   /**

@@ -154,24 +154,47 @@ export class GoogleTimerService {
       }
     }
 
-    // 3. If no active timers, check for paused timers
+    // 3. If no active timers, check for paused timers and other non-active states
     if (!primaryTimer) {
       for (const timer of allTimers) {
-        if (timer.status === 'paused' && timer.timer_id) {
-          primaryTimer = timer;
-          primaryTimerId = String(timer.timer_id);
-          break;
+        if (timer.timer_id) {
+          // Check for paused status (might be 'paused', 'PAUSED', or other variants)
+          const status = timer.status?.toLowerCase();
+          if (status === 'paused' || timer.status === 'PAUSED') {
+            primaryTimer = timer;
+            primaryTimerId = String(timer.timer_id);
+            break;
+          }
+          // Fallback: if timer has remaining time but isn't active, treat as paused
+          if (!primaryTimer && timer.status !== 'set' && timer.status !== 'ringing' && timer.status !== 'none') {
+            if (timer.duration > 0 || timer.remaining_time > 0 || timer.remainingTime > 0) {
+              primaryTimer = timer;
+              primaryTimerId = String(timer.timer_id);
+              // Don't break here - keep looking for an explicitly paused timer
+            }
+          }
         }
       }
     }
 
     if (!primaryTimer) {
-      return null;
+      // If we have timers but none were selected, this might indicate an unknown status
+      // Return information about the first timer to help with debugging
+      if (allTimers.length > 0) {
+        console.warn('GoogleTimer: Found timers but none selected as primary. First timer:', allTimers[0]);
+        // Try to use the first timer as a fallback
+        primaryTimer = allTimers[0];
+        primaryTimerId = String(allTimers[0].timer_id || 'unknown');
+      } else {
+        return null;
+      }
     }
 
     // --- Calculate timer properties using real-time logic like Alexa ---
     const isActive = primaryTimer.status === 'set' || primaryTimer.status === 'ringing';
-    const isPaused = primaryTimer.status === 'paused';
+    const isPaused = primaryTimer.status === 'paused' || primaryTimer.status === 'PAUSED' || 
+                     (primaryTimer.status !== 'set' && primaryTimer.status !== 'ringing' && 
+                      primaryTimer.status !== 'none' && (primaryTimer.duration > 0 || primaryTimer.remaining_time > 0 || primaryTimer.remainingTime > 0));
     const isRinging = primaryTimer.status === 'ringing';
 
     // Duration is in seconds according to the documentation

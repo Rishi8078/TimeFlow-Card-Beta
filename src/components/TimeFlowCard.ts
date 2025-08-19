@@ -470,7 +470,7 @@ export class TimeFlowCardBeta extends LitElement {
         );
       } else {
         // For auto-discovery, avoid stale expired_text as title
-        titleText = this._resolvedConfig.auto_discover_alexa ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
+        titleText = (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
       }
     }
 

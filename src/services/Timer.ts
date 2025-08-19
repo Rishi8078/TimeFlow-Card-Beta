@@ -1,6 +1,7 @@
 import { HomeAssistant } from '../types/index';
 import { StandardTimerService } from './StandardTimer';
 import { AlexaTimerService } from './AlexaTimer';
+import { GoogleTimerService } from './GoogleTimer';
 
 export interface TimerData {
   isActive: boolean;
@@ -17,17 +18,21 @@ export interface TimerData {
   // Enhanced Alexa properties
   timerStatus?: "ON" | "OFF" | "PAUSED"; // Precise status from attributes
   userDefinedLabel?: string; // User-defined timer label (e.g., "Pizza")
+  // NEW: Google Home specific properties
+  isGoogleTimer?: boolean;
+  googleTimerId?: string; // Google Home timer_id for tracking
+  googleTimerStatus?: "none" | "set" | "ringing" | "paused"; // Google Home timer status (includes ringing)
 }
 
 /**
- * TimerEntityService - Enhanced with Amazon Alexa Timer support
- * Handles Home Assistant timer entity integration including Alexa Media Player timers
- * Acts as orchestrator between StandardTimer and AlexaTimer services
+ * TimerEntityService - Enhanced with Amazon Alexa & Google Home Timer support
+ * Handles Home Assistant timer entity integration including Alexa Media Player and Google Home timers
+ * Acts as orchestrator between StandardTimer, AlexaTimer, and GoogleTimer services
  */
 export class TimerEntityService {
   
   /**
-   * Checks if an entity ID is a timer entity (including Alexa timers)
+   * Checks if an entity ID is a timer entity (including Alexa and Google timers)
    * @param entityId - Entity ID to check
    * @returns boolean - Whether the entity is a timer
    */
@@ -41,6 +46,17 @@ export class TimerEntityService {
     if (entityId.includes('_next_timer') || 
         entityId.includes('alexa_timer') || 
         (entityId.startsWith('sensor.') && entityId.includes('timer'))) {
+      return true;
+    }
+    
+    // Google Home timer sensors (ha-google-home integration)
+    // Pattern: sensor.{device_name}_timers
+    if (entityId.startsWith('sensor.') && entityId.endsWith('_timers')) {
+      return true;
+    }
+    
+    // Fallback for Google Home timers that might have different patterns
+    if (entityId.includes('google_home') && entityId.includes('timer')) {
       return true;
     }
     
@@ -59,7 +75,22 @@ export class TimerEntityService {
   }
 
   /**
-   * Gets timer data from a Home Assistant timer entity (including Alexa timers)
+   * Checks if entity is a Google Home timer specifically
+   * @param entityId - Entity ID to check
+   * @returns boolean - Whether this is a Google Home timer
+   */
+  static isGoogleTimer(entityId: string): boolean {
+    // Primary pattern for ha-google-home integration: sensor.{device_name}_timers
+    if (entityId.startsWith('sensor.') && entityId.endsWith('_timers')) {
+      return true;
+    }
+    
+    // Secondary patterns for Google Home timers
+    return entityId.includes('google_home') && entityId.includes('timer');
+  }
+
+  /**
+   * Gets timer data from a Home Assistant timer entity (including Alexa and Google timers)
    * @param entityId - Timer entity ID
    * @param hass - Home Assistant object
    * @returns TimerData object with timer information
@@ -74,13 +105,23 @@ export class TimerEntityService {
       return null;
     }
 
-    // Handle Alexa timers differently
+    // Handle Alexa timers
     if (this.isAlexaTimer(entityId)) {
       return AlexaTimerService.getAlexaTimerData(
         entityId, 
         entity, 
         hass,
         this.isISOTimestamp,
+        this.parseDuration
+      );
+    }
+
+    // Handle Google Home timers
+    if (this.isGoogleTimer(entityId)) {
+      return GoogleTimerService.getGoogleTimerData(
+        entityId,
+        entity,
+        hass,
         this.parseDuration
       );
     }
@@ -101,6 +142,19 @@ export class TimerEntityService {
     return AlexaTimerService.discoverAlexaTimers(
       hass, 
       (entityId: string) => this.isAlexaTimer(entityId), 
+      (entityId: string, hass: HomeAssistant) => this.getTimerData(entityId, hass)
+    );
+  }
+
+  /**
+   * AUTO-DISCOVERY: Attempts to find Google Home timer entities in Home Assistant
+   * @param hass - Home Assistant object
+   * @returns string[] - Array of potential Google Home timer entity IDs
+   */
+  static discoverGoogleTimers(hass: HomeAssistant): string[] {
+    return GoogleTimerService.discoverGoogleTimers(
+      hass,
+      (entityId: string) => this.isGoogleTimer(entityId),
       (entityId: string, hass: HomeAssistant) => this.getTimerData(entityId, hass)
     );
   }
@@ -178,7 +232,7 @@ export class TimerEntityService {
   }
 
   /**
-   * Gets appropriate title text for timer entity (enhanced for Alexa)
+   * Gets appropriate title text for timer entity (enhanced for Alexa and Google Home)
    * @param entityId - Timer entity ID
    * @param hass - Home Assistant object
    * @param customTitle - Custom title override
@@ -213,6 +267,20 @@ export class TimerEntityService {
       return this.formatAlexaTimerName(entityId);
     }
 
+    // Handle Google Home timers
+    if (this.isGoogleTimer(entityId)) {
+      const timerData = GoogleTimerService.getGoogleTimerData(
+        entityId,
+        entity,
+        hass,
+        this.parseDuration
+      );
+      if (timerData?.userDefinedLabel) {
+        return timerData.userDefinedLabel;
+      }
+      return this.formatGoogleTimerName(entityId);
+    }
+
     // Use friendly name or fall back to entity ID
     return entity.attributes.friendly_name || entityId.replace('timer.', '').replace(/_/g, ' ');
   }
@@ -232,6 +300,19 @@ export class TimerEntityService {
   }
 
   /**
+   * Formats Google Home timer name from entity ID
+   * @param entityId - Entity ID
+   * @returns string - Formatted name
+   */
+  private static formatGoogleTimerName(entityId: string): string {
+    return entityId
+      .replace(/^sensor\./, '')
+      .replace(/_timers$/, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase()) + ' Timers';
+  }
+
+  /**
    * Checks if a timer is expired
    * @param timerData - Timer data object
    * @returns boolean - Whether the timer is expired
@@ -240,6 +321,10 @@ export class TimerEntityService {
     if (!timerData) return false;
     
     if (timerData.isAlexaTimer) {
+      return !!timerData.finished || (timerData.remaining === 0 && timerData.progress >= 100);
+    }
+    
+    if (timerData.isGoogleTimer) {
       return !!timerData.finished || (timerData.remaining === 0 && timerData.progress >= 100);
     }
     
@@ -294,6 +379,39 @@ export class TimerEntityService {
         : 'No timers';
     }
 
+    if (timerData.isGoogleTimer) {
+      const isRinging = timerData.googleTimerStatus === 'ringing';
+      
+      if (timerData.finished || isRinging) {
+        return timerData.userDefinedLabel 
+          ? `${timerData.userDefinedLabel} timer complete`
+          : 'Timer complete';
+      }
+
+      if (timerData.isActive && timerData.remaining > 0) {
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        return timerData.userDefinedLabel
+          ? `${remaining} remaining on ${timerData.userDefinedLabel} timer`
+          : `${remaining} remaining on Google Home`;
+      }
+
+      if (timerData.isPaused && timerData.remaining > 0) {
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        return timerData.userDefinedLabel
+          ? `${timerData.userDefinedLabel} timer paused - ${remaining} left`
+          : `Google Home timer paused - ${remaining} left`;
+      }
+
+      if (timerData.finished || isRinging || 
+          (timerData.remaining === 0 && timerData.progress >= 100)) {
+        return timerData.userDefinedLabel
+          ? `${timerData.userDefinedLabel} timer complete`
+          : 'Timer complete';
+      }
+
+      return 'No Google Home timers';
+    }
+
     // Standard HA timer
     if (timerData.isActive) {
       return `${this.formatRemainingTime(timerData.remaining, showSeconds)} remaining`;
@@ -322,6 +440,18 @@ export class TimerEntityService {
     if (timerData.isAlexaTimer) {
       if (timerData.isActive && timerData.remaining > 0) {
         return '#00d4ff'; // Alexa blue
+      }
+      
+      if (this.isTimerExpired(timerData)) {
+        return '#ff4444'; // Red for expired
+      }
+      
+      return '#888888'; // Gray for inactive
+    }
+
+    if (timerData.isGoogleTimer) {
+      if (timerData.isActive && timerData.remaining > 0) {
+        return '#34a853'; // Google green
       }
       
       if (this.isTimerExpired(timerData)) {

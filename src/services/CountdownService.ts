@@ -42,17 +42,30 @@ export class CountdownService {
         }
       }
       
-      // AUTO-DISCOVERY: If no timer_entity specified, try to find Alexa timers
-      if (!config.timer_entity && config.auto_discover_alexa && hass) {
-        const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
-        if (alexaTimers.length > 0) {
+      // AUTO-DISCOVERY: If no timer_entity specified, try to find smart assistant timers
+      if (!config.timer_entity && (config.auto_discover_alexa || config.auto_discover_google) && hass) {
+        let smartTimers: string[] = [];
+        
+        // Discover Alexa timers if enabled
+        if (config.auto_discover_alexa) {
+          const alexaTimers = TimerEntityService.discoverAlexaTimers(hass);
+          smartTimers.push(...alexaTimers);
+        }
+        
+        // Discover Google Home timers if enabled
+        if (config.auto_discover_google) {
+          const googleTimers = TimerEntityService.discoverGoogleTimers(hass);
+          smartTimers.push(...googleTimers);
+        }
+        
+        if (smartTimers.length > 0) {
           // Prefer an active timer; otherwise a paused timer
-          let chosen: string | undefined = alexaTimers.find(entityId => {
+          let chosen: string | undefined = smartTimers.find(entityId => {
             const t = TimerEntityService.getTimerData(entityId, hass);
             return t && t.isActive;
           });
           if (!chosen) {
-            chosen = alexaTimers.find(entityId => {
+            chosen = smartTimers.find(entityId => {
               const t = TimerEntityService.getTimerData(entityId, hass);
               return t && t.isPaused;
             });

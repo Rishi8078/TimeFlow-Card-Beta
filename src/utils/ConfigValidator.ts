@@ -1,5 +1,14 @@
 /**
- * ConfigValidator - Comprehensive input validation for TimeFlow Card configuration
+ * ConfigValidator - Comprehensive input validation fo    } else if (!config.timer_entity && !config.auto_discover_alexa && !config.auto_discover_google) {
+      // target_date is only required if timer_entity, auto_discover_alexa, and auto_discover_google are not provided
+      errors.push({
+        field: 'target_date',
+        message: 'Either "target_date", "timer_entity", "auto_discover_alexa", or "auto_discover_google" must be provided',
+        severity: 'critical',
+        suggestion: 'Add target_date field with a valid date value like "2025-12-31T23:59:59" OR specify a timer_entity like "timer.my_timer" OR enable auto_discover_alexa OR enable auto_discover_google.',
+        value: undefined,
+      });
+    } Card configuration
  * Ensures security, type safety, and data integrity with graceful error handling
  */
 

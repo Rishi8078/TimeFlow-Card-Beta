@@ -52,7 +52,21 @@ export class GoogleTimerService {
           userDefinedLabel: entityCache.lastLabel || 'Timer',
         };
       }
-      return null; // No timers active or cached
+      
+      // Return "no timers" state instead of null for auto-discovery compatibility
+      return {
+        isActive: false,
+        isPaused: false,
+        duration: 0,
+        remaining: 0,
+        finishesAt: null,
+        progress: 0,
+        finished: false,
+        isGoogleTimer: true,
+        userDefinedLabel: undefined,
+        googleTimerId: undefined,
+        googleTimerStatus: 'none',
+      };
     }
 
     // Create maps for active and all timers with timer_id as key
@@ -332,28 +346,35 @@ export class GoogleTimerService {
     for (const entityId in hass.states) {
       if (isGoogleTimer(entityId)) {
         const entity = hass.states[entityId];
-        // Check if entity has timers attributes with valid data
-        const attributes = entity.attributes || {};
-        const timers = attributes.timers || [];
-
-        if (Array.isArray(timers) && timers.length > 0) {
-          // Check if any timer has valid status
-          const hasValidTimer = timers.some((timer: any) => 
-            timer.timer_id && 
-            timer.status && 
-            ['set', 'ringing', 'paused'].includes(timer.status)
-          );
-
-          if (hasValidTimer) {
+        
+        // Include all Google Home timer entities that exist and are not unavailable
+        // This allows showing "No timers" state instead of showing nothing
+        if (entity.state !== 'unavailable' && entity.state !== 'unknown') {
+          // Check if entity has timers attributes structure (even if empty)
+          const attributes = entity.attributes || {};
+          
+          // Include if it has the timers attribute (Google Home integration marker)
+          if ('timers' in attributes) {
             googleTimers.push(entityId);
             continue;
           }
-        }
-
-        // Fallback: use getTimerData to check for active/paused timers
-        const timerData = getTimerData(entityId, hass);
-        if (timerData && (timerData.isActive || timerData.isPaused || timerData.finished)) {
-          googleTimers.push(entityId);
+          
+          // Fallback: check entity structure to see if it's a valid Google timer entity
+          const timers = attributes.timers || [];
+          if (Array.isArray(timers)) {
+            // Include entities with timers array (even if empty)
+            googleTimers.push(entityId);
+            continue;
+          }
+          
+          // Last resort: try getTimerData to confirm it's a working Google timer entity
+          try {
+            const timerData = getTimerData(entityId, hass);
+            // Include if getTimerData doesn't throw and returns something (even null for "no timers")
+            googleTimers.push(entityId);
+          } catch {
+            // Skip entities that can't be parsed as Google timer entities
+          }
         }
       }
     }

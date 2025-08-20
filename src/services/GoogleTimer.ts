@@ -207,17 +207,12 @@ export class GoogleTimerService {
       for (const timer of allTimers) {
         if (timer.timer_id) {
           const status = String(timer.status || '').toLowerCase().trim();
-          console.log(`🔍 GoogleTimer: Checking timer ${timer.timer_id} with status "${timer.status}" (normalized: "${status}")`);
           if (status === 'paused') {
-            console.log(`✅ GoogleTimer: Found paused timer ${timer.timer_id}`);
             primaryTimer = timer;
             primaryTimerId = String(timer.timer_id);
             break;
           }
         }
-      }
-      if (!primaryTimer) {
-        console.log(`❌ GoogleTimer: No paused timers found among ${allTimers.length} timers`);
       }
     }
 
@@ -353,30 +348,21 @@ export class GoogleTimerService {
     for (const entityId in hass.states) {
       if (isGoogleTimer(entityId)) {
         const entity = hass.states[entityId];
-        console.log(`🔍 Discovery: Checking entity ${entityId} with state "${entity.state}"`);
         
         // Don't skip based on entity state - Google Home entities can be "unavailable" 
         // but still have valid timer data in attributes
         const attributes = entity.attributes || {};
         const timers = attributes.timers || [];
-        console.log(`🔍 Discovery: Entity ${entityId} has ${timers.length} timers`);
 
         if (Array.isArray(timers) && timers.length > 0) {
           const hasDisplayableTimer = timers.some(timer => {
             const status = String(timer.status || '').toLowerCase().trim();
-            console.log(`🔍 Discovery: Timer ${timer.timer_id} status: "${timer.status}" (normalized: "${status}")`);
             return status === 'set' || status === 'ringing' || status === 'paused';
           });
           
-          console.log(`🔍 Discovery: Entity ${entityId} hasDisplayableTimer: ${hasDisplayableTimer}`);
           if (hasDisplayableTimer) {
             googleTimers.push(entityId);
-            console.log(`✅ Discovery: Added ${entityId} to results`);
-          } else {
-            console.log(`❌ Discovery: Skipped ${entityId} - no displayable timers`);
           }
-        } else {
-          console.log(`❌ Discovery: Skipped ${entityId} - no timers array`);
         }
       }
     }

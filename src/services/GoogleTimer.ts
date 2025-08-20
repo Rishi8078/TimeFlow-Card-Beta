@@ -36,9 +36,11 @@ export class GoogleTimerService {
     const allTimers = attributes.timers || [];
 
     if (!Array.isArray(allTimers) || allTimers.length === 0) {
+      console.log('🔍 GoogleTimer: No timers found in entity, checking cache...');
       // Check if we have a cached finished timer to display
       const entityCache = this.googleIdCache.get(entityId);
       if (entityCache?.finishedTimerId) {
+        console.log('🔍 GoogleTimer: Returning cached finished timer');
         // Return finished state for the cached timer
         return {
           isActive: false,
@@ -49,10 +51,13 @@ export class GoogleTimerService {
           progress: 100,
           finished: true,
           isGoogleTimer: true,
-          userDefinedLabel: entityCache.lastLabel || 'Timer',
+          userDefinedLabel: entityCache.lastLabel || undefined,
+          googleTimerId: entityCache.finishedTimerId,
+          googleTimerStatus: 'ringing' as const,
         };
       }
       
+      console.log('🔍 GoogleTimer: Returning no timers state');
       // Return "no timers" state instead of null for auto-discovery compatibility
       return {
         isActive: false,
@@ -154,6 +159,7 @@ export class GoogleTimerService {
     // 1. Check for ringing timers first (immediate finished state)
     for (const timer of allTimers) {
       if (timer.timer_id && timer.status === 'ringing') {
+        console.log('🔍 GoogleTimer: Found ringing timer:', timer);
         return {
           isActive: false,
           isPaused: false,
@@ -163,7 +169,9 @@ export class GoogleTimerService {
           progress: 100,
           finished: true,
           isGoogleTimer: true,
-          userDefinedLabel: timer.label || 'Timer',
+          userDefinedLabel: timer.label || undefined,
+          googleTimerId: String(timer.timer_id),
+          googleTimerStatus: 'ringing',
         };
       }
     }
@@ -171,7 +179,8 @@ export class GoogleTimerService {
     // 2. Check if we have a finished timer to display
     if (entityCache.finishedTimerId && allTimersMap.has(entityCache.finishedTimerId)) {
       const finishedTimer = allTimersMap.get(entityCache.finishedTimerId);
-      if (finishedTimer.fire_time <= now) {
+      if (finishedTimer && finishedTimer.fire_time <= now) {
+        console.log('🔍 GoogleTimer: Using cached finished timer:', finishedTimer);
         return {
           isActive: false,
           isPaused: false,
@@ -181,7 +190,9 @@ export class GoogleTimerService {
           progress: 100,
           finished: true,
           isGoogleTimer: true,
-          userDefinedLabel: finishedTimer.label || 'Timer',
+          userDefinedLabel: finishedTimer.label || undefined,
+          googleTimerId: String(finishedTimer.timer_id),
+          googleTimerStatus: finishedTimer.status || 'finished',
         };
       }
     }
@@ -386,7 +397,7 @@ export class GoogleTimerService {
       progress,
       finished: isFinished,
       isGoogleTimer: true,
-      userDefinedLabel: primaryTimer.label || null,
+      userDefinedLabel: primaryTimer.label || undefined,
       // Additional Google Home specific data
       googleTimerId: primaryTimerId || undefined,
       googleTimerStatus: primaryTimer.status, // 'none', 'set', 'ringing', 'paused'

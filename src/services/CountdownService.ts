@@ -392,9 +392,10 @@ export class CountdownService {
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
       if (timerData) {
-        // Debug logging for Google timers
+        // Debug logging for Google timers - TIMER ENTITY FLOW
         if (timerData.isGoogleTimer) {
-          console.log('CountdownService.getSubtitle - Google timer data:', {
+          console.log('🔍 TIMER ENTITY FLOW - Google timer data:', {
+            entityId: config.timer_entity,
             finished: timerData.finished,
             isActive: timerData.isActive,
             isPaused: timerData.isPaused,
@@ -408,7 +409,7 @@ export class CountdownService {
         // For smart assistant timers, always use their specific subtitle logic
         if (timerData.isAlexaTimer || timerData.isGoogleTimer) {
           const subtitle = TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
-          console.log('CountdownService.getSubtitle - Returning subtitle:', subtitle);
+          console.log('🔍 TIMER ENTITY FLOW - Returning subtitle:', subtitle);
           return subtitle;
         }
         // For standard HA timers, use the timer subtitle if available
@@ -439,15 +440,34 @@ export class CountdownService {
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {
+            // Debug logging for Google timers - AUTO-DISCOVERY FLOW
+            if (timerData.isGoogleTimer) {
+              console.log('🔍 AUTO-DISCOVERY FLOW - Google timer data:', {
+                entityId: chosen,
+                finished: timerData.finished,
+                isActive: timerData.isActive,
+                isPaused: timerData.isPaused,
+                remaining: timerData.remaining,
+                userDefinedLabel: timerData.userDefinedLabel,
+                googleTimerStatus: timerData.googleTimerStatus,
+                progress: timerData.progress
+              });
+            }
+            
             this.lastAlexaTimerData = timerData; // Cache for finished fallback
             this.timeRemaining = this._timerDataToCountdownState(timerData);
-            return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
+            const subtitle = TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
+            console.log('🔍 AUTO-DISCOVERY FLOW - Returning subtitle:', subtitle);
+            return subtitle;
           }
         }
 
         // Case 2: No active timer, but we have a cached one that just finished
         if (this.lastAlexaTimerData && TimerEntityService.isTimerExpired(this.lastAlexaTimerData)) {
-          return TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false);
+          console.log('🔍 AUTO-DISCOVERY FLOW - Using cached finished timer');
+          const subtitle = TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false);
+          console.log('🔍 AUTO-DISCOVERY FLOW - Cached subtitle:', subtitle);
+          return subtitle;
         }
 
         // Case 3: No active timer and no recently finished timer.

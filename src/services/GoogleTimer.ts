@@ -430,13 +430,25 @@ export class GoogleTimerService {
             const timers = attributes.timers || [];
             // Only include entities that have timers in displayable states (set, ringing, paused)
             if (Array.isArray(timers) && timers.length > 0) {
+              console.log(`🔍 GoogleTimer Discovery: Checking entity ${entityId} with ${timers.length} timers:`, 
+                timers.map((t: any) => ({ id: t.timer_id, status: t.status, label: t.label })));
+              
               const hasDisplayableTimer = timers.some((timer: any) => {
                 const status = timer.status;
-                return status === 'set' || status === 'ringing' || status === 'paused';
+                const isDisplayable = status === 'set' || status === 'ringing' || status === 'paused';
+                console.log(`🔍 Timer ${timer.timer_id}: status="${status}", displayable=${isDisplayable}`);
+                return isDisplayable;
               });
+              
+              console.log(`🔍 Entity ${entityId}: hasDisplayableTimer=${hasDisplayableTimer}`);
               if (hasDisplayableTimer) {
                 googleTimers.push(entityId);
+                console.log(`✅ Added ${entityId} to discovery results`);
+              } else {
+                console.log(`❌ Skipped ${entityId} - no displayable timers`);
               }
+            } else {
+              console.log(`🔍 Entity ${entityId}: No timers or empty array`);
             }
             continue;
           }
@@ -444,13 +456,22 @@ export class GoogleTimerService {
           // Fallback: check entity structure to see if it's a valid Google timer entity
           const timers = attributes.timers || [];
           if (Array.isArray(timers) && timers.length > 0) {
+            console.log(`🔍 GoogleTimer Discovery (fallback): Checking entity ${entityId} with ${timers.length} timers`);
+            
             // Only include entities with timers in displayable states
             const hasDisplayableTimer = timers.some((timer: any) => {
               const status = timer.status;
-              return status === 'set' || status === 'ringing' || status === 'paused';
+              const isDisplayable = status === 'set' || status === 'ringing' || status === 'paused';
+              console.log(`🔍 Fallback Timer ${timer.timer_id}: status="${status}", displayable=${isDisplayable}`);
+              return isDisplayable;
             });
+            
+            console.log(`🔍 Fallback Entity ${entityId}: hasDisplayableTimer=${hasDisplayableTimer}`);
             if (hasDisplayableTimer) {
               googleTimers.push(entityId);
+              console.log(`✅ Fallback Added ${entityId} to discovery results`);
+            } else {
+              console.log(`❌ Fallback Skipped ${entityId} - no displayable timers`);
             }
             continue;
           }
@@ -470,6 +491,7 @@ export class GoogleTimerService {
       }
     }
     
+    console.log(`🔍 GoogleTimer Discovery: Final results - found ${googleTimers.length} entities:`, googleTimers);
     return googleTimers;
   }
 

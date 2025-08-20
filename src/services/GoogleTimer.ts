@@ -90,11 +90,22 @@ export class GoogleTimerService {
       this.googleIdCache.set(entityId, entityCache);
     }
 
-    // Check for finished timers (timers that were active but now missing/expired)
-    const finishedCandidates: Array<{id: string, fireTime: number}> = [];
+    // Check for finished timers (timers that were active but now missing/expired/ringing)
+    const finishedCandidates: Array<{id: string, fireTime: number, timer: any}> = [];
+    
+    // Check active timers that have passed their fire_time
     for (const [timerId, timer] of activeTimers.entries()) {
       if (timer.fire_time && timer.fire_time <= now && timer.status !== 'ringing') {
-        finishedCandidates.push({id: timerId, fireTime: timer.fire_time});
+        finishedCandidates.push({id: timerId, fireTime: timer.fire_time, timer});
+      }
+    }
+    
+    // Check for ringing timers (they are finished/completed)
+    for (const timer of allTimers) {
+      if (timer.timer_id && timer.status === 'ringing') {
+        const timerId = String(timer.timer_id);
+        const fireTime = timer.fire_time || now - 1; // Use fire_time or current time if missing
+        finishedCandidates.push({id: timerId, fireTime, timer});
       }
     }
 
@@ -102,7 +113,7 @@ export class GoogleTimerService {
     if (finishedCandidates.length > 0) {
       finishedCandidates.sort((a, b) => b.fireTime - a.fireTime);
       entityCache.finishedTimerId = finishedCandidates[0].id;
-      const finishedTimer = allTimersMap.get(finishedCandidates[0].id);
+      const finishedTimer = finishedCandidates[0].timer;
       if (finishedTimer) {
         entityCache.lastDuration = finishedTimer.duration || 0;
         entityCache.lastLabel = finishedTimer.label || 'Timer';
@@ -111,22 +122,53 @@ export class GoogleTimerService {
 
     // Clean up finished timer cache if no longer in active list
     if (entityCache.finishedTimerId && !activeTimers.has(entityCache.finishedTimerId)) {
-      // Keep it for a short time, then clean up
+      // Keep finished timer display for longer until manually dismissed or new timer starts
       setTimeout(() => {
         const currentCache = this.googleIdCache.get(entityId);
         if (currentCache && currentCache.finishedTimerId === entityCache.finishedTimerId) {
-          delete currentCache.finishedTimerId;
-          delete currentCache.lastDuration;
-          delete currentCache.lastLabel;
+          // Only clear if no new active timers have started
+          let hasNewActiveTimers = false;
+          const currentEntity = hass.states[entityId];
+          if (currentEntity && currentEntity.attributes && currentEntity.attributes.timers) {
+            const currentTimers = currentEntity.attributes.timers || [];
+            hasNewActiveTimers = currentTimers.some((timer: any) => 
+              timer.status === 'set' || timer.status === 'ringing'
+            );
+          }
+          
+          // Only clear finished timer if new active timers exist
+          if (hasNewActiveTimers) {
+            delete currentCache.finishedTimerId;
+            delete currentCache.lastDuration;
+            delete currentCache.lastLabel;
+          }
+          // If no new timers, keep displaying finished state for user interaction
         }
-      }, 5000); // 5 second display
+      }, 30000); // 30 seconds instead of 5 seconds
     }
 
     // Find primary timer to display
     let primaryTimer: any = null;
     let primaryTimerId: string | null = null;
 
-    // 1. Check if we have a finished timer to display
+    // 1. Check for ringing timers first (immediate finished state)
+    for (const timer of allTimers) {
+      if (timer.timer_id && timer.status === 'ringing') {
+        return {
+          isActive: false,
+          isPaused: false,
+          duration: timer.duration || 0,
+          remaining: 0,
+          finishesAt: null,
+          progress: 100,
+          finished: true,
+          isGoogleTimer: true,
+          userDefinedLabel: timer.label || 'Timer',
+        };
+      }
+    }
+
+    // 2. Check if we have a finished timer to display
     if (entityCache.finishedTimerId && allTimersMap.has(entityCache.finishedTimerId)) {
       const finishedTimer = allTimersMap.get(entityCache.finishedTimerId);
       if (finishedTimer.fire_time <= now) {
@@ -144,7 +186,7 @@ export class GoogleTimerService {
       }
     }
 
-    // 2. Find active timer with earliest fire time
+    // 3. Find active timer with earliest fire time
     let earliestFireTime = Number.POSITIVE_INFINITY;
     for (const [timerId, timer] of activeTimers.entries()) {
       if (timer.fire_time && timer.fire_time < earliestFireTime) {
@@ -154,7 +196,7 @@ export class GoogleTimerService {
       }
     }
 
-    // 3. If no active timers, check for paused timers and other non-active states
+    // 4. If no active timers, check for paused timers and other non-active states
     if (!primaryTimer) {
       for (const timer of allTimers) {
         if (timer.timer_id) {
@@ -163,6 +205,7 @@ export class GoogleTimerService {
           if (status === 'paused' || timer.status === 'PAUSED') {
             primaryTimer = timer;
             primaryTimerId = String(timer.timer_id);
+            console.log(`GoogleTimer: Found paused timer ${primaryTimerId} with status "${timer.status}"`);
             break;
           }
           // Fallback: if timer has remaining time but isn't active, treat as paused
@@ -170,6 +213,7 @@ export class GoogleTimerService {
             if (timer.duration > 0 || timer.remaining_time > 0 || timer.remainingTime > 0) {
               primaryTimer = timer;
               primaryTimerId = String(timer.timer_id);
+              console.log(`GoogleTimer: Found non-active timer ${primaryTimerId} with status "${timer.status}", treating as paused`);
               // Don't break here - keep looking for an explicitly paused timer
             }
           }
@@ -379,6 +423,8 @@ export class GoogleTimerService {
           
           // Include if it has the timers attribute (Google Home integration marker)
           if ('timers' in attributes) {
+            const timers = attributes.timers || [];
+            console.log(`GoogleTimer Discovery: Found entity ${entityId} with ${timers.length} timers:`, timers.map((t: any) => ({ id: t.timer_id, status: t.status, label: t.label })));
             googleTimers.push(entityId);
             continue;
           }
@@ -387,6 +433,7 @@ export class GoogleTimerService {
           const timers = attributes.timers || [];
           if (Array.isArray(timers)) {
             // Include entities with timers array (even if empty)
+            console.log(`GoogleTimer Discovery: Found entity ${entityId} with timers array (${timers.length} timers)`);
             googleTimers.push(entityId);
             continue;
           }
@@ -395,6 +442,7 @@ export class GoogleTimerService {
           try {
             const timerData = getTimerData(entityId, hass);
             // Include if getTimerData doesn't throw and returns something (even null for "no timers")
+            console.log(`GoogleTimer Discovery: Entity ${entityId} returned timerData via getTimerData`);
             googleTimers.push(entityId);
           } catch {
             // Skip entities that can't be parsed as Google timer entities
@@ -403,7 +451,21 @@ export class GoogleTimerService {
       }
     }
     
+    console.log(`GoogleTimer Discovery: Total discovered entities: ${googleTimers.length}`, googleTimers);
     return googleTimers;
+  }
+
+  /**
+   * Manually clear finished timer cache for an entity (for user dismissal)
+   * @param entityId - Google Home timer entity ID
+   */
+  static clearFinishedTimer(entityId: string): void {
+    const entityCache = this.googleIdCache.get(entityId);
+    if (entityCache && entityCache.finishedTimerId) {
+      delete entityCache.finishedTimerId;
+      delete entityCache.lastDuration;
+      delete entityCache.lastLabel;
+    }
   }
 
   /**

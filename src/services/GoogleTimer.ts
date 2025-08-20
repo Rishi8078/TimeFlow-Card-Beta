@@ -349,23 +349,33 @@ export class GoogleTimerService {
     for (const entityId in hass.states) {
       if (isGoogleTimer(entityId)) {
         const entity = hass.states[entityId];
+        console.log(`🔍 Discovery: Checking entity ${entityId} with state "${entity.state}"`);
         
         if (entity.state === 'unavailable' || entity.state === 'unknown') {
+          console.log(`❌ Discovery: Skipping ${entityId} - unavailable/unknown`);
           continue; // Skip unavailable entities
         }
 
         const attributes = entity.attributes || {};
         const timers = attributes.timers || [];
+        console.log(`🔍 Discovery: Entity ${entityId} has ${timers.length} timers`);
 
         if (Array.isArray(timers) && timers.length > 0) {
           const hasDisplayableTimer = timers.some(timer => {
             const status = String(timer.status || '').toLowerCase().trim();
+            console.log(`🔍 Discovery: Timer ${timer.timer_id} status: "${timer.status}" (normalized: "${status}")`);
             return status === 'set' || status === 'ringing' || status === 'paused';
           });
           
+          console.log(`🔍 Discovery: Entity ${entityId} hasDisplayableTimer: ${hasDisplayableTimer}`);
           if (hasDisplayableTimer) {
             googleTimers.push(entityId);
+            console.log(`✅ Discovery: Added ${entityId} to results`);
+          } else {
+            console.log(`❌ Discovery: Skipped ${entityId} - no displayable timers`);
           }
+        } else {
+          console.log(`❌ Discovery: Skipped ${entityId} - no timers array`);
         }
       }
     }

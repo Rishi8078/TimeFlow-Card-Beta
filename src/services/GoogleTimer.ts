@@ -207,12 +207,17 @@ export class GoogleTimerService {
       for (const timer of allTimers) {
         if (timer.timer_id) {
           const status = String(timer.status || '').toLowerCase().trim();
+          console.log(`🔍 GoogleTimer: Checking timer ${timer.timer_id} with status "${timer.status}" (normalized: "${status}")`);
           if (status === 'paused') {
+            console.log(`✅ GoogleTimer: Found paused timer ${timer.timer_id}`);
             primaryTimer = timer;
             primaryTimerId = String(timer.timer_id);
             break;
           }
         }
+      }
+      if (!primaryTimer) {
+        console.log(`❌ GoogleTimer: No paused timers found among ${allTimers.length} timers`);
       }
     }
 

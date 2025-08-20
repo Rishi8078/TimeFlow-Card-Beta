@@ -202,166 +202,94 @@ export class GoogleTimerService {
       }
     }
 
-    // 4. If no active timers, check for paused timers and other non-active states
+    // 4. If no active timers, check for paused timers
     if (!primaryTimer) {
       for (const timer of allTimers) {
         if (timer.timer_id) {
-          // Check for paused status (might be 'paused', 'PAUSED', or other variants)
-          const status = timer.status?.toLowerCase();
-          if (status === 'paused' || timer.status === 'PAUSED') {
+          const status = String(timer.status || '').toLowerCase().trim();
+          if (status === 'paused') {
             primaryTimer = timer;
             primaryTimerId = String(timer.timer_id);
             break;
-          }
-          // Fallback: if timer has remaining time but isn't active, treat as paused
-          if (!primaryTimer && timer.status !== 'set' && timer.status !== 'ringing' && timer.status !== 'none') {
-            if (timer.duration > 0 || timer.remaining_time > 0 || timer.remainingTime > 0) {
-              primaryTimer = timer;
-              primaryTimerId = String(timer.timer_id);
-              // Don't break here - keep looking for an explicitly paused timer
-            }
           }
         }
       }
     }
 
     if (!primaryTimer) {
-      // If we have timers but none were selected, this might indicate an unknown status
-      // Return information about the first timer to help with debugging
+      // If we have timers but none are active or paused, use the first one as a fallback
+      // This helps in cases where the state is not one we explicitly handle
       if (allTimers.length > 0) {
-        console.warn('GoogleTimer: Found timers but none selected as primary. First timer:', allTimers[0]);
-        // Try to use the first timer as a fallback
         primaryTimer = allTimers[0];
         primaryTimerId = String(allTimers[0].timer_id || 'unknown');
       } else {
-        return null;
+        return null; // No timers at all
       }
     }
 
-    // --- Calculate timer properties using real-time logic like Alexa ---
-    const isActive = primaryTimer.status === 'set' || primaryTimer.status === 'ringing';
-    const isPaused = primaryTimer.status === 'paused' || primaryTimer.status === 'PAUSED' || 
-                     (primaryTimer.status !== 'set' && primaryTimer.status !== 'ringing' && 
-                      primaryTimer.status !== 'none' && (primaryTimer.duration > 0 || primaryTimer.remaining_time > 0 || primaryTimer.remainingTime > 0));
-    const isRinging = primaryTimer.status === 'ringing';
+    // --- Calculate timer properties ---
+    const statusStr = String(primaryTimer.status || '').toLowerCase().trim();
+    const isActive = statusStr === 'set' || statusStr === 'ringing';
+    const isPaused = statusStr === 'paused';
+    const isRinging = statusStr === 'ringing';
 
-    // Duration is in seconds according to the documentation
     const duration = typeof primaryTimer.duration === 'number' 
       ? primaryTimer.duration 
       : parseDuration(primaryTimer.duration || '0');
     
-    // Real-time calculation logic (similar to Alexa timer)
     let remaining = 0;
     let finishesAt: Date | null = null;
     let isFinished = false;
 
-    // Initialize paused snapshots cache if needed
     if (!entityCache.pausedSnapshots) {
       entityCache.pausedSnapshots = new Map();
     }
-
-    // Track previous status to detect state transitions
-    const cacheKey = `${entityId}_${primaryTimerId}`;
     const previousSnapshot = entityCache.pausedSnapshots.get(primaryTimerId!);
     
     if (isActive) {
-      // For active timers, prefer fire_time for live ticking (converted from seconds to ms)
       const fireTimeMs = primaryTimer.fire_time ? primaryTimer.fire_time * 1000 : 0;
       
-      if (fireTimeMs && fireTimeMs > now * 1000) {
-        remaining = Math.max(0, Math.floor((fireTimeMs - now * 1000) / 1000));
+      if (fireTimeMs && fireTimeMs > Date.now()) {
+        remaining = Math.max(0, Math.floor((fireTimeMs - Date.now()) / 1000));
         finishesAt = new Date(fireTimeMs);
         
-        // Store active state in case timer gets paused later
         entityCache.pausedSnapshots.set(primaryTimerId!, {
           remaining,
           pausedAt: now,
           wasActive: true
         });
       } else {
-        // Fallback: if fire_time has passed or is invalid, timer is finished
-        remaining = 0;
-        finishesAt = null;
-        isFinished = true;
-      }
-
-      // If we've passed fire_time or remaining is zero, mark as finished
-      if ((fireTimeMs && fireTimeMs <= now * 1000) || remaining <= 0) {
         remaining = 0;
         finishesAt = null;
         isFinished = true;
       }
     } else if (isPaused) {
-      // For paused timers, Google Home sets fire_time to null
-      // We need to use the last known remaining time before pause
-      
-      if (previousSnapshot && previousSnapshot.wasActive) {
-        // Use the cached remaining time from when timer was last active
-        remaining = previousSnapshot.remaining;
-        
-        // Update cache to mark as paused (no longer active)
-        entityCache.pausedSnapshots.set(primaryTimerId!, {
-          remaining,
-          pausedAt: now,
-          wasActive: false
-        });
-      } else if (previousSnapshot && !previousSnapshot.wasActive) {
-        // Timer was already paused, keep the same remaining time
-        remaining = previousSnapshot.remaining;
-      } else {
-        // First time seeing this timer in paused state - try to determine remaining time
-        // Google Home duration attribute is the original duration, not remaining
-        // We need to make a reasonable guess based on available information
-        
-        // Check if timer was recently active in our cache
-        const recentActiveTime = 30; // seconds
-        if (previousSnapshot && (now - previousSnapshot.pausedAt) < recentActiveTime) {
+      // For paused timers, determine remaining time from cache or duration
+      if (previousSnapshot) {
           remaining = previousSnapshot.remaining;
-        } else {
-          // No recent data - this might be a fresh restart or first time seeing timer
-          // Use the full duration as a conservative estimate
+      } else {
+          // No cached data, use duration as a fallback. This can happen if HA restarts.
           remaining = duration;
-          console.warn(`GoogleTimer: No cached data for paused timer ${primaryTimerId}, using full duration`);
-        }
-        
-        // Store this paused state
-        entityCache.pausedSnapshots.set(primaryTimerId!, {
-          remaining,
-          pausedAt: now,
-          wasActive: false
-        });
       }
       
-      // No finishesAt for paused timers
+      // Update cache to reflect current paused state
+      entityCache.pausedSnapshots.set(primaryTimerId!, {
+        remaining,
+        pausedAt: now,
+        wasActive: false
+      });
       finishesAt = null;
     } else {
-      // Timer is off/finished
+      // Timer is in another state (e.g., idle, or just finished)
       remaining = 0;
       finishesAt = null;
       isFinished = true;
     }
 
-    // Parse local_time_iso as additional finishesAt source for active timers
-    if (isActive && !finishesAt && primaryTimer.local_time_iso) {
-      try {
-        const localFinish = new Date(primaryTimer.local_time_iso);
-        if (!isNaN(localFinish.getTime())) {
-          finishesAt = localFinish;
-          // Recalculate remaining based on local_time_iso if more accurate
-          const localRemaining = Math.max(0, Math.floor((localFinish.getTime() - now * 1000) / 1000));
-          if (Math.abs(localRemaining - remaining) < 5) { // Within 5 seconds tolerance
-            remaining = localRemaining;
-          }
-        }
-      } catch {
-        // Keep existing finishesAt calculation
-      }
-    }
-
     // Calculate progress
     let progress = 0;
     if (duration > 0) {
-      if (isRinging || isFinished || (remaining === 0 && isActive)) {
+      if (isRinging || isFinished || (remaining === 0 && !isPaused)) {
         progress = 100;
       } else {
         const elapsed = Math.max(0, duration - remaining);
@@ -369,18 +297,18 @@ export class GoogleTimerService {
       }
     }
     
-    // Final finished state determination
     if (!isFinished) {
-      isFinished = isRinging || (remaining === 0 && primaryTimer.status !== 'paused');
+      isFinished = isRinging || (remaining === 0 && !isPaused);
     }
 
-    // Cache cleanup: remove paused snapshots when timer resumes or finishes
-    if (entityCache.pausedSnapshots && primaryTimerId) {
-      if (isFinished) {
-        // Timer finished, clear the paused snapshot
-        entityCache.pausedSnapshots.delete(primaryTimerId);
+    if (entityCache.pausedSnapshots && primaryTimerId && (isFinished || isActive)) {
+      if (isActive && previousSnapshot?.wasActive === false) {
+          // Timer was paused and is now active, clear snapshot
+          entityCache.pausedSnapshots.delete(primaryTimerId);
+      } else if (isFinished) {
+          // Timer finished, clear snapshot
+          entityCache.pausedSnapshots.delete(primaryTimerId);
       }
-      // Keep paused snapshots for active timers to track state transitions
     }
 
     return {
@@ -393,18 +321,16 @@ export class GoogleTimerService {
       finished: isFinished,
       isGoogleTimer: true,
       userDefinedLabel: primaryTimer.label || undefined,
-      // Additional Google Home specific data
       googleTimerId: primaryTimerId || undefined,
-      googleTimerStatus: primaryTimer.status, // 'none', 'set', 'ringing', 'paused'
+      googleTimerStatus: primaryTimer.status,
     };
   }
 
   /**
-   * AUTO-DISCOVERY: Attempts to find Google Home timer entities with displayable timers
+   * AUTO-DISCOVERY: Finds Google Home entities with timers in a displayable state.
    * @param hass - Home Assistant object
    * @param isGoogleTimer - Google timer detection function
-   * @param getTimerData - Timer data extraction function
-   * @returns string[] - Array of Google timer entity IDs that have timers in displayable states (set, ringing, paused)
+   * @returns string[] - Array of entity IDs with active, paused, or ringing timers
    */
   static discoverGoogleTimers(
     hass: HomeAssistant,
@@ -419,79 +345,26 @@ export class GoogleTimerService {
       if (isGoogleTimer(entityId)) {
         const entity = hass.states[entityId];
         
-        // Include all Google Home timer entities that exist and are not unavailable
-        // This allows showing "No timers" state instead of showing nothing
-        if (entity.state !== 'unavailable' && entity.state !== 'unknown') {
-          // Check if entity has timers attributes structure (even if empty)
-          const attributes = entity.attributes || {};
+        if (entity.state === 'unavailable' || entity.state === 'unknown') {
+          continue; // Skip unavailable entities
+        }
+
+        const attributes = entity.attributes || {};
+        const timers = attributes.timers || [];
+
+        if (Array.isArray(timers) && timers.length > 0) {
+          const hasDisplayableTimer = timers.some(timer => {
+            const status = String(timer.status || '').toLowerCase().trim();
+            return status === 'set' || status === 'ringing' || status === 'paused';
+          });
           
-          // Include if it has the timers attribute (Google Home integration marker)
-          if ('timers' in attributes) {
-            const timers = attributes.timers || [];
-            // Only include entities that have timers in displayable states (set, ringing, paused)
-            if (Array.isArray(timers) && timers.length > 0) {
-              console.log(`🔍 GoogleTimer Discovery: Checking entity ${entityId} with ${timers.length} timers:`, 
-                timers.map((t: any) => ({ id: t.timer_id, status: t.status, label: t.label })));
-              
-              const hasDisplayableTimer = timers.some((timer: any) => {
-                const status = timer.status;
-                const isDisplayable = status === 'set' || status === 'ringing' || status === 'paused';
-                console.log(`🔍 Timer ${timer.timer_id}: status="${status}", displayable=${isDisplayable}`);
-                return isDisplayable;
-              });
-              
-              console.log(`🔍 Entity ${entityId}: hasDisplayableTimer=${hasDisplayableTimer}`);
-              if (hasDisplayableTimer) {
-                googleTimers.push(entityId);
-                console.log(`✅ Added ${entityId} to discovery results`);
-              } else {
-                console.log(`❌ Skipped ${entityId} - no displayable timers`);
-              }
-            } else {
-              console.log(`🔍 Entity ${entityId}: No timers or empty array`);
-            }
-            continue;
-          }
-          
-          // Fallback: check entity structure to see if it's a valid Google timer entity
-          const timers = attributes.timers || [];
-          if (Array.isArray(timers) && timers.length > 0) {
-            console.log(`🔍 GoogleTimer Discovery (fallback): Checking entity ${entityId} with ${timers.length} timers`);
-            
-            // Only include entities with timers in displayable states
-            const hasDisplayableTimer = timers.some((timer: any) => {
-              const status = timer.status;
-              const isDisplayable = status === 'set' || status === 'ringing' || status === 'paused';
-              console.log(`🔍 Fallback Timer ${timer.timer_id}: status="${status}", displayable=${isDisplayable}`);
-              return isDisplayable;
-            });
-            
-            console.log(`🔍 Fallback Entity ${entityId}: hasDisplayableTimer=${hasDisplayableTimer}`);
-            if (hasDisplayableTimer) {
-              googleTimers.push(entityId);
-              console.log(`✅ Fallback Added ${entityId} to discovery results`);
-            } else {
-              console.log(`❌ Fallback Skipped ${entityId} - no displayable timers`);
-            }
-            continue;
-          }
-          
-          // Last resort: try getTimerData to confirm it's a working Google timer entity with actual timers
-          try {
-            const timerData = getTimerData(entityId, hass);
-            // Only include if getTimerData returns a timer with actual data (not just "no timers" state)
-            if (timerData && (timerData.isActive || timerData.isPaused || timerData.finished || 
-                (timerData.duration > 0 || timerData.remaining > 0))) {
-              googleTimers.push(entityId);
-            }
-          } catch {
-            // Skip entities that can't be parsed as Google timer entities
+          if (hasDisplayableTimer) {
+            googleTimers.push(entityId);
           }
         }
       }
     }
     
-    console.log(`🔍 GoogleTimer Discovery: Final results - found ${googleTimers.length} entities:`, googleTimers);
     return googleTimers;
   }
 
@@ -505,22 +378,6 @@ export class GoogleTimerService {
       delete entityCache.finishedTimerId;
       delete entityCache.lastDuration;
       delete entityCache.lastLabel;
-    }
-  }
-
-  /**
-   * Checks if Google Home entity has any timers
-   * @param entityId - Entity ID
-   * @param entity - Entity state object
-   * @returns boolean - Whether entity has timers
-   */
-  static hasAnyTimers(entityId: string, entity: any): boolean {
-    try {
-      const attributes = entity.attributes;
-      const timers = attributes?.timers || [];
-      return Array.isArray(timers) && timers.length > 0;
-    } catch {
-      return false;
     }
   }
 }

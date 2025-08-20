@@ -400,11 +400,11 @@ export class GoogleTimerService {
   }
 
   /**
-   * AUTO-DISCOVERY: Attempts to find Google Home timer entities with actual timers
+   * AUTO-DISCOVERY: Attempts to find Google Home timer entities with displayable timers
    * @param hass - Home Assistant object
    * @param isGoogleTimer - Google timer detection function
    * @param getTimerData - Timer data extraction function
-   * @returns string[] - Array of Google timer entity IDs that have actual timers (active, paused, or finished)
+   * @returns string[] - Array of Google timer entity IDs that have timers in displayable states (set, ringing, paused)
    */
   static discoverGoogleTimers(
     hass: HomeAssistant,
@@ -428,9 +428,15 @@ export class GoogleTimerService {
           // Include if it has the timers attribute (Google Home integration marker)
           if ('timers' in attributes) {
             const timers = attributes.timers || [];
-            // Only include entities that actually have timers (not empty arrays)
+            // Only include entities that have timers in displayable states (set, ringing, paused)
             if (Array.isArray(timers) && timers.length > 0) {
-              googleTimers.push(entityId);
+              const hasDisplayableTimer = timers.some((timer: any) => {
+                const status = timer.status;
+                return status === 'set' || status === 'ringing' || status === 'paused';
+              });
+              if (hasDisplayableTimer) {
+                googleTimers.push(entityId);
+              }
             }
             continue;
           }
@@ -438,8 +444,14 @@ export class GoogleTimerService {
           // Fallback: check entity structure to see if it's a valid Google timer entity
           const timers = attributes.timers || [];
           if (Array.isArray(timers) && timers.length > 0) {
-            // Only include entities with actual timers
-            googleTimers.push(entityId);
+            // Only include entities with timers in displayable states
+            const hasDisplayableTimer = timers.some((timer: any) => {
+              const status = timer.status;
+              return status === 'set' || status === 'ringing' || status === 'paused';
+            });
+            if (hasDisplayableTimer) {
+              googleTimers.push(entityId);
+            }
             continue;
           }
           

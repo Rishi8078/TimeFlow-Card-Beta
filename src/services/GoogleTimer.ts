@@ -351,11 +351,8 @@ export class GoogleTimerService {
         const entity = hass.states[entityId];
         console.log(`🔍 Discovery: Checking entity ${entityId} with state "${entity.state}"`);
         
-        if (entity.state === 'unavailable' || entity.state === 'unknown') {
-          console.log(`❌ Discovery: Skipping ${entityId} - unavailable/unknown`);
-          continue; // Skip unavailable entities
-        }
-
+        // Don't skip based on entity state - Google Home entities can be "unavailable" 
+        // but still have valid timer data in attributes
         const attributes = entity.attributes || {};
         const timers = attributes.timers || [];
         console.log(`🔍 Discovery: Entity ${entityId} has ${timers.length} timers`);

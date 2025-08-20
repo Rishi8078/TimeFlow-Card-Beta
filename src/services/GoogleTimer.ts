@@ -13,7 +13,7 @@ export class GoogleTimerService {
     finishedTimerId?: string;
     lastDuration?: number;
     lastLabel?: string;
-    pausedSnapshots?: Map<string, { remaining: number; pausedAt: number }>;
+    pausedSnapshots?: Map<string, { remaining: number; pausedAt: number; wasActive?: boolean }>;
   }>();
 
   /**
@@ -207,8 +207,14 @@ export class GoogleTimerService {
     let finishesAt: Date | null = null;
     let isFinished = false;
 
-    // Store paused snapshots in cache for accurate resumption
+    // Initialize paused snapshots cache if needed
+    if (!entityCache.pausedSnapshots) {
+      entityCache.pausedSnapshots = new Map();
+    }
+
+    // Track previous status to detect state transitions
     const cacheKey = `${entityId}_${primaryTimerId}`;
+    const previousSnapshot = entityCache.pausedSnapshots.get(primaryTimerId!);
     
     if (isActive) {
       // For active timers, prefer fire_time for live ticking (converted from seconds to ms)
@@ -217,6 +223,13 @@ export class GoogleTimerService {
       if (fireTimeMs && fireTimeMs > now * 1000) {
         remaining = Math.max(0, Math.floor((fireTimeMs - now * 1000) / 1000));
         finishesAt = new Date(fireTimeMs);
+        
+        // Store active state in case timer gets paused later
+        entityCache.pausedSnapshots.set(primaryTimerId!, {
+          remaining,
+          pausedAt: now,
+          wasActive: true
+        });
       } else {
         // Fallback: if fire_time has passed or is invalid, timer is finished
         remaining = 0;
@@ -231,57 +244,44 @@ export class GoogleTimerService {
         isFinished = true;
       }
     } else if (isPaused) {
-      // For paused timers, we need to store/retrieve the remaining snapshot
-      // Initialize paused snapshots cache if needed
-      if (!entityCache.pausedSnapshots) {
-        entityCache.pausedSnapshots = new Map();
-      }
-
-      const pausedSnapshot = entityCache.pausedSnapshots.get(primaryTimerId!);
+      // For paused timers, Google Home sets fire_time to null
+      // We need to use the last known remaining time before pause
       
-      // Try to get remaining time from timer attributes (if Google Home provides it)
-      if (typeof primaryTimer.remaining_time === 'number') {
-        remaining = Math.max(0, primaryTimer.remaining_time);
-        // Store this snapshot for consistency
-        entityCache.pausedSnapshots.set(primaryTimerId!, {
-          remaining,
-          pausedAt: now
-        });
-      } else if (typeof primaryTimer.remainingTime === 'number') {
-        remaining = Math.max(0, Math.floor(primaryTimer.remainingTime / 1000)); // Convert ms to seconds
-        // Store this snapshot for consistency
-        entityCache.pausedSnapshots.set(primaryTimerId!, {
-          remaining,
-          pausedAt: now
-        });
-      } else if (pausedSnapshot) {
-        // Use cached snapshot from when timer was paused
-        remaining = pausedSnapshot.remaining;
-      } else {
-        // Fallback: calculate from duration and elapsed time if available
-        const originalDuration = duration;
-        const fireTimeMs = primaryTimer.fire_time ? primaryTimer.fire_time * 1000 : 0;
+      if (previousSnapshot && previousSnapshot.wasActive) {
+        // Use the cached remaining time from when timer was last active
+        remaining = previousSnapshot.remaining;
         
-        if (fireTimeMs && originalDuration > 0) {
-          // Calculate what the remaining time should have been when paused
-          const scheduledEndTime = fireTimeMs;
-          const pauseTime = now * 1000; // Current time as pause reference
-          const calculatedRemaining = Math.max(0, Math.floor((scheduledEndTime - pauseTime) / 1000));
-          remaining = Math.min(originalDuration, calculatedRemaining);
-          
-          // Store this calculated snapshot
-          entityCache.pausedSnapshots.set(primaryTimerId!, {
-            remaining,
-            pausedAt: now
-          });
+        // Update cache to mark as paused (no longer active)
+        entityCache.pausedSnapshots.set(primaryTimerId!, {
+          remaining,
+          pausedAt: now,
+          wasActive: false
+        });
+      } else if (previousSnapshot && !previousSnapshot.wasActive) {
+        // Timer was already paused, keep the same remaining time
+        remaining = previousSnapshot.remaining;
+      } else {
+        // First time seeing this timer in paused state - try to determine remaining time
+        // Google Home duration attribute is the original duration, not remaining
+        // We need to make a reasonable guess based on available information
+        
+        // Check if timer was recently active in our cache
+        const recentActiveTime = 30; // seconds
+        if (previousSnapshot && (now - previousSnapshot.pausedAt) < recentActiveTime) {
+          remaining = previousSnapshot.remaining;
         } else {
-          // Last resort: assume full duration remaining (not ideal)
+          // No recent data - this might be a fresh restart or first time seeing timer
+          // Use the full duration as a conservative estimate
           remaining = duration;
-          entityCache.pausedSnapshots.set(primaryTimerId!, {
-            remaining,
-            pausedAt: now
-          });
+          console.warn(`GoogleTimer: No cached data for paused timer ${primaryTimerId}, using full duration`);
         }
+        
+        // Store this paused state
+        entityCache.pausedSnapshots.set(primaryTimerId!, {
+          remaining,
+          pausedAt: now,
+          wasActive: false
+        });
       }
       
       // No finishesAt for paused timers
@@ -328,10 +328,11 @@ export class GoogleTimerService {
 
     // Cache cleanup: remove paused snapshots when timer resumes or finishes
     if (entityCache.pausedSnapshots && primaryTimerId) {
-      if (isActive || isFinished) {
-        // Timer resumed or finished, clear the paused snapshot
+      if (isFinished) {
+        // Timer finished, clear the paused snapshot
         entityCache.pausedSnapshots.delete(primaryTimerId);
       }
+      // Keep paused snapshots for active timers to track state transitions
     }
 
     return {

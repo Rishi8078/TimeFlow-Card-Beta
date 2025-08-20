@@ -59,16 +59,20 @@ export class CountdownService {
       }
       
       if (smartTimers.length > 0) {
+        console.log(`🔍 CountdownService: Found ${smartTimers.length} smart timers: ${smartTimers}`);
         let chosen: string | undefined = smartTimers.find(entityId => {
           const t = TimerEntityService.getTimerData(entityId, hass);
+          console.log(`🔍 CountdownService: Checking ${entityId} - isActive: ${t?.isActive}, isPaused: ${t?.isPaused}, status: ${t?.googleTimerStatus || t?.timerStatus}`);
           return t && t.isActive;
         });
         if (!chosen) {
           chosen = smartTimers.find(entityId => {
             const t = TimerEntityService.getTimerData(entityId, hass);
+            console.log(`🔍 CountdownService: Checking paused ${entityId} - isActive: ${t?.isActive}, isPaused: ${t?.isPaused}, status: ${t?.googleTimerStatus || t?.timerStatus}`);
             return t && t.isPaused;
           });
         }
+        console.log(`🔍 CountdownService: Chosen timer: ${chosen || 'none'}`);
         if (chosen) {
           const timerData = TimerEntityService.getTimerData(chosen, hass);
           if (timerData) {

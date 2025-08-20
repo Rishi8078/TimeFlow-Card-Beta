@@ -205,7 +205,6 @@ export class GoogleTimerService {
           if (status === 'paused' || timer.status === 'PAUSED') {
             primaryTimer = timer;
             primaryTimerId = String(timer.timer_id);
-            console.log(`GoogleTimer: Found paused timer ${primaryTimerId} with status "${timer.status}"`);
             break;
           }
           // Fallback: if timer has remaining time but isn't active, treat as paused
@@ -213,7 +212,6 @@ export class GoogleTimerService {
             if (timer.duration > 0 || timer.remaining_time > 0 || timer.remainingTime > 0) {
               primaryTimer = timer;
               primaryTimerId = String(timer.timer_id);
-              console.log(`GoogleTimer: Found non-active timer ${primaryTimerId} with status "${timer.status}", treating as paused`);
               // Don't break here - keep looking for an explicitly paused timer
             }
           }
@@ -423,8 +421,6 @@ export class GoogleTimerService {
           
           // Include if it has the timers attribute (Google Home integration marker)
           if ('timers' in attributes) {
-            const timers = attributes.timers || [];
-            console.log(`GoogleTimer Discovery: Found entity ${entityId} with ${timers.length} timers:`, timers.map((t: any) => ({ id: t.timer_id, status: t.status, label: t.label })));
             googleTimers.push(entityId);
             continue;
           }
@@ -433,7 +429,6 @@ export class GoogleTimerService {
           const timers = attributes.timers || [];
           if (Array.isArray(timers)) {
             // Include entities with timers array (even if empty)
-            console.log(`GoogleTimer Discovery: Found entity ${entityId} with timers array (${timers.length} timers)`);
             googleTimers.push(entityId);
             continue;
           }
@@ -442,7 +437,6 @@ export class GoogleTimerService {
           try {
             const timerData = getTimerData(entityId, hass);
             // Include if getTimerData doesn't throw and returns something (even null for "no timers")
-            console.log(`GoogleTimer Discovery: Entity ${entityId} returned timerData via getTimerData`);
             googleTimers.push(entityId);
           } catch {
             // Skip entities that can't be parsed as Google timer entities
@@ -451,7 +445,6 @@ export class GoogleTimerService {
       }
     }
     
-    console.log(`GoogleTimer Discovery: Total discovered entities: ${googleTimers.length}`, googleTimers);
     return googleTimers;
   }
 

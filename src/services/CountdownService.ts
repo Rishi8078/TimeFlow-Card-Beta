@@ -392,6 +392,26 @@ export class CountdownService {
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
       if (timerData) {
+        // Debug logging for Google timers
+        if (timerData.isGoogleTimer) {
+          console.log('CountdownService.getSubtitle - Google timer data:', {
+            finished: timerData.finished,
+            isActive: timerData.isActive,
+            isPaused: timerData.isPaused,
+            remaining: timerData.remaining,
+            userDefinedLabel: timerData.userDefinedLabel,
+            googleTimerStatus: timerData.googleTimerStatus,
+            progress: timerData.progress
+          });
+        }
+        
+        // For smart assistant timers, always use their specific subtitle logic
+        if (timerData.isAlexaTimer || timerData.isGoogleTimer) {
+          const subtitle = TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
+          console.log('CountdownService.getSubtitle - Returning subtitle:', subtitle);
+          return subtitle;
+        }
+        // For standard HA timers, use the timer subtitle if available
         return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
       }
       return 'Timer not found';
@@ -445,16 +465,6 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      // Don't use default expired text for smart assistant timers configured as timer_entity
-      // They should have been handled in the timer entity section above
-      if (config.timer_entity && hass) {
-        const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
-        if (timerData && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
-          // Force smart timer completion message instead of default
-          return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false);
-        }
-      }
-      
       const { expired_text = 'Completed! 🎉' } = config;
       return expired_text;
     }

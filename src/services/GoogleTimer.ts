@@ -36,23 +36,14 @@ export class GoogleTimerService {
     const allTimers = attributes.timers || [];
 
     if (!Array.isArray(allTimers) || allTimers.length === 0) {
-      // Check if we have a cached finished timer to display
+      // If timers array is completely empty, clear any cached finished timer
+      // This handles the case when a ringing timer gets dismissed
       const entityCache = this.googleIdCache.get(entityId);
       if (entityCache?.finishedTimerId) {
-        // Return finished state for the cached timer
-        return {
-          isActive: false,
-          isPaused: false,
-          duration: entityCache.lastDuration || 0,
-          remaining: 0,
-          finishesAt: null,
-          progress: 100,
-          finished: true,
-          isGoogleTimer: true,
-          userDefinedLabel: entityCache.lastLabel || undefined,
-          googleTimerId: entityCache.finishedTimerId,
-          googleTimerStatus: 'ringing' as const,
-        };
+        // Clear the finished timer cache since no timers exist anymore
+        delete entityCache.finishedTimerId;
+        delete entityCache.lastDuration;
+        delete entityCache.lastLabel;
       }
       
       // Return "no timers" state instead of null for auto-discovery compatibility
@@ -122,31 +113,18 @@ export class GoogleTimerService {
       }
     }
 
-    // Clean up finished timer cache if no longer in active list
-    if (entityCache.finishedTimerId && !activeTimers.has(entityCache.finishedTimerId)) {
-      // Keep finished timer display for longer until manually dismissed or new timer starts
-      setTimeout(() => {
-        const currentCache = this.googleIdCache.get(entityId);
-        if (currentCache && currentCache.finishedTimerId === entityCache.finishedTimerId) {
-          // Only clear if no new active timers have started
-          let hasNewActiveTimers = false;
-          const currentEntity = hass.states[entityId];
-          if (currentEntity && currentEntity.attributes && currentEntity.attributes.timers) {
-            const currentTimers = currentEntity.attributes.timers || [];
-            hasNewActiveTimers = currentTimers.some((timer: any) => 
-              timer.status === 'set' || timer.status === 'ringing'
-            );
-          }
-          
-          // Only clear finished timer if new active timers exist
-          if (hasNewActiveTimers) {
-            delete currentCache.finishedTimerId;
-            delete currentCache.lastDuration;
-            delete currentCache.lastLabel;
-          }
-          // If no new timers, keep displaying finished state for user interaction
-        }
-      }, 30000); // 30 seconds instead of 5 seconds
+    // Clean up finished timer cache if the finished timer is no longer in the timers array
+    if (entityCache.finishedTimerId) {
+      const finishedTimerStillExists = allTimers.some((timer: any) => 
+        String(timer.timer_id) === entityCache.finishedTimerId
+      );
+      
+      if (!finishedTimerStillExists) {
+        // Timer was dismissed or removed, clear the cache immediately
+        delete entityCache.finishedTimerId;
+        delete entityCache.lastDuration;
+        delete entityCache.lastLabel;
+      }
     }
 
     // Find primary timer to display

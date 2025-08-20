@@ -380,55 +380,35 @@ export class TimerEntityService {
     }
 
     if (timerData.isGoogleTimer) {
-      console.log('🔍 TimerEntityService.getTimerSubtitle - Processing Google timer:', {
-        finished: timerData.finished,
-        isActive: timerData.isActive,
-        isPaused: timerData.isPaused,
-        remaining: timerData.remaining,
-        userDefinedLabel: timerData.userDefinedLabel,
-        googleTimerStatus: timerData.googleTimerStatus,
-        progress: timerData.progress
-      });
-      
       const isRinging = timerData.googleTimerStatus === 'ringing';
-      console.log('🔍 TimerEntityService.getTimerSubtitle - Ringing check:', isRinging);
       
       if (timerData.finished || isRinging) {
-        const result = timerData.userDefinedLabel 
+        return timerData.userDefinedLabel 
           ? `${timerData.userDefinedLabel} timer complete`
           : 'Timer complete';
-        console.log('🔍 TimerEntityService.getTimerSubtitle - Finished/Ringing result:', result);
-        return result;
       }
 
       if (timerData.isActive && timerData.remaining > 0) {
         const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
-        const result = timerData.userDefinedLabel
+        return timerData.userDefinedLabel
           ? `${remaining} remaining on ${timerData.userDefinedLabel} timer`
           : `${remaining} remaining on Google Home`;
-        console.log('🔍 TimerEntityService.getTimerSubtitle - Active result:', result);
-        return result;
       }
 
       if (timerData.isPaused && timerData.remaining > 0) {
         const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
-        const result = timerData.userDefinedLabel
+        return timerData.userDefinedLabel
           ? `${timerData.userDefinedLabel} timer paused - ${remaining} left`
           : `Google Home timer paused - ${remaining} left`;
-        console.log('🔍 TimerEntityService.getTimerSubtitle - Paused result:', result);
-        return result;
       }
 
       if (timerData.finished || isRinging || 
           (timerData.remaining === 0 && timerData.progress >= 100)) {
-        const result = timerData.userDefinedLabel
+        return timerData.userDefinedLabel
           ? `${timerData.userDefinedLabel} timer complete`
           : 'Timer complete';
-        console.log('🔍 TimerEntityService.getTimerSubtitle - Final finished check result:', result);
-        return result;
       }
 
-      console.log('🔍 TimerEntityService.getTimerSubtitle - No Google Home timers fallback');
       return 'No Google Home timers';
     }
 

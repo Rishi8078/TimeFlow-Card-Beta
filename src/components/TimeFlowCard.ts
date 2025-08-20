@@ -440,8 +440,8 @@ export class TimeFlowCardBeta extends LitElement {
     if (this._resolvedConfig.timer_entity && this.hass) {
       const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
       if (timerData) {
-        // If expired and it's an Alexa timer, show dynamic "timer complete" text (with label when available)
-        if (this._expired && timerData.isAlexaTimer) {
+        // If expired and it's an Alexa or Google timer, show dynamic "timer complete" text (with label when available)
+        if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
           subtitleText = TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);
         } else if (!this._expired) {
           subtitleText = subtitle || TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);

@@ -400,11 +400,11 @@ export class GoogleTimerService {
   }
 
   /**
-   * AUTO-DISCOVERY: Attempts to find Google Home timer entities
+   * AUTO-DISCOVERY: Attempts to find Google Home timer entities with actual timers
    * @param hass - Home Assistant object
    * @param isGoogleTimer - Google timer detection function
    * @param getTimerData - Timer data extraction function
-   * @returns string[] - Array of potential Google timer entity IDs
+   * @returns string[] - Array of Google timer entity IDs that have actual timers (active, paused, or finished)
    */
   static discoverGoogleTimers(
     hass: HomeAssistant,
@@ -427,23 +427,30 @@ export class GoogleTimerService {
           
           // Include if it has the timers attribute (Google Home integration marker)
           if ('timers' in attributes) {
-            googleTimers.push(entityId);
+            const timers = attributes.timers || [];
+            // Only include entities that actually have timers (not empty arrays)
+            if (Array.isArray(timers) && timers.length > 0) {
+              googleTimers.push(entityId);
+            }
             continue;
           }
           
           // Fallback: check entity structure to see if it's a valid Google timer entity
           const timers = attributes.timers || [];
-          if (Array.isArray(timers)) {
-            // Include entities with timers array (even if empty)
+          if (Array.isArray(timers) && timers.length > 0) {
+            // Only include entities with actual timers
             googleTimers.push(entityId);
             continue;
           }
           
-          // Last resort: try getTimerData to confirm it's a working Google timer entity
+          // Last resort: try getTimerData to confirm it's a working Google timer entity with actual timers
           try {
             const timerData = getTimerData(entityId, hass);
-            // Include if getTimerData doesn't throw and returns something (even null for "no timers")
-            googleTimers.push(entityId);
+            // Only include if getTimerData returns a timer with actual data (not just "no timers" state)
+            if (timerData && (timerData.isActive || timerData.isPaused || timerData.finished || 
+                (timerData.duration > 0 || timerData.remaining > 0))) {
+              googleTimers.push(entityId);
+            }
           } catch {
             // Skip entities that can't be parsed as Google timer entities
           }

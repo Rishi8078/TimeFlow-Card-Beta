@@ -93,9 +93,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: flex;
                 flex-direction: column;
                 gap: 16px;
-                padding: 16px 0 24px 0;
-                border-bottom: 1px solid var(--divider-color);
-                margin-bottom: 16px;
+                padding: 16px 0;
             }
         `;
     }

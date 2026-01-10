@@ -204,7 +204,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
                 .color="${f}"
                 .size="${_}"
                 .strokeWidth="${v}"
-                .showProgressText="${!0===m}"
+                .showProgressText=${!0===m}
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

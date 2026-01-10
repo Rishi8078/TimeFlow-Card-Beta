@@ -281,11 +281,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         const schema = [
             // ═══════════════════════════════════════════════════════════
-            // DISPLAY - Title first
-            // ═══════════════════════════════════════════════════════════
-            { name: 'title', selector: { text: {} } },
-            
-            // ═══════════════════════════════════════════════════════════
             // TIMER SOURCE - Most important, always visible at top
             // ═══════════════════════════════════════════════════════════
             { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
@@ -401,6 +396,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ];
 
         return html`
+            <!-- Title Field -->
+            <div style="margin-bottom: 16px;">
+                <ha-textfield
+                    label="Title"
+                    .value=${cfg.title || ''}
+                    @input=${(e: Event) => this._fireConfigChanged({ ...cfg, title: (e.target as HTMLInputElement).value })}
+                ></ha-textfield>
+            </div>
+            
             <!-- Date Fields with Template Toggle -->
             <div class="date-fields-section">
                 ${this._renderDateField(

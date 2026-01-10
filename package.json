@@ -1,6 +1,6 @@
 {
   "name": "timeflow-card-beta",
-  "version": "1.2.0",
+  "version": "1.3",
   "type": "module",
   "description": "TimeFlow Card Beta - Modern modular architecture",
   "main": "timeflow-card-beta.js",

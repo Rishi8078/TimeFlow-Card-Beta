@@ -68,30 +68,47 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const cfg = this._config || {};
 
         const schema = [
-            // Basic Info
-            { name: 'title', required: false, selector: { text: {} } },
-            { name: 'subtitle', required: false, selector: { text: {} } },
-            { name: 'expired_text', required: false, selector: { text: {} } },
-            
-            // Timer Source
+            // === TIMER SOURCE (Pick One) ===
             {
                 type: "expandable",
-                title: "Timer Source",
+                title: "Timer Source: Manual Entity",
+                description: "Select a timer or sensor entity",
                 schema: [
                     { name: 'timer_entity', required: false, selector: { entity: { domain: ['timer', 'sensor'] } } },
+                ]
+            },
+            
+            {
+                type: "expandable",
+                title: "Timer Source: Static Countdown",
+                description: "Use a fixed target date",
+                schema: [
                     { name: 'target_date', required: false, selector: { text: {} } },
                     { name: 'creation_date', required: false, selector: { text: {} } },
+                ]
+            },
+            
+            {
+                type: "expandable",
+                title: "Timer Source: Smart Assistants",
+                description: "Auto-discover timers from Alexa or Google Home",
+                schema: [
                     {
                         type: 'grid',
                         schema: [
-                            { name: 'auto_discover_alexa', label: 'Auto-discover Alexa Timers', required: false, selector: { boolean: {} } },
-                            { name: 'auto_discover_google', label: 'Auto-discover Google Timers', required: false, selector: { boolean: {} } },
+                            { name: 'auto_discover_alexa', label: 'Alexa Timers', required: false, selector: { boolean: {} } },
+                            { name: 'auto_discover_google', label: 'Google Home Timers', required: false, selector: { boolean: {} } },
                         ]
                     },
                 ]
             },
             
-            // Time Units (always visible)
+            // === TEXT & MESSAGES ===
+            { name: 'title', required: false, selector: { text: {} } },
+            { name: 'subtitle', required: false, selector: { text: {} } },
+            { name: 'expired_text', required: false, selector: { text: {} } },
+            
+            // === TIME UNITS (always visible) ===
             {
                 type: 'grid',
                 schema: [
@@ -102,7 +119,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ]
             },
             
-            // Appearance
+            // === APPEARANCE ===
             {
                 type: "expandable",
                 title: "Appearance",
@@ -114,7 +131,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ]
             },
             
-            // Layout
+            // === LAYOUT ===
             {
                 type: "expandable",
                 title: "Layout",
@@ -130,7 +147,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ]
             },
             
-            // Progress Circle
+            // === PROGRESS CIRCLE ===
             {
                 type: "expandable",
                 title: "Progress Circle",

@@ -93,9 +93,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: flex;
                 flex-direction: column;
                 gap: 16px;
-                padding: 16px 0;
-                border-top: 1px solid var(--divider-color);
-                margin-top: 16px;
+                padding: 16px 0 24px 0;
+                border-bottom: 1px solid var(--divider-color);
+                margin-bottom: 16px;
             }
         `;
     }
@@ -283,6 +283,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         const schema = [
             // ═══════════════════════════════════════════════════════════
+            // DISPLAY - Title first
+            // ═══════════════════════════════════════════════════════════
+            { name: 'title', selector: { text: {} } },
+            
+            // ═══════════════════════════════════════════════════════════
             // TIMER SOURCE - Most important, always visible at top
             // ═══════════════════════════════════════════════════════════
             { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
@@ -297,9 +302,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             },
             
             // ═══════════════════════════════════════════════════════════
-            // DISPLAY - Title, subtitle visible
+            // DISPLAY - Subtitle and expired text
             // ═══════════════════════════════════════════════════════════
-            { name: 'title', selector: { text: {} } },
             { name: 'subtitle', selector: { text: {} } },
             { name: 'expired_text', selector: { text: {} } },
             
@@ -399,15 +403,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ];
 
         return html`
-            <ha-form
-                .hass=${this.hass}
-                .data=${cfg}
-                .schema=${schema}
-                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                .computeLabel=${this._computeLabel}
-                .computeHelper=${this._computeHelper}
-            ></ha-form>
-            
             <!-- Date Fields with Template Toggle -->
             <div class="date-fields-section">
                 ${this._renderDateField(
@@ -426,6 +421,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     () => this._toggleCreationDateMode()
                 )}
             </div>
+            
+            <ha-form
+                .hass=${this.hass}
+                .data=${cfg}
+                .schema=${schema}
+                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                .computeLabel=${this._computeLabel}
+                .computeHelper=${this._computeHelper}
+            ></ha-form>
         `;
     }
 

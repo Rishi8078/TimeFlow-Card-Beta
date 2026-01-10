@@ -59,6 +59,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'creation_date': 'Start date for progress calculation (optional)',
             'auto_discover_alexa': 'Automatically find active Alexa timers',
             'auto_discover_google': 'Automatically find active Google Home timers',
+            'alexa_device_filter': 'Comma-separated list of Alexa device names or IDs to filter timers (e.g., "Kitchen, Living Room")',
             'prefer_labeled_timers': 'Prefer timers with labels over unnamed ones',
             
             // Display
@@ -93,6 +94,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'creation_date': 'Start Date (for progress)',
             'auto_discover_alexa': 'Auto-discover Alexa Timers',
             'auto_discover_google': 'Auto-discover Google Timers',
+            'alexa_device_filter': 'Alexa Device Filter',
             'prefer_labeled_timers': 'Prefer Labeled Timers',
             'show_alexa_device': 'Show Alexa Device Name',
             'show_days': 'Days',
@@ -221,6 +223,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 title: "Smart Assistant Options",
                 icon: "mdi:home-assistant",
                 schema: [
+                    { name: 'alexa_device_filter', selector: { text: {} } },
                     { name: 'prefer_labeled_timers', selector: { boolean: {} } },
                     { name: 'show_alexa_device', selector: { boolean: {} } },
                 ]

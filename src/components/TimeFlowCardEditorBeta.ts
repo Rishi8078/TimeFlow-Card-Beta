@@ -70,9 +70,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'progress_color': 'Progress circle color (hex, name, rgb, or template)',
             'background_color': 'Card background color',
             'text_color': 'Text color for title and countdown',
-            'primary_color': 'Primary accent color',
-            'secondary_color': 'Secondary accent color',
-            'alexa_color': 'Custom color for Alexa timer display',
             
             // Layout
             'width': 'Card width (e.g., "300px", "100%", "20em")',
@@ -82,9 +79,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             // Progress Circle
             'stroke_width': 'Thickness of the progress circle ring',
             'icon_size': 'Size of the progress circle',
-            
-            // Alexa
-            'alexa_icon': 'Custom icon for Alexa timers (e.g., mdi:amazon-alexa)',
         };
         return helpers[schema.name] || '';
     }
@@ -101,8 +95,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'auto_discover_google': 'Auto-discover Google Timers',
             'prefer_labeled_timers': 'Prefer Labeled Timers',
             'show_alexa_device': 'Show Alexa Device Name',
-            'alexa_color': 'Alexa Timer Color',
-            'alexa_icon': 'Alexa Timer Icon',
             'show_days': 'Days',
             'show_hours': 'Hours',
             'show_minutes': 'Minutes',
@@ -114,13 +106,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'progress_color': 'Progress Color',
             'background_color': 'Background Color',
             'text_color': 'Text Color',
-            'primary_color': 'Primary Color',
-            'secondary_color': 'Secondary Color',
             'stroke_width': 'Stroke Width',
             'icon_size': 'Circle Size',
             'aspect_ratio': 'Aspect Ratio',
-            'show_timer_info': 'Show Timer Debug Info',
-            'debug': 'Debug Mode',
         };
 
         if (labels[schema.name]) return labels[schema.name];
@@ -185,13 +173,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'progress_color', selector: { text: {} } },
                     { name: 'background_color', selector: { text: {} } },
                     { name: 'text_color', selector: { text: {} } },
-                    {
-                        type: 'grid',
-                        schema: [
-                            { name: 'primary_color', selector: { text: {} } },
-                            { name: 'secondary_color', selector: { text: {} } },
-                        ]
-                    },
                     { name: 'expired_animation', selector: { boolean: {} } },
                 ]
             },
@@ -244,8 +225,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 schema: [
                     { name: 'prefer_labeled_timers', selector: { boolean: {} } },
                     { name: 'show_alexa_device', selector: { boolean: {} } },
-                    { name: 'alexa_color', selector: { text: {} } },
-                    { name: 'alexa_icon', selector: { icon: {} } },
                 ]
             },
             
@@ -260,19 +239,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'tap_action', selector: { ui_action: {} } },
                     { name: 'hold_action', selector: { ui_action: {} } },
                     { name: 'double_tap_action', selector: { ui_action: {} } },
-                ]
-            },
-            
-            // ═══════════════════════════════════════════════════════════
-            // DEBUG - Expandable (advanced)
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Debug Options",
-                icon: "mdi:bug",
-                schema: [
-                    { name: 'debug', selector: { boolean: {} } },
-                    { name: 'show_timer_info', selector: { boolean: {} } },
                 ]
             },
         ];

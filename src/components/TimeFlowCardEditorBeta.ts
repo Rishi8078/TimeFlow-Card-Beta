@@ -33,18 +33,22 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     private _computeHelper(schema: any): string {
         const helpers: Record<string, string> = {
-            'creation_date': 'Examples: "2024-01-01T00:00:00", "{{ now() }}", "{{ states(\'input_datetime.start\') }}"',
-            'target_date': 'Examples: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
-            'progress_color': 'Examples: "#FF0000", "red", "rgb(255,0,0)", "{{ states(\'input_text.color\') }}"',
-            'background_color': 'Examples: "#00FF00", "blue", "rgba(0,255,0,0.5)", "{{ \'red\' if is_state(\'switch.alert\', \'on\') else \'green\' }}"',
-            'text_color': 'Examples: "#333333", "white", "rgb(0,0,0)", "{{ states(\'input_text.color\') }}"',
-            'title': 'Examples: "My Timer", "{{ states(\'sensor.event_name\') }}"',
-            'subtitle': 'Shows time remaining by default; only change if you want custom text. Examples: "Countdown", "{{ relative_time(states(\'input_datetime.start\')) }}"',
-            'expired_text': 'Examples: "Time\'s up!", "{{ states(\'input_text.message\') }}"',
-            'expired_animation': 'A subtle animation when timer expires',
-            'width': 'Card width in CSS units (e.g., "300px", "100%", "20em")',
-            'height': 'Card height in CSS units (e.g., "200px", "auto", "15em")',
-            'aspect_ratio': 'Width to height ratio (e.g., "16:9", "4:3", "1:1")'
+            'creation_date': 'Start date for progress calculation. Examples: "2024-01-01T00:00:00", "{{ now() }}"',
+            'target_date': 'End date for countdown. Examples: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
+            'timer_entity': 'Use a Home Assistant timer entity instead of fixed dates',
+            'auto_discover_alexa': 'Automatically find and display active Alexa timers',
+            'auto_discover_google': 'Automatically find and display active Google Home timers',
+            'progress_color': 'Color of the progress ring',
+            'background_color': 'Card background color',
+            'text_color': 'Color for title and subtitle text',
+            'title': 'Card title (auto-generated from timer if empty)',
+            'subtitle': 'Shows time remaining by default',
+            'expired_text': 'Text shown when countdown completes',
+            'expired_animation': 'Pulse animation when timer expires',
+            'width': 'e.g., "300px", "100%"',
+            'height': 'e.g., "200px", "auto"',
+            'aspect_ratio': 'e.g., "16/9", "4/3", "1/1"',
+            'show_progress_text': 'Display percentage inside the circle'
         };
         return helpers[schema.name] || '';
     }
@@ -65,22 +69,65 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const cfg = this._config || {};
 
         const schema = [
+            // === Basic Info ===
             { name: 'title', required: false, selector: { text: {} } },
             { name: 'subtitle', required: false, selector: { text: {} } },
-            { name: 'expired_text', required: false, selector: { text: {} } },
-            { name: 'creation_date', required: false, selector: { text: {} } },
-            { name: 'target_date', required: false, selector: { text: {} } },
-            { name: 'timer_entity', required: false, selector: { entity: { domain: 'timer' } } },
+            
+            // === Timer Source (grouped together) ===
+            {
+                type: "expandable",
+                title: "Timer Source",
+                schema: [
+                    { name: 'timer_entity', required: false, selector: { entity: { domain: ['timer', 'sensor'] } } },
+                    { name: 'target_date', required: false, selector: { text: {} } },
+                    { name: 'creation_date', required: false, selector: { text: {} } },
+                    {
+                        type: 'grid',
+                        schema: [
+                            { name: 'auto_discover_alexa', label: 'Auto-discover Alexa', required: false, selector: { boolean: {} } },
+                            { name: 'auto_discover_google', label: 'Auto-discover Google', required: false, selector: { boolean: {} } },
+                        ]
+                    },
+                ]
+            },
+            
+            // === Time Units (visible, not collapsed) ===
+            {
+                type: 'grid',
+                name: 'time_units',
+                schema: [
+                    { name: 'show_days', label: 'Days', required: false, selector: { boolean: {} } },
+                    { name: 'show_hours', label: 'Hours', required: false, selector: { boolean: {} } },
+                    { name: 'show_minutes', label: 'Minutes', required: false, selector: { boolean: {} } },
+                    { name: 'show_seconds', label: 'Seconds', required: false, selector: { boolean: {} } },
+                ]
+            },
+            
+            // === Appearance ===
             {
                 type: "expandable",
                 title: "Appearance",
                 schema: [
-                    { name: 'progress_color', required: false, selector: { text: {} } },
-                    { name: 'background_color', required: false, selector: { text: {} } },
-                    { name: 'text_color', required: false, selector: { text: {} } },
+                    { name: 'progress_color', required: false, selector: { ui_color: {} } },
+                    { name: 'background_color', required: false, selector: { ui_color: {} } },
+                    { name: 'text_color', required: false, selector: { ui_color: {} } },
+                    { name: 'expired_text', required: false, selector: { text: {} } },
                     { name: 'expired_animation', required: false, selector: { boolean: {} } },
                 ]
             },
+            
+            // === Progress Circle ===
+            {
+                type: "expandable",
+                title: "Progress Circle",
+                schema: [
+                    { name: 'icon_size', label: 'Circle Size', required: false, selector: { number: { min: 40, max: 200, step: 5, mode: 'slider' } } },
+                    { name: 'stroke_width', label: 'Ring Thickness', required: false, selector: { number: { min: 2, max: 30, step: 1, mode: 'slider' } } },
+                    { name: 'show_progress_text', label: 'Show Percentage', required: false, selector: { boolean: {} } },
+                ]
+            },
+            
+            // === Layout (advanced, collapsed) ===
             {
                 type: "expandable",
                 title: "Layout",
@@ -95,35 +142,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'aspect_ratio', required: false, selector: { text: {} } },
                 ]
             },
-            {
-                type: "expandable",
-                title: "Time Units",
-                schema: [
-                    {
-                        type: 'grid',
-                        schema: [
-                            { name: 'show_days', required: false, selector: { boolean: {} } },
-                            { name: 'show_hours', required: false, selector: { boolean: {} } },
-                            { name: 'show_minutes', required: false, selector: { boolean: {} } },
-                            { name: 'show_seconds', required: false, selector: { boolean: {} } },
-                        ]
-                    }
-                ]
-            },
-            {
-                type: "expandable",
-                title: "Progress Circle",
-                schema: [
-                    {
-                        type: "grid",
-                        schema: [
-                            { name: 'stroke_width', required: false, selector: { number: { min: 1, max: 50 } } },
-                            { name: 'icon_size', required: false, selector: { number: { min: 10, max: 350 } } },
-                        ]
-                    },
-                    { name: 'show_progress_text', required: false, selector: { boolean: {} } },
-                ]
-            }
         ];
 
         return html`

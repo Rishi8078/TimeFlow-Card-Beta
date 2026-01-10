@@ -23,9 +23,9 @@ export class ProgressCircleBeta extends LitElement {
         margin: 0 auto;
       }
       .progress-text {
-        font-size: 16px;  
+        font-size: 16px;
         font-weight: bold;
-        fill: red !important; /* DEBUG: Make text very visible */
+        fill: var(--progress-text-color, #f4f5f4ff);
         dominant-baseline: middle;
         text-anchor: middle;
         pointer-events: none;
@@ -85,7 +85,7 @@ export class ProgressCircleBeta extends LitElement {
     const offset = circumference - (safeProgress / 100) * circumference;
 
     // Calculate responsive font size based on circle size
-    const fontSize = Math.max(10, Math.min(24, size * 0.16));
+    const fontSize = Math.max(12, Math.min(26, size * 0.22));
 
     return html`
       <div class="progress-wrapper" style="width:${size}px; height:${size}px;">

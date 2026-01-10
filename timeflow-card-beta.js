@@ -204,6 +204,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
                 .color="${f}"
                 .size="${_}"
                 .strokeWidth="${v}"
+                style="--progress-text-color: ${g};"
                 .showProgressText=${Boolean(m)}
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
@@ -224,9 +225,9 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         margin: 0 auto;
       }
       .progress-text {
-        font-size: 16px;  
+        font-size: 16px;
         font-weight: bold;
-        fill: red !important; /* DEBUG: Make text very visible */
+        fill: var(--progress-text-color, #f4f5f4ff);
         dominant-baseline: middle;
         text-anchor: middle;
         pointer-events: none;
@@ -235,7 +236,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .updating {
         transition: stroke-dashoffset 0.3s ease;
       }
-    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1}updated(e){var t;if(e.has("progress")){const e=null===(t=this.renderRoot)||void 0===t?void 0:t.querySelector(".progress-bar");e&&(e.classList.add("updating"),setTimeout(()=>{e&&e.classList.remove("updating")},400))}}updateProgress(e,t=!0){var i;if(t)this.progress=e;else{const t=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=e,t&&(t.style.transition="none"),setTimeout(()=>{t&&(t.style.transition="")},20)}}getProgress(){return this.progress}render(){const e=Math.max(0,Math.min(100,Number(this.progress)||0)),t=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(t-i)/2,r=2*Math.PI*s,a=r-e/100*r,o=Math.max(10,Math.min(24,.16*t));return V`
+    `}constructor(){super(),this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1,this.progress=0,this.color="#4CAF50",this.size=100,this.strokeWidth=15,this.showProgressText=!1}updated(e){var t;if(e.has("progress")){const e=null===(t=this.renderRoot)||void 0===t?void 0:t.querySelector(".progress-bar");e&&(e.classList.add("updating"),setTimeout(()=>{e&&e.classList.remove("updating")},400))}}updateProgress(e,t=!0){var i;if(t)this.progress=e;else{const t=null===(i=this.renderRoot)||void 0===i?void 0:i.querySelector(".progress-bar");this.progress=e,t&&(t.style.transition="none"),setTimeout(()=>{t&&(t.style.transition="")},20)}}getProgress(){return this.progress}render(){const e=Math.max(0,Math.min(100,Number(this.progress)||0)),t=Number(this.size)||100,i=Number(this.strokeWidth)||15,s=(t-i)/2,r=2*Math.PI*s,a=r-e/100*r,o=Math.max(12,Math.min(26,.22*t));return V`
       <div class="progress-wrapper" style="width:${t}px; height:${t}px;">
         <svg
           class="progress-circle-beta"

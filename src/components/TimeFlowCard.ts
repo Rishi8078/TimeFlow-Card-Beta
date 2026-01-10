@@ -527,6 +527,7 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
+                style="--progress-text-color: ${textColor};"
                 .showProgressText=${Boolean(show_progress_text)}
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>

@@ -44,7 +44,7 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
 | `target_date`      | string  | **Required**            | ISO date or entity ID                |
 | `title`            | string  | `"Countdown Timer"`     | Card title                           |
 | `creation_date`    | string  | `null`                  | Start date for progress              |
-| `expired_text`     | string  | `"Completed! 🎉"`       | Text when expired                    |
+| `expired_text`     | string  | `"Completed!"`       | Text when expired                    |
 | `show_*`           | boolean | `true`                  | Show time units                      |
 | `width/height`     | string  | `null`                  | Card dimensions                      |
 | `aspect_ratio`     | string  | `"2/1"`                 | Card proportions                     |

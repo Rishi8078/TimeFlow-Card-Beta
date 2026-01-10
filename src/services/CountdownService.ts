@@ -380,7 +380,7 @@ export class CountdownService {
         }
         return { value: '🔔', label: 'Timer complete' };
       }
-      return { value: '🎉', label: 'Completed!' };
+      return { value: 'Done', label: 'Completed!' };
     }
     
     // Show the largest time unit that is enabled and has a value > 0
@@ -474,7 +474,7 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      const { expired_text = 'Completed! 🎉' } = config;
+      const { expired_text = 'Completed!' } = config;
       return expired_text;
     }
     

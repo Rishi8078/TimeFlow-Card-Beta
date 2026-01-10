@@ -19,6 +19,7 @@ declare global {
 import { TimeFlowCardBeta } from './components/TimeFlowCard';
 import { ProgressCircleBeta } from './components/ProgressCircle';
 import { ErrorDisplayBeta } from './utils/ErrorDisplay';
+import { TimeFlowCardEditorBeta } from './components/TimeFlowCardEditorBeta';
 
 // Register Lit custom elements with duplicate protection
 if (!customElements.get('error-display-beta')) {
@@ -39,6 +40,12 @@ if (!customElements.get('timeflow-card-beta')) {
   // Component already registered
 }
 
+if (!customElements.get('timeflow-card-beta-editor')) {
+  customElements.define('timeflow-card-beta-editor', TimeFlowCardEditorBeta);
+} else {
+  // Component already registered
+}
+
 // Register the card with Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
@@ -50,4 +57,4 @@ window.customCards.push({
 });
 
 // Export main classes for external use or testing
-export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplayBeta };
+export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplayBeta, TimeFlowCardEditorBeta };

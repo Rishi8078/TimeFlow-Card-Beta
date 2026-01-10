@@ -269,14 +269,10 @@ export class GoogleTimerService {
     if (duration > 0) {
       if (isRinging || isFinished || (remaining === 0 && !isPaused)) {
         progress = 100;
-        console.log(`🔔 GoogleTimer: Setting progress to 100 for timer ${primaryTimerId} - isRinging: ${isRinging}, isFinished: ${isFinished}, remaining: ${remaining}, isPaused: ${isPaused}`);
       } else {
         const elapsed = Math.max(0, duration - remaining);
         progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-        console.log(`⏱️ GoogleTimer: Calculated progress ${progress}% for timer ${primaryTimerId} - elapsed: ${elapsed}, duration: ${duration}, remaining: ${remaining}`);
       }
-    } else {
-      console.log(`⚠️ GoogleTimer: Duration is 0 for timer ${primaryTimerId}, progress stays 0`);
     }
     
     if (!isFinished) {

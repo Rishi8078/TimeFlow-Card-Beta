@@ -210,7 +210,6 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size: 100,
       expired_animation: true,
       expired_text: 'Completed! 🎉',
-      show_progress_text: false, // FIXED: Added to stub config
     };
   }
 
@@ -405,8 +404,7 @@ export class TimeFlowCardBeta extends LitElement {
       expired_text = 'Completed! 🎉',
       width,
       height,
-      aspect_ratio,
-      show_progress_text = false // FIXED: Extract the boolean properly
+      aspect_ratio
     } = this._resolvedConfig;
 
     // FIXED: Ensure background color has a sensible default
@@ -527,8 +525,6 @@ export class TimeFlowCardBeta extends LitElement {
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
-                style="--progress-text-color: ${textColor};"
-                .showProgressText=${Boolean(show_progress_text)}
                 aria-label="Countdown progress: ${Math.round(this._progress)}%"
               ></progress-circle-beta>
             </div>

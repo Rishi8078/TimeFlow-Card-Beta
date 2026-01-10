@@ -100,7 +100,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'show_minutes': 'Minutes',
             'show_seconds': 'Seconds',
             'show_months': 'Months',
-            'show_progress_text': 'Show Progress Percentage',
             'expired_animation': 'Expired Animation',
             'expired_text': 'Expired Text',
             'progress_color': 'Progress Color',
@@ -211,7 +210,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                             { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5 } } },
                         ]
                     },
-                    { name: 'show_progress_text', selector: { boolean: {} } },
                 ]
             },
             

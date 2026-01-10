@@ -25,6 +25,24 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     private _formChanged(ev: CustomEvent) {
         const value = ev.detail?.value || {};
+        
+        // Handle timer_source_type selector
+        if ('timer_source_type' in value) {
+            const sourceType = value.timer_source_type;
+            // Clear all timer source fields when changing type
+            if (sourceType !== 'entity') delete value.timer_entity;
+            if (sourceType !== 'countdown') {
+                delete value.target_date;
+                delete value.creation_date;
+            }
+            if (sourceType !== 'assistants') {
+                delete value.auto_discover_alexa;
+                delete value.auto_discover_google;
+            }
+            // Don't store the virtual timer_source_type field
+            delete value.timer_source_type;
+        }
+        
         // Merge with existing config and keep the card type
         const newConfig = { ...(this._config || {}), ...value, type: this._config?.type || 'custom:timeflow-card-beta' } as CardConfig;
         this._config = newConfig;
@@ -66,56 +84,63 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     render(): TemplateResult {
         const cfg = this._config || {};
+        const timerSourceType = cfg.timer_entity ? 'entity' : 
+                                cfg.target_date ? 'countdown' :
+                                (cfg.auto_discover_alexa || cfg.auto_discover_google) ? 'assistants' :
+                                undefined;
 
         const schema = [
-            // === TIMER SOURCE (Pick One) ===
+            // === TIMER SOURCE TYPE SELECTOR ===
             {
-                type: "expandable",
-                title: "Timer Source: Manual Entity",
-                description: "Select a timer or sensor entity",
-                schema: [
-                    { name: 'timer_entity', required: false, selector: { entity: { domain: ['timer', 'sensor'] } } },
-                ]
+                name: 'timer_source_type',
+                label: 'You need to add a timer source type',
+                selector: {
+                    select: {
+                        options: [
+                            { label: 'Entity Timer', value: 'entity' },
+                            { label: 'Static Countdown', value: 'countdown' },
+                            { label: 'Smart Assistants', value: 'assistants' }
+                        ],
+                        mode: 'dropdown'
+                    }
+                }
             },
             
-            {
-                type: "expandable",
-                title: "Timer Source: Static Countdown",
-                description: "Use a fixed target date",
-                schema: [
-                    { name: 'target_date', required: false, selector: { text: {} } },
-                    { name: 'creation_date', required: false, selector: { text: {} } },
-                ]
-            },
+            // === ENTITY TIMER ===
+            ...(timerSourceType === 'entity' ? [
+                { name: 'timer_entity', label: 'Timer Entity', selector: { entity: { domain: ['timer', 'sensor'] } } }
+            ] : []),
             
-            {
-                type: "expandable",
-                title: "Timer Source: Smart Assistants",
-                description: "Auto-discover timers from Alexa or Google Home",
-                schema: [
-                    {
-                        type: 'grid',
-                        schema: [
-                            { name: 'auto_discover_alexa', label: 'Alexa Timers', required: false, selector: { boolean: {} } },
-                            { name: 'auto_discover_google', label: 'Google Home Timers', required: false, selector: { boolean: {} } },
-                        ]
-                    },
-                ]
-            },
+            // === STATIC COUNTDOWN ===
+            ...(timerSourceType === 'countdown' ? [
+                { name: 'target_date', label: 'Target Date', selector: { text: {} } },
+                { name: 'creation_date', label: 'Creation Date (Optional)', selector: { text: {} } }
+            ] : []),
+            
+            // === SMART ASSISTANTS ===
+            ...(timerSourceType === 'assistants' ? [
+                {
+                    type: 'grid',
+                    schema: [
+                        { name: 'auto_discover_alexa', label: 'Alexa Timers', selector: { boolean: {} } },
+                        { name: 'auto_discover_google', label: 'Google Home Timers', selector: { boolean: {} } },
+                    ]
+                }
+            ] : []),
             
             // === TEXT & MESSAGES ===
-            { name: 'title', required: false, selector: { text: {} } },
-            { name: 'subtitle', required: false, selector: { text: {} } },
-            { name: 'expired_text', required: false, selector: { text: {} } },
+            { name: 'title', label: 'Title (Optional)', selector: { text: {} } },
+            { name: 'subtitle', label: 'Subtitle (Optional)', selector: { text: {} } },
+            { name: 'expired_text', label: 'Expired Text (Optional)', selector: { text: {} } },
             
             // === TIME UNITS (always visible) ===
             {
                 type: 'grid',
                 schema: [
-                    { name: 'show_days', label: 'Days', required: false, selector: { boolean: {} } },
-                    { name: 'show_hours', label: 'Hours', required: false, selector: { boolean: {} } },
-                    { name: 'show_minutes', label: 'Minutes', required: false, selector: { boolean: {} } },
-                    { name: 'show_seconds', label: 'Seconds', required: false, selector: { boolean: {} } },
+                    { name: 'show_days', label: 'Days', selector: { boolean: {} } },
+                    { name: 'show_hours', label: 'Hours', selector: { boolean: {} } },
+                    { name: 'show_minutes', label: 'Minutes', selector: { boolean: {} } },
+                    { name: 'show_seconds', label: 'Seconds', selector: { boolean: {} } },
                 ]
             },
             
@@ -124,10 +149,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 type: "expandable",
                 title: "Appearance",
                 schema: [
-                    { name: 'progress_color', required: false, selector: { text: {} } },
-                    { name: 'background_color', required: false, selector: { text: {} } },
-                    { name: 'text_color', required: false, selector: { text: {} } },
-                    { name: 'expired_animation', required: false, selector: { boolean: {} } },
+                    { name: 'progress_color', label: 'Progress Color', selector: { text: {} } },
+                    { name: 'background_color', label: 'Background Color', selector: { text: {} } },
+                    { name: 'text_color', label: 'Text Color', selector: { text: {} } },
+                    { name: 'expired_animation', label: 'Expired Animation', selector: { boolean: {} } },
                 ]
             },
             
@@ -139,11 +164,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     {
                         type: 'grid',
                         schema: [
-                            { name: 'width', required: false, selector: { text: {} } },
-                            { name: 'height', required: false, selector: { text: {} } },
+                            { name: 'width', label: 'Width', selector: { text: {} } },
+                            { name: 'height', label: 'Height', selector: { text: {} } },
                         ]
                     },
-                    { name: 'aspect_ratio', required: false, selector: { text: {} } },
+                    { name: 'aspect_ratio', label: 'Aspect Ratio', selector: { text: {} } },
                 ]
             },
             
@@ -155,11 +180,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     {
                         type: "grid",
                         schema: [
-                            { name: 'stroke_width', required: false, selector: { number: { min: 1, max: 50 } } },
-                            { name: 'icon_size', required: false, selector: { number: { min: 10, max: 350 } } },
+                            { name: 'stroke_width', label: 'Stroke Width', selector: { number: { min: 1, max: 50 } } },
+                            { name: 'icon_size', label: 'Icon Size', selector: { number: { min: 10, max: 350 } } },
                         ]
                     },
-                    { name: 'show_progress_text', required: false, selector: { boolean: {} } },
+                    { name: 'show_progress_text', label: 'Show Progress Text', selector: { boolean: {} } },
                 ]
             }
         ];

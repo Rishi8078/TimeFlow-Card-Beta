@@ -192,7 +192,7 @@ export class TimeFlowCardBeta extends LitElement {
     this._resolvedConfig = stubConfig;
   }
 
-  // Provide default configuration stub (like original)
+  // Provide default configuration stub 
   static getStubConfig(): CardConfig {
     return {
       type: 'custom:timeflow-card-beta',
@@ -204,11 +204,11 @@ export class TimeFlowCardBeta extends LitElement {
       show_hours: true,
       show_minutes: true,
       show_seconds: true,
-      progress_color: '#C0F950',
-      background_color: "#1a1a1a",
+      progress_color: '',
+      background_color: "",
       stroke_width: 15,
       icon_size: 100,
-      expired_animation: true,
+      expired_animation: false,
       expired_text: 'Completed!',
     };
   }

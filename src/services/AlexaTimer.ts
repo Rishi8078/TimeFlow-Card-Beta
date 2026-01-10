@@ -33,17 +33,19 @@ export class AlexaTimerService {
     const totalActive: number = (attributes.total_active as number) ?? activeTimers.length ?? 0;
     const totalAll: number    = (attributes.total_all as number)    ?? allTimers.length    ?? 0;
 
-    // Build quick lookups keyed by the short ID (first tuple element)
+    // Build quick lookups keyed by the ID (handles both tuple and object formats)
     const activeMap = new Map<string, any>();
     for (const t of activeTimers) {
-      if (Array.isArray(t) && t.length >= 2 && t[0] && t[1]) {
-        activeMap.set(String(t[0]), t[1]);
+      const entry = this.extractTimerEntry(t);
+      if (entry) {
+        activeMap.set(entry.id, entry.data);
       }
     }
     const allMap = new Map<string, any>();
     for (const t of allTimers) {
-      if (Array.isArray(t) && t.length >= 2 && t[0] && t[1]) {
-        allMap.set(String(t[0]), t[1]);
+      const entry = this.extractTimerEntry(t);
+      if (entry) {
+        allMap.set(entry.id, entry.data);
       }
     }
 
@@ -85,19 +87,19 @@ export class AlexaTimerService {
       } else {
         // Choose the active timer (prefer the one with shortest remainingTime)
         if (activeTimers.length === 1) {
-          primaryId = String(activeTimers[0]?.[0]);
-          primaryTimer = activeTimers[0]?.[1] ?? null;
+          const entry = this.extractTimerEntry(activeTimers[0]);
+          primaryId = entry?.id;
+          primaryTimer = entry?.data ?? null;
         } else {
           let bestId: string | undefined;
           let best: any = null;
           let shortest = Number.POSITIVE_INFINITY;
           for (const t of activeTimers) {
-            const id = String(t?.[0]);
-            const data = t?.[1];
-            if (data && typeof data.remainingTime === 'number' && data.remainingTime < shortest) {
-              shortest = data.remainingTime;
-              best = data;
-              bestId = id;
+            const entry = this.extractTimerEntry(t);
+            if (entry && typeof entry.data?.remainingTime === 'number' && entry.data.remainingTime < shortest) {
+              shortest = entry.data.remainingTime;
+              best = entry.data;
+              bestId = entry.id;
             }
           }
           primaryId = bestId;
@@ -216,9 +218,16 @@ export class AlexaTimerService {
     // We'll show "timer complete" as long as a finished timer exists in sorted_all.
 
     // 3) Label selection (prefer label from primary timer)
-    let label: string | undefined = primaryTimer?.timerLabel;
-    if (!label && activeTimers.length > 0) label = activeTimers[0]?.[1]?.timerLabel;
-    if (!label && allTimers.length > 0)    label = allTimers[0]?.[1]?.timerLabel;
+    // Use extractTimerLabel to handle both timerLabel and label fields
+    let label: string | undefined = this.extractTimerLabel(primaryTimer);
+    if (!label && activeTimers.length > 0) {
+      const firstActive = this.extractTimerEntry(activeTimers[0]);
+      label = this.extractTimerLabel(firstActive?.data);
+    }
+    if (!label && allTimers.length > 0) {
+      const firstAll = this.extractTimerEntry(allTimers[0]);
+      label = this.extractTimerLabel(firstAll?.data);
+    }
 
     return {
       isActive,
@@ -399,7 +408,8 @@ export class AlexaTimerService {
         let hasPaused = false;
         if (!hasActive && Array.isArray(allTimers) && allTimers.length > 0) {
           for (const t of allTimers) {
-            const data = t?.[1];
+            const entry = this.extractTimerEntry(t);
+            const data = entry?.data;
             if (data && data.status === 'PAUSED' && typeof data.remainingTime === 'number' && data.remainingTime > 0) {
               hasPaused = true;
               break;
@@ -433,6 +443,39 @@ export class AlexaTimerService {
       } catch {} 
     }
     return null;
+  }
+
+  /**
+   * Helper to extract id and data from timer entry
+   * Handles both old tuple format [id, data] and new object format {id, ...data}
+   * @param entry - Timer entry (either tuple or object)
+   * @returns {id, data} or null if invalid
+   */
+  private static extractTimerEntry(entry: any): { id: string; data: any } | null {
+    // New object format: {id, timerLabel, status, remainingTime, ...}
+    if (entry && typeof entry === 'object' && !Array.isArray(entry) && entry.id) {
+      return { id: String(entry.id), data: entry };
+    }
+    // Old tuple format: [id, {timerLabel, status, remainingTime, ...}]
+    if (Array.isArray(entry) && entry.length >= 2 && entry[0] && entry[1]) {
+      return { id: String(entry[0]), data: entry[1] };
+    }
+    return null;
+  }
+
+  /**
+   * Helper to extract timer label from timer data
+   * Checks timerLabel first (sorted_* format), then label (brief format)
+   * @param data - Timer data object
+   * @returns Timer label or undefined
+   */
+  private static extractTimerLabel(data: any): string | undefined {
+    if (!data) return undefined;
+    // timerLabel is used in sorted_active/sorted_all
+    if (data.timerLabel) return data.timerLabel;
+    // label is used in brief.active/brief.all (generic resolved label)
+    if (data.label) return data.label;
+    return undefined;
   }
 
   /**

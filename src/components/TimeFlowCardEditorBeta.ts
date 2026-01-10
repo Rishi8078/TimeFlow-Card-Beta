@@ -1,15 +1,35 @@
-import { LitElement, html, css, TemplateResult } from 'lit';
+import { LitElement, html, css, TemplateResult, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 
 /**
  * TimeFlow Card Editor Beta
- * Minimal graphical editor for the TimeFlow custom card (Beta version).
+ * Full-featured graphical editor for the TimeFlow custom card (Beta version).
+ * Follows Bubble Card UX patterns: important fields visible, secondary in expandables.
  * Emits `config-changed` events with the updated config.
  */
 export class TimeFlowCardEditorBeta extends LitElement {
     @property({ type: Object }) hass: any = null;
     @state() private _config: CardConfig = { type: 'custom:timeflow-card-beta' } as CardConfig;
+
+    static get styles(): CSSResult {
+        return css`
+            .section-header {
+                font-weight: 500;
+                font-size: 14px;
+                color: var(--primary-text-color);
+                margin: 16px 0 8px 0;
+                padding-bottom: 4px;
+                border-bottom: 1px solid var(--divider-color);
+            }
+            .section-header:first-of-type {
+                margin-top: 8px;
+            }
+            ha-form {
+                display: block;
+            }
+        `;
+    }
 
     setConfig(config: CardConfig) {
         this._config = { ...config } as CardConfig;
@@ -25,24 +45,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     private _formChanged(ev: CustomEvent) {
         const value = ev.detail?.value || {};
-        
-        // Handle timer_source_type selector
-        if ('timer_source_type' in value) {
-            const sourceType = value.timer_source_type;
-            // Clear all timer source fields when changing type
-            if (sourceType !== 'entity') delete value.timer_entity;
-            if (sourceType !== 'countdown') {
-                delete value.target_date;
-                delete value.creation_date;
-            }
-            if (sourceType !== 'assistants') {
-                delete value.auto_discover_alexa;
-                delete value.auto_discover_google;
-            }
-            // Don't store the virtual timer_source_type field
-            delete value.timer_source_type;
-        }
-        
         // Merge with existing config and keep the card type
         const newConfig = { ...(this._config || {}), ...value, type: this._config?.type || 'custom:timeflow-card-beta' } as CardConfig;
         this._config = newConfig;
@@ -51,21 +53,38 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     private _computeHelper(schema: any): string {
         const helpers: Record<string, string> = {
-            'creation_date': 'Examples: "2024-01-01T00:00:00", "{{ now() }}", "{{ states(\'input_datetime.start\') }}"',
-            'target_date': 'Examples: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
-            'progress_color': 'Examples: "#FF0000", "red", "rgb(255,0,0)", "{{ states(\'input_text.color\') }}"',
-            'background_color': 'Examples: "#00FF00", "blue", "rgba(0,255,0,0.5)", "{{ \'red\' if is_state(\'switch.alert\', \'on\') else \'green\' }}"',
-            'text_color': 'Examples: "#333333", "white", "rgb(0,0,0)", "{{ states(\'input_text.color\') }}"',
-            'title': 'Examples: "My Timer", "{{ states(\'sensor.event_name\') }}"',
-            'subtitle': 'Shows time remaining by default; only change if you want custom text.',
-            'expired_text': 'Examples: "Time\'s up!", "{{ states(\'input_text.message\') }}"',
-            'expired_animation': 'A subtle animation when timer expires',
-            'width': 'Card width in CSS units (e.g., "300px", "100%", "20em")',
-            'height': 'Card height in CSS units (e.g., "200px", "auto", "15em")',
-            'aspect_ratio': 'Width to height ratio (e.g., "16/9", "4/3", "1/1")',
-            'auto_discover_alexa': 'Automatically find and use Alexa timers',
-            'auto_discover_google': 'Automatically find and use Google Home timers',
-            'timer_entity': 'Select a timer or sensor entity'
+            // Timer Source
+            'timer_entity': 'Select a timer, sensor, or input_datetime entity',
+            'target_date': 'ISO date, entity, or template: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
+            'creation_date': 'Start date for progress calculation (optional)',
+            'auto_discover_alexa': 'Automatically find active Alexa timers',
+            'auto_discover_google': 'Automatically find active Google Home timers',
+            'prefer_labeled_timers': 'Prefer timers with labels over unnamed ones',
+            
+            // Display
+            'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
+            'subtitle': 'Shows time remaining by default; only set for custom text',
+            'expired_text': 'Text shown when countdown completes',
+            
+            // Colors
+            'progress_color': 'Progress circle color (hex, name, rgb, or template)',
+            'background_color': 'Card background color',
+            'text_color': 'Text color for title and countdown',
+            'primary_color': 'Primary accent color',
+            'secondary_color': 'Secondary accent color',
+            'alexa_color': 'Custom color for Alexa timer display',
+            
+            // Layout
+            'width': 'Card width (e.g., "300px", "100%", "20em")',
+            'height': 'Card height (e.g., "200px", "auto")',
+            'aspect_ratio': 'Width:height ratio (e.g., "16/9", "4/3", "1/1")',
+            
+            // Progress Circle
+            'stroke_width': 'Thickness of the progress circle ring',
+            'icon_size': 'Size of the progress circle',
+            
+            // Alexa
+            'alexa_icon': 'Custom icon for Alexa timers (e.g., mdi:amazon-alexa)',
         };
         return helpers[schema.name] || '';
     }
@@ -73,6 +92,38 @@ export class TimeFlowCardEditorBeta extends LitElement {
     private _computeLabel(schema: any): string {
         if (schema.label)
             return schema.label;
+
+        const labels: Record<string, string> = {
+            'timer_entity': 'Timer Entity',
+            'target_date': 'Target Date/Time',
+            'creation_date': 'Start Date (for progress)',
+            'auto_discover_alexa': 'Auto-discover Alexa Timers',
+            'auto_discover_google': 'Auto-discover Google Timers',
+            'prefer_labeled_timers': 'Prefer Labeled Timers',
+            'show_alexa_device': 'Show Alexa Device Name',
+            'alexa_color': 'Alexa Timer Color',
+            'alexa_icon': 'Alexa Timer Icon',
+            'show_days': 'Days',
+            'show_hours': 'Hours',
+            'show_minutes': 'Minutes',
+            'show_seconds': 'Seconds',
+            'show_months': 'Months',
+            'show_progress_text': 'Show Progress Percentage',
+            'expired_animation': 'Expired Animation',
+            'expired_text': 'Expired Text',
+            'progress_color': 'Progress Color',
+            'background_color': 'Background Color',
+            'text_color': 'Text Color',
+            'primary_color': 'Primary Color',
+            'secondary_color': 'Secondary Color',
+            'stroke_width': 'Stroke Width',
+            'icon_size': 'Circle Size',
+            'aspect_ratio': 'Aspect Ratio',
+            'show_timer_info': 'Show Timer Debug Info',
+            'debug': 'Debug Mode',
+        };
+
+        if (labels[schema.name]) return labels[schema.name];
 
         const key = (schema.name ?? '').toString();
         if (!key) return '';
@@ -84,123 +135,158 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     render(): TemplateResult {
         const cfg = this._config || {};
-        const timerSourceType = cfg.timer_entity ? 'entity' : 
-                                cfg.target_date ? 'countdown' :
-                                (cfg.auto_discover_alexa || cfg.auto_discover_google) ? 'assistants' :
-                                undefined;
 
         const schema = [
-            // === TIMER SOURCE TYPE SELECTOR ===
-            {
-                name: 'timer_source_type',
-                label: 'You need to add a timer source type',
-                selector: {
-                    select: {
-                        options: [
-                            { label: 'Entity Timer', value: 'entity' },
-                            { label: 'Static Countdown', value: 'countdown' },
-                            { label: 'Smart Assistants', value: 'assistants' }
-                        ],
-                        mode: 'dropdown'
-                    }
-                }
-            },
+            // ═══════════════════════════════════════════════════════════
+            // TIMER SOURCE - Most important, always visible at top
+            // ═══════════════════════════════════════════════════════════
+            { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
+            { name: 'target_date', selector: { text: {} } },
+            { name: 'creation_date', selector: { text: {} } },
             
-            // === ENTITY TIMER ===
-            ...(timerSourceType === 'entity' ? [
-                { name: 'timer_entity', label: 'Timer Entity', selector: { entity: { domain: ['timer', 'sensor'] } } }
-            ] : []),
-            
-            // === STATIC COUNTDOWN ===
-            ...(timerSourceType === 'countdown' ? [
-                { name: 'target_date', label: 'Target Date', selector: { text: {} } },
-                { name: 'creation_date', label: 'Creation Date (Optional)', selector: { text: {} } }
-            ] : []),
-            
-            // === SMART ASSISTANTS ===
-            ...(timerSourceType === 'assistants' ? [
-                {
-                    type: 'grid',
-                    schema: [
-                        { name: 'auto_discover_alexa', label: 'Alexa Timers', selector: { boolean: {} } },
-                        { name: 'auto_discover_google', label: 'Google Home Timers', selector: { boolean: {} } },
-                    ]
-                }
-            ] : []),
-            
-            // === TEXT & MESSAGES ===
-            { name: 'title', label: 'Title (Optional)', selector: { text: {} } },
-            { name: 'subtitle', label: 'Subtitle (Optional)', selector: { text: {} } },
-            { name: 'expired_text', label: 'Expired Text (Optional)', selector: { text: {} } },
-            
-            // === TIME UNITS (always visible) ===
+            // Smart Assistant Auto-Discovery (visible toggles)
             {
                 type: 'grid',
                 schema: [
-                    { name: 'show_days', label: 'Days', selector: { boolean: {} } },
-                    { name: 'show_hours', label: 'Hours', selector: { boolean: {} } },
-                    { name: 'show_minutes', label: 'Minutes', selector: { boolean: {} } },
-                    { name: 'show_seconds', label: 'Seconds', selector: { boolean: {} } },
+                    { name: 'auto_discover_alexa', selector: { boolean: {} } },
+                    { name: 'auto_discover_google', selector: { boolean: {} } },
                 ]
             },
             
-            // === APPEARANCE ===
+            // ═══════════════════════════════════════════════════════════
+            // DISPLAY - Title, subtitle visible
+            // ═══════════════════════════════════════════════════════════
+            { name: 'title', selector: { text: {} } },
+            { name: 'subtitle', selector: { text: {} } },
+            { name: 'expired_text', selector: { text: {} } },
+            
+            // ═══════════════════════════════════════════════════════════
+            // TIME UNITS - Always visible as grid
+            // ═══════════════════════════════════════════════════════════
+            {
+                type: 'grid',
+                schema: [
+                    { name: 'show_months', selector: { boolean: {} } },
+                    { name: 'show_days', selector: { boolean: {} } },
+                    { name: 'show_hours', selector: { boolean: {} } },
+                    { name: 'show_minutes', selector: { boolean: {} } },
+                    { name: 'show_seconds', selector: { boolean: {} } },
+                ]
+            },
+            
+            // ═══════════════════════════════════════════════════════════
+            // APPEARANCE - Expandable (secondary settings)
+            // ═══════════════════════════════════════════════════════════
             {
                 type: "expandable",
                 title: "Appearance",
+                icon: "mdi:palette",
                 schema: [
-                    { name: 'progress_color', label: 'Progress Color', selector: { text: {} } },
-                    { name: 'background_color', label: 'Background Color', selector: { text: {} } },
-                    { name: 'text_color', label: 'Text Color', selector: { text: {} } },
-                    { name: 'expired_animation', label: 'Expired Animation', selector: { boolean: {} } },
+                    { name: 'progress_color', selector: { text: {} } },
+                    { name: 'background_color', selector: { text: {} } },
+                    { name: 'text_color', selector: { text: {} } },
+                    {
+                        type: 'grid',
+                        schema: [
+                            { name: 'primary_color', selector: { text: {} } },
+                            { name: 'secondary_color', selector: { text: {} } },
+                        ]
+                    },
+                    { name: 'expired_animation', selector: { boolean: {} } },
                 ]
             },
             
-            // === LAYOUT ===
+            // ═══════════════════════════════════════════════════════════
+            // LAYOUT - Expandable
+            // ═══════════════════════════════════════════════════════════
             {
                 type: "expandable",
                 title: "Layout",
+                icon: "mdi:page-layout-body",
                 schema: [
                     {
                         type: 'grid',
                         schema: [
-                            { name: 'width', label: 'Width', selector: { text: {} } },
-                            { name: 'height', label: 'Height', selector: { text: {} } },
+                            { name: 'width', selector: { text: {} } },
+                            { name: 'height', selector: { text: {} } },
                         ]
                     },
-                    { name: 'aspect_ratio', label: 'Aspect Ratio', selector: { text: {} } },
+                    { name: 'aspect_ratio', selector: { text: {} } },
                 ]
             },
             
-            // === PROGRESS CIRCLE ===
+            // ═══════════════════════════════════════════════════════════
+            // PROGRESS CIRCLE - Expandable
+            // ═══════════════════════════════════════════════════════════
             {
                 type: "expandable",
                 title: "Progress Circle",
+                icon: "mdi:circle-slice-3",
                 schema: [
                     {
                         type: "grid",
                         schema: [
-                            { name: 'stroke_width', label: 'Stroke Width', selector: { number: { min: 1, max: 50 } } },
-                            { name: 'icon_size', label: 'Icon Size', selector: { number: { min: 10, max: 350 } } },
+                            { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1 } } },
+                            { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5 } } },
                         ]
                     },
-                    { name: 'show_progress_text', label: 'Show Progress Text', selector: { boolean: {} } },
+                    { name: 'show_progress_text', selector: { boolean: {} } },
                 ]
-            }
+            },
+            
+            // ═══════════════════════════════════════════════════════════
+            // ALEXA/GOOGLE OPTIONS - Expandable
+            // ═══════════════════════════════════════════════════════════
+            {
+                type: "expandable",
+                title: "Smart Assistant Options",
+                icon: "mdi:home-assistant",
+                schema: [
+                    { name: 'prefer_labeled_timers', selector: { boolean: {} } },
+                    { name: 'show_alexa_device', selector: { boolean: {} } },
+                    { name: 'alexa_color', selector: { text: {} } },
+                    { name: 'alexa_icon', selector: { icon: {} } },
+                ]
+            },
+            
+            // ═══════════════════════════════════════════════════════════
+            // ACTIONS - Expandable
+            // ═══════════════════════════════════════════════════════════
+            {
+                type: "expandable",
+                title: "Tap Actions",
+                icon: "mdi:gesture-tap",
+                schema: [
+                    { name: 'tap_action', selector: { ui_action: {} } },
+                    { name: 'hold_action', selector: { ui_action: {} } },
+                    { name: 'double_tap_action', selector: { ui_action: {} } },
+                ]
+            },
+            
+            // ═══════════════════════════════════════════════════════════
+            // DEBUG - Expandable (advanced)
+            // ═══════════════════════════════════════════════════════════
+            {
+                type: "expandable",
+                title: "Debug Options",
+                icon: "mdi:bug",
+                schema: [
+                    { name: 'debug', selector: { boolean: {} } },
+                    { name: 'show_timer_info', selector: { boolean: {} } },
+                ]
+            },
         ];
 
         return html`
-      <div style="padding: 8px;">
-        <ha-form
-          .hass=${this.hass}
-          .data=${cfg}
-          .schema=${schema}
-          @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-          .computeLabel=${this._computeLabel}
-          .computeHelper=${this._computeHelper}
-        ></ha-form>
-      </div>
-    `;
+            <ha-form
+                .hass=${this.hass}
+                .data=${cfg}
+                .schema=${schema}
+                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                .computeLabel=${this._computeLabel}
+                .computeHelper=${this._computeHelper}
+            ></ha-form>
+        `;
     }
 
 }

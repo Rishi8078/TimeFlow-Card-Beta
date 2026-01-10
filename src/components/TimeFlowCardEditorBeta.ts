@@ -39,12 +39,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'background_color': 'Examples: "#00FF00", "blue", "rgba(0,255,0,0.5)", "{{ \'red\' if is_state(\'switch.alert\', \'on\') else \'green\' }}"',
             'text_color': 'Examples: "#333333", "white", "rgb(0,0,0)", "{{ states(\'input_text.color\') }}"',
             'title': 'Examples: "My Timer", "{{ states(\'sensor.event_name\') }}"',
-            'subtitle': 'Shows time remaining by default; only change if you want custom text. Examples: "Countdown", "{{ relative_time(states(\'input_datetime.start\')) }}"',
+            'subtitle': 'Shows time remaining by default; only change if you want custom text.',
             'expired_text': 'Examples: "Time\'s up!", "{{ states(\'input_text.message\') }}"',
             'expired_animation': 'A subtle animation when timer expires',
             'width': 'Card width in CSS units (e.g., "300px", "100%", "20em")',
             'height': 'Card height in CSS units (e.g., "200px", "auto", "15em")',
-            'aspect_ratio': 'Width to height ratio (e.g., "16:9", "4:3", "1:1")'
+            'aspect_ratio': 'Width to height ratio (e.g., "16/9", "4/3", "1/1")',
+            'auto_discover_alexa': 'Automatically find and use Alexa timers',
+            'auto_discover_google': 'Automatically find and use Google Home timers',
+            'timer_entity': 'Select a timer or sensor entity'
         };
         return helpers[schema.name] || '';
     }
@@ -65,12 +68,41 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const cfg = this._config || {};
 
         const schema = [
+            // Basic Info
             { name: 'title', required: false, selector: { text: {} } },
             { name: 'subtitle', required: false, selector: { text: {} } },
             { name: 'expired_text', required: false, selector: { text: {} } },
-            { name: 'creation_date', required: false, selector: { text: {} } },
-            { name: 'target_date', required: false, selector: { text: {} } },
-            { name: 'timer_entity', required: false, selector: { entity: { domain: 'timer' } } },
+            
+            // Timer Source
+            {
+                type: "expandable",
+                title: "Timer Source",
+                schema: [
+                    { name: 'timer_entity', required: false, selector: { entity: { domain: ['timer', 'sensor'] } } },
+                    { name: 'target_date', required: false, selector: { text: {} } },
+                    { name: 'creation_date', required: false, selector: { text: {} } },
+                    {
+                        type: 'grid',
+                        schema: [
+                            { name: 'auto_discover_alexa', label: 'Auto-discover Alexa Timers', required: false, selector: { boolean: {} } },
+                            { name: 'auto_discover_google', label: 'Auto-discover Google Timers', required: false, selector: { boolean: {} } },
+                        ]
+                    },
+                ]
+            },
+            
+            // Time Units (always visible)
+            {
+                type: 'grid',
+                schema: [
+                    { name: 'show_days', label: 'Days', required: false, selector: { boolean: {} } },
+                    { name: 'show_hours', label: 'Hours', required: false, selector: { boolean: {} } },
+                    { name: 'show_minutes', label: 'Minutes', required: false, selector: { boolean: {} } },
+                    { name: 'show_seconds', label: 'Seconds', required: false, selector: { boolean: {} } },
+                ]
+            },
+            
+            // Appearance
             {
                 type: "expandable",
                 title: "Appearance",
@@ -81,6 +113,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'expired_animation', required: false, selector: { boolean: {} } },
                 ]
             },
+            
+            // Layout
             {
                 type: "expandable",
                 title: "Layout",
@@ -95,21 +129,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'aspect_ratio', required: false, selector: { text: {} } },
                 ]
             },
-            {
-                type: "expandable",
-                title: "Time Units",
-                schema: [
-                    {
-                        type: 'grid',
-                        schema: [
-                            { name: 'show_days', required: false, selector: { boolean: {} } },
-                            { name: 'show_hours', required: false, selector: { boolean: {} } },
-                            { name: 'show_minutes', required: false, selector: { boolean: {} } },
-                            { name: 'show_seconds', required: false, selector: { boolean: {} } },
-                        ]
-                    }
-                ]
-            },
+            
+            // Progress Circle
             {
                 type: "expandable",
                 title: "Progress Circle",

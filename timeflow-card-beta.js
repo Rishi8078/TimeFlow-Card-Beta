@@ -198,7 +198,6 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           
           <div class="content" role="group" aria-label="Countdown Progress">
             <div class="progress-section">
-              <!-- DEBUG: show_progress_text=${m}, type=${typeof m}, Boolean=${Boolean(m)} -->
               <progress-circle-beta
                 class="progress-circle"
                 .progress="${this._progress}"
@@ -227,7 +226,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .progress-text {
         font-size: 16px;  
         font-weight: bold;
-        fill: var(--progress-text-color, #f4f5f4ff);
+        fill: red !important; /* DEBUG: Make text very visible */
         dominant-baseline: middle;
         text-anchor: middle;
         pointer-events: none;

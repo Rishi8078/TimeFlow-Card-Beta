@@ -521,7 +521,6 @@ export class TimeFlowCardBeta extends LitElement {
           
           <div class="content" role="group" aria-label="Countdown Progress">
             <div class="progress-section">
-              <!-- DEBUG: show_progress_text=${show_progress_text}, type=${typeof show_progress_text}, Boolean=${Boolean(show_progress_text)} -->
               <progress-circle-beta
                 class="progress-circle"
                 .progress="${this._progress}"

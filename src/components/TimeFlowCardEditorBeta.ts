@@ -55,8 +55,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const helpers: Record<string, string> = {
             // Timer Source
             'timer_entity': 'Select a timer, sensor, or input_datetime entity',
-            'target_date': 'ISO date, entity, or template: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
-            'creation_date': 'Start date for progress calculation (optional)',
+            'target_date': 'Select a date/time or enter a template: "{{ states(\'input_datetime.deadline\') }}"',
+            'creation_date': 'Start date for progress (optional). Select a date or use a template.',
             'auto_discover_alexa': 'Automatically find active Alexa timers',
             'auto_discover_google': 'Automatically find active Google Home timers',
             'alexa_device_filter': 'Comma-separated list of Alexa device names or IDs to filter timers (e.g., "Kitchen, Living Room")',
@@ -130,8 +130,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             // TIMER SOURCE - Most important, always visible at top
             // ═══════════════════════════════════════════════════════════
             { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
-            { name: 'target_date', selector: { text: {} } },
-            { name: 'creation_date', selector: { text: {} } },
+            { name: 'target_date', selector: { datetime: {} } },
+            { name: 'creation_date', selector: { datetime: {} } },
             
             // Smart Assistant Auto-Discovery (visible toggles)
             {

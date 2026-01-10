@@ -1,4 +1,4 @@
-import { LitElement, html, css, TemplateResult, CSSResult } from 'lit';
+import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 
@@ -11,6 +11,10 @@ import { CardConfig } from '../types/index';
 export class TimeFlowCardEditorBeta extends LitElement {
     @property({ type: Object }) hass: any = null;
     @state() private _config: CardConfig = { type: 'custom:timeflow-card-beta' } as CardConfig;
+    
+    // Track which date fields are in "template mode"
+    @state() private _targetDateTemplateMode: boolean = false;
+    @state() private _creationDateTemplateMode: boolean = false;
 
     static get styles(): CSSResult {
         return css`
@@ -28,11 +32,104 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ha-form {
                 display: block;
             }
+            
+            /* Date field with mode toggle */
+            .date-field-container {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                margin-bottom: 16px;
+            }
+            .date-field-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .date-field-label {
+                font-weight: 500;
+                font-size: 14px;
+                color: var(--primary-text-color);
+            }
+            .mode-toggle {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12px;
+                color: var(--secondary-text-color);
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                background: var(--secondary-background-color);
+                border: none;
+            }
+            .mode-toggle:hover {
+                background: var(--primary-color);
+                color: var(--text-primary-color);
+            }
+            .mode-toggle ha-icon {
+                --mdc-icon-size: 16px;
+            }
+            .date-helper {
+                font-size: 12px;
+                color: var(--secondary-text-color);
+                margin-top: 4px;
+            }
+            ha-textfield, input[type="datetime-local"] {
+                width: 100%;
+            }
+            input[type="datetime-local"] {
+                padding: 12px;
+                border: 1px solid var(--divider-color);
+                border-radius: 4px;
+                background: var(--card-background-color);
+                color: var(--primary-text-color);
+                font-size: 14px;
+            }
+            input[type="datetime-local"]:focus {
+                outline: none;
+                border-color: var(--primary-color);
+            }
+            .date-fields-section {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px 0;
+                border-top: 1px solid var(--divider-color);
+                margin-top: 16px;
+            }
         `;
     }
 
     setConfig(config: CardConfig) {
         this._config = { ...config } as CardConfig;
+        
+        // Auto-detect if existing values are templates
+        const targetDate = config.target_date || '';
+        const creationDate = config.creation_date || '';
+        this._targetDateTemplateMode = this._isTemplate(targetDate);
+        this._creationDateTemplateMode = this._isTemplate(creationDate);
+    }
+    
+    private _isTemplate(value: string): boolean {
+        return value.includes('{{') || value.includes('{%');
+    }
+    
+    private _convertToDatetimeLocal(isoDate: string): string {
+        if (!isoDate || this._isTemplate(isoDate)) return '';
+        // Convert ISO format to datetime-local format (YYYY-MM-DDTHH:MM)
+        try {
+            const date = new Date(isoDate);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().slice(0, 16);
+        } catch {
+            return '';
+        }
+    }
+    
+    private _convertFromDatetimeLocal(localDate: string): string {
+        if (!localDate) return '';
+        // Convert datetime-local to ISO format with seconds
+        return localDate + ':00';
     }
 
     private _fireConfigChanged(config: CardConfig) {
@@ -55,8 +152,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const helpers: Record<string, string> = {
             // Timer Source
             'timer_entity': 'Select a timer, sensor, or input_datetime entity',
-            'target_date': 'Select a date/time or enter a template: "{{ states(\'input_datetime.deadline\') }}"',
-            'creation_date': 'Start date for progress (optional). Select a date or use a template.',
+            'target_date': 'ISO date, entity, or template: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
+            'creation_date': 'Start date for progress calculation (optional)',
             'auto_discover_alexa': 'Automatically find active Alexa timers',
             'auto_discover_google': 'Automatically find active Google Home timers',
             'alexa_device_filter': 'Comma-separated list of Alexa device names or IDs to filter timers (e.g., "Kitchen, Living Room")',
@@ -121,6 +218,65 @@ export class TimeFlowCardEditorBeta extends LitElement {
             .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
             .join(' ');
     }
+    
+    private _renderDateField(
+        configKey: 'target_date' | 'creation_date',
+        label: string,
+        helper: string,
+        templateMode: boolean,
+        toggleCallback: () => void
+    ): TemplateResult {
+        const value = this._config[configKey] || '';
+        
+        return html`
+            <div class="date-field-container">
+                <div class="date-field-header">
+                    <span class="date-field-label">${label}</span>
+                    <button 
+                        class="mode-toggle" 
+                        @click=${toggleCallback}
+                        title=${templateMode ? 'Switch to date picker' : 'Switch to template/Jinja mode'}
+                    >
+                        <ha-icon icon=${templateMode ? 'mdi:calendar' : 'mdi:code-braces'}></ha-icon>
+                        ${templateMode ? 'Picker' : 'Template'}
+                    </button>
+                </div>
+                
+                ${templateMode 
+                    ? html`
+                        <ha-textfield
+                            .value=${value}
+                            .placeholder=${'{{ states(\'input_datetime.my_date\') }}'}
+                            @input=${(e: Event) => this._updateDateField(configKey, (e.target as HTMLInputElement).value)}
+                        ></ha-textfield>
+                        <div class="date-helper">Enter Jinja template, entity, or ISO date string</div>
+                    `
+                    : html`
+                        <input 
+                            type="datetime-local"
+                            .value=${this._convertToDatetimeLocal(value)}
+                            @input=${(e: Event) => this._updateDateField(configKey, this._convertFromDatetimeLocal((e.target as HTMLInputElement).value))}
+                        />
+                        <div class="date-helper">${helper}</div>
+                    `
+                }
+            </div>
+        `;
+    }
+    
+    private _updateDateField(configKey: string, value: string): void {
+        const newConfig = { ...this._config, [configKey]: value };
+        this._config = newConfig as CardConfig;
+        this._fireConfigChanged(newConfig as CardConfig);
+    }
+    
+    private _toggleTargetDateMode(): void {
+        this._targetDateTemplateMode = !this._targetDateTemplateMode;
+    }
+    
+    private _toggleCreationDateMode(): void {
+        this._creationDateTemplateMode = !this._creationDateTemplateMode;
+    }
 
     render(): TemplateResult {
         const cfg = this._config || {};
@@ -130,8 +286,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             // TIMER SOURCE - Most important, always visible at top
             // ═══════════════════════════════════════════════════════════
             { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
-            { name: 'target_date', selector: { datetime: {} } },
-            { name: 'creation_date', selector: { datetime: {} } },
             
             // Smart Assistant Auto-Discovery (visible toggles)
             {
@@ -253,6 +407,25 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 .computeLabel=${this._computeLabel}
                 .computeHelper=${this._computeHelper}
             ></ha-form>
+            
+            <!-- Date Fields with Template Toggle -->
+            <div class="date-fields-section">
+                ${this._renderDateField(
+                    'target_date',
+                    'Target Date',
+                    'Date/time when countdown ends',
+                    this._targetDateTemplateMode,
+                    () => this._toggleTargetDateMode()
+                )}
+                
+                ${this._renderDateField(
+                    'creation_date',
+                    'Creation Date',
+                    'Start date (defaults to now)',
+                    this._creationDateTemplateMode,
+                    () => this._toggleCreationDateMode()
+                )}
+            </div>
         `;
     }
 

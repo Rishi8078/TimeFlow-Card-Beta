@@ -367,15 +367,6 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
                     `}
             </div>
         `}_updateDateField(e,t){const i={...this._config,[e]:t};this._config=i,this._fireConfigChanged(i)}_toggleTargetDateMode(){this._targetDateTemplateMode=!this._targetDateTemplateMode}_toggleCreationDateMode(){this._creationDateTemplateMode=!this._creationDateTemplateMode}render(){const e=this._config||{};return V`
-            <!-- Title Field -->
-            <div style="margin-bottom: 16px;">
-                <ha-textfield
-                    label="Title"
-                    .value=${e.title||""}
-                    @input=${t=>this._fireConfigChanged({...e,title:t.target.value})}
-                ></ha-textfield>
-            </div>
-            
             <!-- Date Fields with Template Toggle -->
             <div class="date-fields-section">
                 ${this._renderDateField("target_date","Target Date","Date/time when countdown ends",this._targetDateTemplateMode,()=>this._toggleTargetDateMode())}
@@ -386,7 +377,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
             <ha-form
                 .hass=${this.hass}
                 .data=${e}
-                .schema=${[{name:"timer_entity",selector:{entity:{domain:["timer","sensor","input_datetime"]}}},{type:"grid",schema:[{name:"auto_discover_alexa",selector:{boolean:{}}},{name:"auto_discover_google",selector:{boolean:{}}}]},{name:"subtitle",selector:{text:{}}},{name:"expired_text",selector:{text:{}}},{type:"grid",schema:[{name:"show_months",selector:{boolean:{}}},{name:"show_days",selector:{boolean:{}}},{name:"show_hours",selector:{boolean:{}}},{name:"show_minutes",selector:{boolean:{}}},{name:"show_seconds",selector:{boolean:{}}}]},{type:"expandable",title:"Appearance",icon:"mdi:palette",schema:[{name:"progress_color",selector:{text:{}}},{name:"background_color",selector:{text:{}}},{name:"text_color",selector:{text:{}}},{name:"expired_animation",selector:{boolean:{}}}]},{type:"expandable",title:"Layout",icon:"mdi:page-layout-body",schema:[{type:"grid",schema:[{name:"width",selector:{text:{}}},{name:"height",selector:{text:{}}}]},{name:"aspect_ratio",selector:{text:{}}}]},{type:"expandable",title:"Progress Circle",icon:"mdi:circle-slice-3",schema:[{type:"grid",schema:[{name:"stroke_width",selector:{number:{min:1,max:50,step:1}}},{name:"icon_size",selector:{number:{min:10,max:350,step:5}}}]}]},{type:"expandable",title:"Smart Assistant Options",icon:"mdi:home-assistant",schema:[{name:"alexa_device_filter",selector:{text:{}}},{name:"prefer_labeled_timers",selector:{boolean:{}}},{name:"show_alexa_device",selector:{boolean:{}}}]},{type:"expandable",title:"Tap Actions",icon:"mdi:gesture-tap",schema:[{name:"tap_action",selector:{ui_action:{}}},{name:"hold_action",selector:{ui_action:{}}},{name:"double_tap_action",selector:{ui_action:{}}}]}]}
+                .schema=${[{name:"timer_entity",selector:{entity:{domain:["timer","sensor","input_datetime"]}}},{type:"grid",schema:[{name:"auto_discover_alexa",selector:{boolean:{}}},{name:"auto_discover_google",selector:{boolean:{}}}]},{name:"title",selector:{text:{}}},{name:"subtitle",selector:{text:{}}},{name:"expired_text",selector:{text:{}}},{type:"grid",schema:[{name:"show_months",selector:{boolean:{}}},{name:"show_days",selector:{boolean:{}}},{name:"show_hours",selector:{boolean:{}}},{name:"show_minutes",selector:{boolean:{}}},{name:"show_seconds",selector:{boolean:{}}}]},{type:"expandable",title:"Appearance",icon:"mdi:palette",schema:[{name:"progress_color",selector:{text:{}}},{name:"background_color",selector:{text:{}}},{name:"text_color",selector:{text:{}}},{name:"expired_animation",selector:{boolean:{}}}]},{type:"expandable",title:"Layout",icon:"mdi:page-layout-body",schema:[{type:"grid",schema:[{name:"width",selector:{text:{}}},{name:"height",selector:{text:{}}}]},{name:"aspect_ratio",selector:{text:{}}}]},{type:"expandable",title:"Progress Circle",icon:"mdi:circle-slice-3",schema:[{type:"grid",schema:[{name:"stroke_width",selector:{number:{min:1,max:50,step:1}}},{name:"icon_size",selector:{number:{min:10,max:350,step:5}}}]}]},{type:"expandable",title:"Smart Assistant Options",icon:"mdi:home-assistant",schema:[{name:"alexa_device_filter",selector:{text:{}}},{name:"prefer_labeled_timers",selector:{boolean:{}}},{name:"show_alexa_device",selector:{boolean:{}}}]},{type:"expandable",title:"Tap Actions",icon:"mdi:gesture-tap",schema:[{name:"tap_action",selector:{ui_action:{}}},{name:"hold_action",selector:{ui_action:{}}},{name:"double_tap_action",selector:{ui_action:{}}}]}]}
                 @value-changed=${e=>this._formChanged(e)}
                 .computeLabel=${this._computeLabel}
                 .computeHelper=${this._computeHelper}

@@ -295,8 +295,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             },
             
             // ═══════════════════════════════════════════════════════════
-            // DISPLAY - Subtitle and expired text
+            // DISPLAY - Title, subtitle, and expired text
             // ═══════════════════════════════════════════════════════════
+            { name: 'title', selector: { text: {} } },
             { name: 'subtitle', selector: { text: {} } },
             { name: 'expired_text', selector: { text: {} } },
             
@@ -396,15 +397,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ];
 
         return html`
-            <!-- Title Field -->
-            <div style="margin-bottom: 16px;">
-                <ha-textfield
-                    label="Title"
-                    .value=${cfg.title || ''}
-                    @input=${(e: Event) => this._fireConfigChanged({ ...cfg, title: (e.target as HTMLInputElement).value })}
-                ></ha-textfield>
-            </div>
-            
             <!-- Date Fields with Template Toggle -->
             <div class="date-fields-section">
                 ${this._renderDateField(

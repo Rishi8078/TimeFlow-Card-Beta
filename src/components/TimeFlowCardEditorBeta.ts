@@ -278,8 +278,32 @@ export class TimeFlowCardEditorBeta extends LitElement {
         this._creationDateTemplateMode = !this._creationDateTemplateMode;
     }
 
+    /**
+     * Compute the effective compact_format state for display
+     * Auto-enables when 3+ units are selected (unless explicitly disabled)
+     */
+    private _getEffectiveCompactFormat(): boolean {
+        const { show_months, show_days, show_hours, show_minutes, show_seconds, compact_format } = this._config;
+        
+        // If explicitly set, use that value
+        if (compact_format !== undefined) {
+            return compact_format;
+        }
+        
+        // Otherwise, auto-enable if 3+ units are shown
+        const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
+        return enabledUnits >= 3;
+    }
+
     render(): TemplateResult {
         const cfg = this._config || {};
+        
+        // Create a display config that shows the effective compact_format state
+        const displayCfg = {
+            ...cfg,
+            // Show the effective compact_format value for UI consistency
+            compact_format: this._getEffectiveCompactFormat()
+        };
 
         const schema = [
             // ═══════════════════════════════════════════════════════════
@@ -421,7 +445,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             
             <ha-form
                 .hass=${this.hass}
-                .data=${cfg}
+                .data=${displayCfg}
                 .schema=${schema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${this._computeLabel}

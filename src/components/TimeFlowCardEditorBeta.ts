@@ -161,6 +161,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
             'subtitle': 'Shows time remaining by default; only set for custom text',
             'expired_text': 'Text shown when countdown completes',
+            'compact_format': 'Auto-enable compact format when 3+ time units are shown (e.g., "2d 5h 30m" vs "2 days 5 hours 30 minutes")',
             
             // Colors
             'progress_color': 'Progress circle color (hex, name, rgb, or template)',
@@ -197,6 +198,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'show_minutes': 'Minutes',
             'show_seconds': 'Seconds',
             'show_months': 'Months',
+            'compact_format': 'Compact Format',
             'expired_animation': 'Expired Animation',
             'expired_text': 'Expired Text',
             'progress_color': 'Progress Color',
@@ -312,6 +314,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'show_hours', selector: { boolean: {} } },
                     { name: 'show_minutes', selector: { boolean: {} } },
                     { name: 'show_seconds', selector: { boolean: {} } },
+                    { name: 'compact_format', selector: { boolean: {} } },
                 ]
             },
             

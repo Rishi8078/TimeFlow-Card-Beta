@@ -479,7 +479,7 @@ export class CountdownService {
     }
     
     const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
-    const { show_months, show_days, show_hours, show_minutes, show_seconds } = config;
+    const { show_months, show_days, show_hours, show_minutes, show_seconds, compact_format } = config;
     
     const parts = [];
     
@@ -494,10 +494,22 @@ export class CountdownService {
       return 'Starting...';
     }
     
+    // If only one unit, always show full format
     if (parts.length === 1) return `${parts[0].value} ${parts[0].unit}`;
     
-    const compact = parts.map(p => `${p.value}${p.unit.charAt(0)}`).join(' ');
-    return compact;
+    // For 2+ units, decide format:
+    // - If compact_format is explicitly true, use compact
+    // - If compact_format is explicitly false, use full
+    // - If compact_format is undefined (auto), use compact only if 3+ units
+    const useCompact = compact_format === true || (compact_format !== false && parts.length >= 3);
+    
+    if (useCompact) {
+      const compact = parts.map(p => `${p.value}${p.unit.charAt(0)}`).join(' ');
+      return compact;
+    }
+    
+    // Full format for 2 units
+    return parts.map(p => `${p.value} ${p.unit}`).join(' ');
   }  /**
    * Converts TimerData to CountdownState for unified interface
    */

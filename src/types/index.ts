@@ -75,6 +75,9 @@ export interface CardConfig {
   show_minutes?: boolean;
   show_seconds?: boolean;
   
+  // Subtitle format configuration
+  compact_format?: boolean;  // Use compact format (auto-enabled if 3+ units shown)
+  
   // Action configuration
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;

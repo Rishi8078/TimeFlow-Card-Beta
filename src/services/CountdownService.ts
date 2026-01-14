@@ -408,6 +408,7 @@ export class CountdownService {
    * @returns {string} - Formatted subtitle text
    */
   getSubtitle(config: CardConfig, hass: HomeAssistant | null, localize?: LocalizeFunction, useCompact: boolean = true): string {
+    const t = localize || ((key: string) => key);
     // TIMER ENTITY SUPPORT (Handles explicit entity)
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
@@ -478,17 +479,17 @@ export class CountdownService {
     
     const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
     const { show_months, show_days, show_hours, show_minutes, show_seconds, compact_format } = config;
-    
+
     const parts = [];
-    
-    if (show_months && months > 0) parts.push({ value: months, unit: months === 1 ? 'month' : 'months' });
-    if (show_days && days > 0) parts.push({ value: days, unit: days === 1 ? 'day' : 'days' });
-    if (show_hours && hours > 0) parts.push({ value: hours, unit: hours === 1 ? 'hour' : 'hours' });
-    if (show_minutes && minutes > 0) parts.push({ value: minutes, unit: minutes === 1 ? 'minute' : 'minutes' });
-    if (show_seconds && seconds > 0) parts.push({ value: seconds, unit: seconds === 1 ? 'second' : 'seconds' });
+
+    if (show_months && months > 0) parts.push({ value: months, unit: months === 1 ? t('time.month_full') : t('time.months_full') });
+    if (show_days && days > 0) parts.push({ value: days, unit: days === 1 ? t('time.day_full') : t('time.days_full') });
+    if (show_hours && hours > 0) parts.push({ value: hours, unit: hours === 1 ? t('time.hour_full') : t('time.hours_full') });
+    if (show_minutes && minutes > 0) parts.push({ value: minutes, unit: minutes === 1 ? t('time.minute_full') : t('time.minutes_full') });
+    if (show_seconds && seconds > 0) parts.push({ value: seconds, unit: seconds === 1 ? t('time.second_full') : t('time.seconds_full') });
     
     if (parts.length === 0) {
-      if (show_seconds) return `0 seconds`;
+      if (show_seconds) return `0 ${t('time.seconds_full')}`;
       return 'Starting...';
     }
     

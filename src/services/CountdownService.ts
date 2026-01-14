@@ -473,8 +473,8 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      const { expired_text } = config;
-      return expired_text ?? t('countdown.completed');
+      const { expired_text = 'Completed!' } = config;
+      return expired_text;
     }
     
     const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };

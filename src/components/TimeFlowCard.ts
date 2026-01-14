@@ -471,14 +471,14 @@ export class TimeFlowCardBeta extends LitElement {
           subtitleText = expired_text;
         }
       } else {
-        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined));
       }
     } else {
       // In auto-discovery, always defer to service subtitle (handles Alexa finished/none states)
       if (this._resolvedConfig.auto_discover_alexa) {
-        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass);
+        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined);
       } else {
-        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass));
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined));
       }
     }
 

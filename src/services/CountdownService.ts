@@ -463,11 +463,6 @@ export class CountdownService {
 
         // Case 3: No active timer and no recently finished timer.
         // This means the entity exists but has no running timers. Provide a specific message.
-        const firstDiscovered = TimerEntityService.getTimerData(smartTimers[0], hass);
-        if (firstDiscovered) {
-            // Return the "no timers" state from the specific service (Alexa or Google)
-            return TimerEntityService.getTimerSubtitle(firstDiscovered, config.show_seconds !== false, localize, useCompact);
-        }
       }
       
       // Case 4: No smart timer entities were discovered at all.

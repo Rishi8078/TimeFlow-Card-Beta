@@ -459,6 +459,11 @@ export class TimeFlowCardBeta extends LitElement {
       ...dimensionStyles
     ].join('; ');
 
+    // Determine if this is a timer display (timer_entity or auto_discover_*)
+    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
+    // For timers, always use compact format by default (show: 5h30m25s); for countdowns, use the calculated useCompact
+    const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
+
     // Compose subtitle text
     let subtitleText: string;
     if (this._resolvedConfig.timer_entity && this.hass) {
@@ -470,27 +475,27 @@ export class TimeFlowCardBeta extends LitElement {
             timerData,
             this._resolvedConfig.show_seconds !== false,
             this._localize || undefined,
-            useCompact
+            timeFormatCompact
           );
         } else if (!this._expired) {
           subtitleText = subtitle || TimerEntityService.getTimerSubtitle(
             timerData,
             this._resolvedConfig.show_seconds !== false,
             this._localize || undefined,
-            useCompact
+            timeFormatCompact
           );
         } else {
           subtitleText = expired_text;
         }
       } else {
-        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, useCompact));
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
       }
     } else {
       // In auto-discovery, always defer to service subtitle (handles Alexa finished/none states)
       if (this._resolvedConfig.auto_discover_alexa) {
-        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, useCompact);
+        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
       } else {
-        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, useCompact));
+        subtitleText = this._expired ? expired_text : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
       }
     }
 

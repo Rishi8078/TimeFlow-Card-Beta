@@ -225,20 +225,20 @@ export class TimerEntityService {
     const seconds = Math.floor(remaining % 60);
 
     if (useCompact) {
-      // Compact format: 5h30m25s
+      // Compact format: 5h 30m 25s (with spaces between units)
       const h = localize ? localize('time.hour_compact') : 'h';
       const m = localize ? localize('time.minute_compact') : 'm';
       const s = localize ? localize('time.second_compact') : 's';
 
       if (hours > 0) {
         if (showSeconds) {
-          return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}${seconds.toString().padStart(2, '0')}${s}`;
+          return `${hours}${h} ${minutes.toString().padStart(2, '0')}${m} ${seconds.toString().padStart(2, '0')}${s}`;
         } else {
-          return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}`;
+          return `${hours}${h} ${minutes.toString().padStart(2, '0')}${m}`;
         }
       } else {
         if (showSeconds) {
-          return `${minutes}${m}${seconds.toString().padStart(2, '0')}${s}`;
+          return `${minutes}${m} ${seconds.toString().padStart(2, '0')}${s}`;
         } else {
           return `${minutes}${m}`;
         }

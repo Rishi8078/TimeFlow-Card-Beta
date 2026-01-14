@@ -473,7 +473,7 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      const { expired_text = 'Completed!' } = config;
+      const { expired_text = t('countdown.completed') } = config;
       return expired_text;
     }
     

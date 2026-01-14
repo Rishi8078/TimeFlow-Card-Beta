@@ -216,7 +216,7 @@ export class TimeFlowCardBeta extends LitElement {
       stroke_width: 15,
       icon_size: 100,
       expired_animation: false,
-      expired_text: 'Completed!',
+      expired_text: '',
     };
   }
 

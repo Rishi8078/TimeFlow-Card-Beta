@@ -413,7 +413,7 @@ export class TimeFlowCardBeta extends LitElement {
       stroke_width ,
       icon_size ,
       expired_animation = true,
-      expired_text = 'Completed!',
+      expired_text = '',
       width,
       height,
       aspect_ratio,

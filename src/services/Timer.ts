@@ -206,9 +206,14 @@ export class TimerEntityService {
    * Formats remaining time as human-readable string
    * @param remaining - Remaining time in seconds
    * @param showSeconds - Whether to include seconds in output
+   * @param localize - Optional localization function for time unit labels
    * @returns string - Formatted time string
    */
-  static formatRemainingTime(remaining: number, showSeconds: boolean = true): string {
+  static formatRemainingTime(
+    remaining: number,
+    showSeconds: boolean = true,
+    localize?: LocalizeFunction
+  ): string {
     if (remaining <= 0) {
       return '0:00';
     }
@@ -217,17 +222,21 @@ export class TimerEntityService {
     const minutes = Math.floor((remaining % 3600) / 60);
     const seconds = Math.floor(remaining % 60);
 
+    const h = localize ? localize('time.hour') : 'h';
+    const m = localize ? localize('time.minute') : 'm';
+    const s = localize ? localize('time.second') : 's';
+
     if (hours > 0) {
       if (showSeconds) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}${seconds.toString().padStart(2, '0')}${s}`;
       } else {
-        return `${hours}:${minutes.toString().padStart(2, '0')}`;
+        return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}`;
       }
     } else {
       if (showSeconds) {
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        return `${minutes}${m}${seconds.toString().padStart(2, '0')}${s}`;
       } else {
-        return `${minutes}m`;
+        return `${minutes}${m}`;
       }
     }
   }
@@ -360,7 +369,7 @@ export class TimerEntityService {
       }
 
       if (timerData.isActive && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
         return timerData.userDefinedLabel
           ? t('timer.remaining_with_label', { time: remaining, label: timerData.userDefinedLabel })
           : timerData.alexaDevice
@@ -369,7 +378,7 @@ export class TimerEntityService {
       }
 
       if (timerData.isPaused && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
         return timerData.userDefinedLabel
           ? t('timer.paused_with_time', { label: timerData.userDefinedLabel, time: remaining })
           : timerData.alexaDevice
@@ -398,14 +407,14 @@ export class TimerEntityService {
       }
 
       if (timerData.isActive && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
         return timerData.userDefinedLabel
           ? t('timer.remaining_with_label', { time: remaining, label: timerData.userDefinedLabel })
           : t('timer.remaining_with_device', { time: remaining, device: 'Google Home' });
       }
 
       if (timerData.isPaused && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
         return timerData.userDefinedLabel
           ? t('timer.paused_with_time', { label: timerData.userDefinedLabel, time: remaining })
           : t('timer.google_paused', { time: remaining });
@@ -422,15 +431,15 @@ export class TimerEntityService {
 
     // Standard HA timer
     if (timerData.isActive) {
-      return t('timer.remaining', { time: this.formatRemainingTime(timerData.remaining, showSeconds) });
+      return t('timer.remaining', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize) });
     }
 
     if (timerData.isPaused) {
-      return t('timer.paused_time_left', { time: this.formatRemainingTime(timerData.remaining, showSeconds) });
+      return t('timer.paused_time_left', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize) });
     }
 
     if (timerData.duration > 0) {
-      return t('timer.ready_with_time', { time: this.formatRemainingTime(timerData.duration, showSeconds) });
+      return t('timer.ready_with_time', { time: this.formatRemainingTime(timerData.duration, showSeconds, localize) });
     }
 
     return t('timer.timer_ready');

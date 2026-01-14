@@ -26,6 +26,17 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Google Home timer paused - {time} left',
       timer_ready: 'Timer ready',
     },
+    time: {
+      hour_compact: 'h',
+      minute_compact: 'm',
+      second_compact: 's',
+      hour_full: 'hour',
+      hours_full: 'hours',
+      minute_full: 'minute',
+      minutes_full: 'minutes',
+      second_full: 'second',
+      seconds_full: 'seconds',
+    },
   },
   fr: {
     timer: {
@@ -46,6 +57,17 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Minuteur en pause - {time} restant',
       google_paused: 'Minuteur Google Home en pause - {time} restant',
       timer_ready: 'Minuteur prêt',
+    },
+    time: {
+      hour_compact: 'h',
+      minute_compact: 'min',
+      second_compact: 's',
+      hour_full: 'heure',
+      hours_full: 'heures',
+      minute_full: 'minute',
+      minutes_full: 'minutes',
+      second_full: 'seconde',
+      seconds_full: 'secondes',
     },
   },
   de: {
@@ -68,6 +90,17 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Google Home Timer pausiert - {time} verbleibend',
       timer_ready: 'Timer bereit',
     },
+    time: {
+      hour_compact: 'Std',
+      minute_compact: 'Min',
+      second_compact: 's',
+      hour_full: 'Stunde',
+      hours_full: 'Stunden',
+      minute_full: 'Minute',
+      minutes_full: 'Minuten',
+      second_full: 'Sekunde',
+      seconds_full: 'Sekunden',
+    },
   },
   es: {
     timer: {
@@ -88,6 +121,17 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Temporizador pausado - {time} restante',
       google_paused: 'Temporizador de Google Home pausado - {time} restante',
       timer_ready: 'Temporizador listo',
+    },
+    time: {
+      hour_compact: 'h',
+      minute_compact: 'min',
+      second_compact: 's',
+      hour_full: 'hora',
+      hours_full: 'horas',
+      minute_full: 'minuto',
+      minutes_full: 'minutos',
+      second_full: 'segundo',
+      seconds_full: 'segundos',
     },
   },
   it: {
@@ -110,6 +154,17 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Timer Google Home in pausa - {time} rimanente',
       timer_ready: 'Timer pronto',
     },
+    time: {
+      hour_compact: 'h',
+      minute_compact: 'min',
+      second_compact: 's',
+      hour_full: 'ora',
+      hours_full: 'ore',
+      minute_full: 'minuto',
+      minutes_full: 'minuti',
+      second_full: 'secondo',
+      seconds_full: 'secondi',
+    },
   },
   nl: {
     timer: {
@@ -130,6 +185,17 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Timer gepauzeerd - {time} resterend',
       google_paused: 'Google Home timer gepauzeerd - {time} resterend',
       timer_ready: 'Timer klaar',
+    },
+    time: {
+      hour_compact: 'u',
+      minute_compact: 'min',
+      second_compact: 's',
+      hour_full: 'uur',
+      hours_full: 'uren',
+      minute_full: 'minuut',
+      minutes_full: 'minuten',
+      second_full: 'seconde',
+      seconds_full: 'seconden',
     },
   },
 };

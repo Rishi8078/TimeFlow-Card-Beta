@@ -306,8 +306,8 @@ export class TimeFlowCardBeta extends LitElement {
 
   updated(changedProperties: Map<string | number | symbol, unknown>): void {
     if (changedProperties.has('hass') || changedProperties.has('config')) {
-      // Initialize localization based on Home Assistant language setting
-      if (this.hass && !this._localize) {
+      // Initialize/update localization based on Home Assistant language setting
+      if (this.hass) {
         this._localize = setupLocalize(this.hass);
       }
       

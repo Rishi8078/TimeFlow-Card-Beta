@@ -473,8 +473,8 @@ export class CountdownService {
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---
     if (this.expired) {
-      const { expired_text = 'Completed!' } = config;
-      return expired_text;
+      const { expired_text } = config;
+      return expired_text ?? t('countdown.completed');
     }
     
     const { months, days, hours, minutes, seconds } = this.timeRemaining || { months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -490,7 +490,7 @@ export class CountdownService {
     
     if (parts.length === 0) {
       if (show_seconds) return `0 ${t('time.seconds_full')}`;
-      return 'Starting...';
+      return t('countdown.starting');
     }
     
     // If only one unit, always show full format

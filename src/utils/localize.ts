@@ -26,6 +26,10 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Google Home timer paused - {time} left',
       timer_ready: 'Timer ready',
     },
+    countdown: {
+      starting: 'Starting...',
+      completed: 'Completed!'
+    },
     time: {
       hour_compact: 'h',
       day_compact: 'd',
@@ -63,6 +67,10 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Minuteur en pause - {time} restant',
       google_paused: 'Minuteur Google Home en pause - {time} restant',
       timer_ready: 'Minuteur prêt',
+    },
+    countdown: {
+      starting: 'Démarrage...',
+      completed: 'Terminé!'
     },
     time: {
       hour_compact: 'h',
@@ -102,6 +110,10 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Google Home Timer pausiert - {time} verbleibend',
       timer_ready: 'Timer bereit',
     },
+    countdown: {
+      starting: 'Startet...',
+      completed: 'Abgeschlossen!'
+    },
     time: {
       hour_compact: 'Std',
       day_compact: 'T',
@@ -139,6 +151,10 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Temporizador pausado - {time} restante',
       google_paused: 'Temporizador de Google Home pausado - {time} restante',
       timer_ready: 'Temporizador listo',
+    },
+    countdown: {
+      starting: 'Iniciando...',
+      completed: '¡Completado!'
     },
     time: {
       hour_compact: 'h',
@@ -178,6 +194,10 @@ const languages: Record<string, LanguageRecord> = {
       google_paused: 'Timer Google Home in pausa - {time} rimanente',
       timer_ready: 'Timer pronto',
     },
+    countdown: {
+      starting: 'Avvio...',
+      completed: 'Completato!'
+    },
     time: {
       hour_compact: 'h',
       day_compact: 'g',
@@ -215,6 +235,10 @@ const languages: Record<string, LanguageRecord> = {
       paused_time_left: 'Timer gepauzeerd - {time} resterend',
       google_paused: 'Google Home timer gepauzeerd - {time} resterend',
       timer_ready: 'Timer klaar',
+    },
+    countdown: {
+      starting: 'Starten...',
+      completed: 'Voltooid!'
     },
     time: {
       hour_compact: 'u',

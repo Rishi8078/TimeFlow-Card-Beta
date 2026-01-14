@@ -407,17 +407,17 @@ export class CountdownService {
    * @param {LocalizeFunction} localize - Optional localization function
    * @returns {string} - Formatted subtitle text
    */
-  getSubtitle(config: CardConfig, hass: HomeAssistant | null, localize?: LocalizeFunction): string {
+  getSubtitle(config: CardConfig, hass: HomeAssistant | null, localize?: LocalizeFunction, useCompact: boolean = true): string {
     // TIMER ENTITY SUPPORT (Handles explicit entity)
     if (config.timer_entity && hass) {
       const timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
       if (timerData) {
         // For smart assistant timers, always use their specific subtitle logic
         if (timerData.isAlexaTimer || timerData.isGoogleTimer) {
-          return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize);
+          return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize, useCompact);
         }
         // For standard HA timers, use the timer subtitle if available
-        return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize);
+        return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize, useCompact);
       }
       return 'Timer not found';
     }
@@ -452,13 +452,13 @@ export class CountdownService {
           if (timerData) {
             this.lastAlexaTimerData = timerData; // Cache for finished fallback
             this.timeRemaining = this._timerDataToCountdownState(timerData);
-            return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize);
+            return TimerEntityService.getTimerSubtitle(timerData, config.show_seconds !== false, localize, useCompact);
           }
         }
 
         // Case 2: No active timer, but we have a cached one that just finished
         if (this.lastAlexaTimerData && TimerEntityService.isTimerExpired(this.lastAlexaTimerData)) {
-          return TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false, localize);
+          return TimerEntityService.getTimerSubtitle(this.lastAlexaTimerData, config.show_seconds !== false, localize, useCompact);
         }
 
         // Case 3: No active timer and no recently finished timer.
@@ -466,7 +466,7 @@ export class CountdownService {
         const firstDiscovered = TimerEntityService.getTimerData(smartTimers[0], hass);
         if (firstDiscovered) {
             // Return the "no timers" state from the specific service (Alexa or Google)
-            return TimerEntityService.getTimerSubtitle(firstDiscovered, config.show_seconds !== false, localize);
+            return TimerEntityService.getTimerSubtitle(firstDiscovered, config.show_seconds !== false, localize, useCompact);
         }
       }
       
@@ -503,9 +503,9 @@ export class CountdownService {
     // - If compact_format is explicitly true, use compact
     // - If compact_format is explicitly false, use full
     // - If compact_format is undefined (auto), use compact only if 3+ units
-    const useCompact = compact_format === true || (compact_format !== false && parts.length >= 3);
+    const useCompactFormat = compact_format === true || (compact_format !== false && parts.length >= 3);
     
-    if (useCompact) {
+    if (useCompactFormat) {
       const compact = parts.map(p => `${p.value}${p.unit.charAt(0)}`).join(' ');
       return compact;
     }

@@ -207,12 +207,14 @@ export class TimerEntityService {
    * @param remaining - Remaining time in seconds
    * @param showSeconds - Whether to include seconds in output
    * @param localize - Optional localization function for time unit labels
+   * @param useCompact - Whether to use compact format (e.g., "5h30m") vs full format (e.g., "5 hours 30 minutes")
    * @returns string - Formatted time string
    */
   static formatRemainingTime(
     remaining: number,
     showSeconds: boolean = true,
-    localize?: LocalizeFunction
+    localize?: LocalizeFunction,
+    useCompact: boolean = true
   ): string {
     if (remaining <= 0) {
       return '0:00';
@@ -222,22 +224,55 @@ export class TimerEntityService {
     const minutes = Math.floor((remaining % 3600) / 60);
     const seconds = Math.floor(remaining % 60);
 
-    const h = localize ? localize('time.hour') : 'h';
-    const m = localize ? localize('time.minute') : 'm';
-    const s = localize ? localize('time.second') : 's';
+    if (useCompact) {
+      // Compact format: 5h30m25s
+      const h = localize ? localize('time.hour_compact') : 'h';
+      const m = localize ? localize('time.minute_compact') : 'm';
+      const s = localize ? localize('time.second_compact') : 's';
 
-    if (hours > 0) {
-      if (showSeconds) {
-        return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}${seconds.toString().padStart(2, '0')}${s}`;
+      if (hours > 0) {
+        if (showSeconds) {
+          return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}${seconds.toString().padStart(2, '0')}${s}`;
+        } else {
+          return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}`;
+        }
       } else {
-        return `${hours}${h}${minutes.toString().padStart(2, '0')}${m}`;
+        if (showSeconds) {
+          return `${minutes}${m}${seconds.toString().padStart(2, '0')}${s}`;
+        } else {
+          return `${minutes}${m}`;
+        }
       }
     } else {
-      if (showSeconds) {
-        return `${minutes}${m}${seconds.toString().padStart(2, '0')}${s}`;
-      } else {
-        return `${minutes}${m}`;
+      // Full format: 5 hours 30 minutes 25 seconds
+      const parts: string[] = [];
+
+      if (hours > 0) {
+        const hourUnit = localize 
+          ? (hours === 1 ? localize('time.hour_full') : localize('time.hours_full'))
+          : (hours === 1 ? 'hour' : 'hours');
+        parts.push(`${hours} ${hourUnit}`);
       }
+
+      if (minutes > 0) {
+        const minUnit = localize
+          ? (minutes === 1 ? localize('time.minute_full') : localize('time.minutes_full'))
+          : (minutes === 1 ? 'minute' : 'minutes');
+        parts.push(`${minutes} ${minUnit}`);
+      }
+
+      if (showSeconds && seconds > 0) {
+        const secUnit = localize
+          ? (seconds === 1 ? localize('time.second_full') : localize('time.seconds_full'))
+          : (seconds === 1 ? 'second' : 'seconds');
+        parts.push(`${seconds} ${secUnit}`);
+      }
+
+      if (parts.length === 0) {
+        return '0 ' + (localize ? localize('time.minutes_full') : 'minutes');
+      }
+
+      return parts.join(' ');
     }
   }
 
@@ -347,12 +382,14 @@ export class TimerEntityService {
    * @param timerData - Timer data object
    * @param showSeconds - Whether to show seconds in display
    * @param localize - Localization function for translating status text
+   * @param useCompact - Whether to use compact format for time (default: true)
    * @returns string - Subtitle text
    */
   static getTimerSubtitle(
     timerData: TimerData,
     showSeconds: boolean = true,
-    localize?: LocalizeFunction
+    localize?: LocalizeFunction,
+    useCompact: boolean = true
   ): string {
     if (!timerData) {
       return 'Timer not found';
@@ -369,7 +406,7 @@ export class TimerEntityService {
       }
 
       if (timerData.isActive && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact);
         return timerData.userDefinedLabel
           ? t('timer.remaining_with_label', { time: remaining, label: timerData.userDefinedLabel })
           : timerData.alexaDevice
@@ -378,7 +415,7 @@ export class TimerEntityService {
       }
 
       if (timerData.isPaused && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact);
         return timerData.userDefinedLabel
           ? t('timer.paused_with_time', { label: timerData.userDefinedLabel, time: remaining })
           : timerData.alexaDevice
@@ -407,14 +444,14 @@ export class TimerEntityService {
       }
 
       if (timerData.isActive && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact);
         return timerData.userDefinedLabel
           ? t('timer.remaining_with_label', { time: remaining, label: timerData.userDefinedLabel })
           : t('timer.remaining_with_device', { time: remaining, device: 'Google Home' });
       }
 
       if (timerData.isPaused && timerData.remaining > 0) {
-        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize);
+        const remaining = this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact);
         return timerData.userDefinedLabel
           ? t('timer.paused_with_time', { label: timerData.userDefinedLabel, time: remaining })
           : t('timer.google_paused', { time: remaining });
@@ -431,15 +468,15 @@ export class TimerEntityService {
 
     // Standard HA timer
     if (timerData.isActive) {
-      return t('timer.remaining', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize) });
+      return t('timer.remaining', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact) });
     }
 
     if (timerData.isPaused) {
-      return t('timer.paused_time_left', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize) });
+      return t('timer.paused_time_left', { time: this.formatRemainingTime(timerData.remaining, showSeconds, localize, useCompact) });
     }
 
     if (timerData.duration > 0) {
-      return t('timer.ready_with_time', { time: this.formatRemainingTime(timerData.duration, showSeconds, localize) });
+      return t('timer.ready_with_time', { time: this.formatRemainingTime(timerData.duration, showSeconds, localize, useCompact) });
     }
 
     return t('timer.timer_ready');

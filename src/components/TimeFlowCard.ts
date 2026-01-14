@@ -7,6 +7,7 @@ import { ConfigValidator, ValidationResult, ValidationError } from '../utils/Con
 import { TemplateService } from '../services/TemplateService';
 import { CountdownService } from '../services/CountdownService';
 import { StyleManager } from '../utils/StyleManager';
+import { setupLocalize, LocalizeFunction } from '../utils/localize';
 import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/action-handler';
 import '../utils/ErrorDisplay';
@@ -34,6 +35,7 @@ export class TimeFlowCardBeta extends LitElement {
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
   @state() private _initialized: boolean = false; // Track initialization
+  @state() private _localize: LocalizeFunction | null = null; // Localization function
 
   // Timer ID
   private _timerId: ReturnType<typeof setInterval> | null = null;
@@ -57,13 +59,18 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         flex-direction: column;
         padding: 0;
-        border-radius: 22px;
+        /* Use HA theme border-radius: defaults to 12px, respects user theme */
+        border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
         position: relative;
         overflow: hidden;
-        /* IMPORTANT: Set default background immediately */
-        background: var(--card-background, var(--primary-background-color, #1a1a1a));
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        border: none;
+        /* Use HA theme background: respects user theme changes */
+        background: var(--ha-card-background, var(--ha-card-background-color, #1a1a1a));
+        /* Use HA theme box-shadow: respects user theme */
+        box-shadow: var(--ha-card-box-shadow, 0 2px 10px rgba(0, 0, 0, 0.1));
+        /* Use HA theme border: respects user theme */
+        border-width: var(--ha-card-border-width, 1px);
+        border-style: solid;
+        border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
         /* REMOVED: transition that causes flash - only animate specific properties if needed */
         /* transition: background-color 0.3s ease; */
         min-height: 120px; /* Prevent layout shift */
@@ -299,6 +306,11 @@ export class TimeFlowCardBeta extends LitElement {
 
   updated(changedProperties: Map<string | number | symbol, unknown>): void {
     if (changedProperties.has('hass') || changedProperties.has('config')) {
+      // Initialize localization based on Home Assistant language setting
+      if (this.hass && !this._localize) {
+        this._localize = setupLocalize(this.hass);
+      }
+      
       // Clear template caches on hass or config changes
       this.templateService.clearTemplateCache();
       this._updateCountdownAndRender();
@@ -408,7 +420,7 @@ export class TimeFlowCardBeta extends LitElement {
     } = this._resolvedConfig;
 
     // FIXED: Ensure background color has a sensible default
-    const cardBackground = background_color || 'var(--card-background, var(--primary-background-color, #1a1a1a))';
+    const cardBackground = background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))';
     const textColor = text_color || 'var(--primary-text-color, #fff)';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
 
@@ -444,9 +456,17 @@ export class TimeFlowCardBeta extends LitElement {
       if (timerData) {
         // If expired and it's an Alexa or Google timer, show dynamic "timer complete" text (with label when available)
         if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
-          subtitleText = TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);
+          subtitleText = TimerEntityService.getTimerSubtitle(
+            timerData,
+            this._resolvedConfig.show_seconds !== false,
+            this._localize || undefined
+          );
         } else if (!this._expired) {
-          subtitleText = subtitle || TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false);
+          subtitleText = subtitle || TimerEntityService.getTimerSubtitle(
+            timerData,
+            this._resolvedConfig.show_seconds !== false,
+            this._localize || undefined
+          );
         } else {
           subtitleText = expired_text;
         }

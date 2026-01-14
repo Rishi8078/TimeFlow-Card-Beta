@@ -1,0 +1,21 @@
+{
+  "timer": {
+    "complete": "Temporizador finalizado",
+    "complete_with_label": "Temporizador {label} finalizado",
+    "paused": "Pausado",
+    "paused_with_time": "Temporizador {label} pausado - {time} restante",
+    "paused_without_label": "Temporizador pausado - {time} restante",
+    "paused_alexa": "Temporizador pausado en {device} - {time} restante",
+    "ready": "Listo",
+    "ready_with_time": "Listo - {time}",
+    "no_timers": "Sin temporizadores",
+    "no_timers_device": "Sin temporizadores en {device}",
+    "no_timers_google": "Sin temporizadores de Google Home",
+    "remaining": "{time} restante",
+    "remaining_with_label": "{time} restante en temporizador {label}",
+    "remaining_with_device": "{time} restante en {device}",
+    "paused_time_left": "Temporizador pausado - {time} restante",
+    "google_paused": "Temporizador de Google Home pausado - {time} restante",
+    "timer_ready": "Temporizador listo"
+  }
+}

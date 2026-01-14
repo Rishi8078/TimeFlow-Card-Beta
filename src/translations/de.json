@@ -1,0 +1,21 @@
+{
+  "timer": {
+    "complete": "Timer abgelaufen",
+    "complete_with_label": "Timer {label} abgelaufen",
+    "paused": "Pausiert",
+    "paused_with_time": "Timer {label} pausiert - {time} verbleibend",
+    "paused_without_label": "Timer pausiert - {time} verbleibend",
+    "paused_alexa": "Timer pausiert auf {device} - {time} verbleibend",
+    "ready": "Bereit",
+    "ready_with_time": "Bereit - {time}",
+    "no_timers": "Keine Timer",
+    "no_timers_device": "Keine Timer auf {device}",
+    "no_timers_google": "Keine Google Home Timer",
+    "remaining": "{time} verbleibend",
+    "remaining_with_label": "{time} verbleibend bei Timer {label}",
+    "remaining_with_device": "{time} verbleibend auf {device}",
+    "paused_time_left": "Timer pausiert - {time} verbleibend",
+    "google_paused": "Google Home Timer pausiert - {time} verbleibend",
+    "timer_ready": "Timer bereit"
+  }
+}

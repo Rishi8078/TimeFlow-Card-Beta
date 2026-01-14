@@ -471,7 +471,8 @@ export class CountdownService {
       }
       
       // Case 4: No smart timer entities were discovered at all.
-      return 'No timers found';
+      const t = localize || ((key: string) => key);
+      return t('timer.no_timers');
     }
     
     // --- FALLBACK TO STANDARD COUNTDOWN ---

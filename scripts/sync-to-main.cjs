@@ -67,7 +67,22 @@ const REPLACEMENTS = [
   { from: /customElements.define\('timeflow-card-beta'/g, to: "customElements.define('timeflow-card'" },
   
   // 8. Fix Editor Element Creation
-  { from: /document.createElement\('timeflow-card-beta-editor'\)/g, to: "document.createElement('timeflow-card-editor')" }
+  { from: /document.createElement\('timeflow-card-beta-editor'\)/g, to: "document.createElement('timeflow-card-editor')" },
+  
+  // 9. Fix remaining Beta references (standalone usages)
+  { from: /TimeFlowCardBeta\./g, to: 'TimeFlowCard.' },
+  { from: /ProgressCircleBeta\b/g, to: 'ProgressCircle' },
+  { from: /ErrorDisplayBeta\b/g, to: 'ErrorDisplay' },
+  { from: /TimeFlowCardEditorBeta\b/g, to: 'TimeFlowCardEditor' },
+  { from: /TimeFlowCardBeta\b/g, to: 'TimeFlowCard' },
+  
+  // 10. Fix import paths for renamed files
+  { from: /from '\.\/components\/TimeFlowCardEditorBeta'/g, to: "from './components/TimeFlowCardEditor'" },
+  { from: /from "\.\/components\/TimeFlowCardEditorBeta"/g, to: 'from "./components/TimeFlowCardEditor"' },
+  
+  // 11. Fix card name in customCards registration
+  { from: /name: 'TimeFlow Card beta'/g, to: "name: 'TimeFlow Card'" },
+  { from: /name: "TimeFlow Card beta"/g, to: 'name: "TimeFlow Card"' }
 ];
 
 // Ensure target directory exists

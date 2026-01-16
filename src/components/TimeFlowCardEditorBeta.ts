@@ -115,10 +115,16 @@ export class TimeFlowCardEditorBeta extends LitElement {
     private _convertToDatetimeLocal(isoDate: string): string {
         if (!isoDate || this._isTemplate(isoDate)) return '';
         // Convert ISO format to datetime-local format (YYYY-MM-DDTHH:MM)
+        // Use local time components to avoid timezone shift from toISOString()
         try {
             const date = new Date(isoDate);
             if (isNaN(date.getTime())) return '';
-            return date.toISOString().slice(0, 16);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
         } catch {
             return '';
         }

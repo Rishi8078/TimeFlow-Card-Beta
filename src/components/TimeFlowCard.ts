@@ -311,8 +311,9 @@ export class TimeFlowCardBeta extends LitElement {
         this._localize = setupLocalize(this.hass);
       }
       
-      // Clear template caches on hass or config changes
-      this.templateService.clearTemplateCache();
+      // Note: Template cache is NOT cleared here to prevent excessive API calls.
+      // The TemplateService has a 5-second TTL cache that handles freshness.
+      // Clearing on every hass update caused performance issues on slower devices.
       this._updateCountdownAndRender();
     }
   }
@@ -597,6 +598,6 @@ export class TimeFlowCardBeta extends LitElement {
 
   // Static version info
   static get version() {
-    return '1.3';
+    return '3.1.1';
   }
 }

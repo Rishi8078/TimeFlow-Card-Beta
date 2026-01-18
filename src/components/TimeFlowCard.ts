@@ -298,10 +298,19 @@ export class TimeFlowCardBeta extends LitElement {
     });
   }
 
-  // Cleanup on disconnect
+  // Connect template subscriptions when card is added to DOM
+  connectedCallback(): void {
+    super.connectedCallback();
+    // Connect template service for WebSocket subscriptions
+    this.templateService.connect();
+  }
+
+  // Cleanup on disconnect - unsubscribe from all WebSocket connections
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this._stopCountdownUpdates();
+    // Disconnect template service - saves cache and unsubscribes
+    this.templateService.disconnect();
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>): void {
@@ -311,9 +320,8 @@ export class TimeFlowCardBeta extends LitElement {
         this._localize = setupLocalize(this.hass);
       }
       
-      // Note: Template cache is NOT cleared here to prevent excessive API calls.
-      // The TemplateService has a 5-second TTL cache that handles freshness.
-      // Clearing on every hass update caused performance issues on slower devices.
+      // Note: With WebSocket subscriptions, templates auto-update when dependencies change.
+      // No manual cache clearing needed - the subscriptions handle freshness automatically.
       this._updateCountdownAndRender();
     }
   }

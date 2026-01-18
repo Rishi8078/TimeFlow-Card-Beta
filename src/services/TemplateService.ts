@@ -1,97 +1,221 @@
-import { HomeAssistant, TimeFlowCard } from '../types/index';
-
-interface CacheEntry {
-  result: any;
-  timestamp: number;
-}
+import { HomeAssistant, TimeFlowCard, RenderTemplateResult, subscribeRenderTemplate, UnsubscribeFunc } from '../types/index';
 
 /**
- * TemplateService - Handles Home Assistant template evaluation and caching
- * Provides efficient template processing with intelligent caching
+ * CacheManager - Simple cache with time-based expiration (inspired by Mushroom)
+ * Used to persist template results across disconnect/reconnect
+ */
+class CacheManager<T> {
+  private _expiration?: number;
+  private _cache = new Map<string, T>();
+
+  constructor(expiration?: number) {
+    this._expiration = expiration;
+  }
+
+  public get(key: string): T | undefined {
+    return this._cache.get(key);
+  }
+
+  public set(key: string, value: T): void {
+    this._cache.set(key, value);
+    if (this._expiration) {
+      window.setTimeout(() => this._cache.delete(key), this._expiration);
+    }
+  }
+
+  public has(key: string): boolean {
+    return this._cache.has(key);
+  }
+
+  public delete(key: string): boolean {
+    return this._cache.delete(key);
+  }
+
+  public clear(): void {
+    this._cache.clear();
+  }
+}
+
+// Global cache for template results - persists across card reconnects (1 minute expiration)
+const templateCache = new CacheManager<RenderTemplateResult>(60000);
+
+/**
+ * TemplateService - Handles Home Assistant template evaluation using WebSocket subscriptions
+ * 
+ * KEY CHANGES from HTTP API approach:
+ * - Uses WebSocket subscriptions (subscribeRenderTemplate) instead of HTTP POST
+ * - Real-time updates when template dependencies change
+ * - Significantly fewer API calls (only one subscription per unique template)
+ * - No polling needed - HA pushes updates automatically
  */
 export class TemplateService {
-  private templateResults: Map<string, CacheEntry>;
-  private templateCacheLimit: number;
+  // Map of template string -> subscription unsubscribe function
+  private _unsubRenderTemplates: Map<string, Promise<UnsubscribeFunc>> = new Map();
+  
+  // Map of template string -> current result
+  private _templateResults: Map<string, RenderTemplateResult> = new Map();
+  
+  // Reference to the card component
   public card?: TimeFlowCard;
+  
+  // Flag to track connection state
+  private _connected: boolean = false;
 
-  constructor() {
-    this.templateResults = new Map();
-    this.templateCacheLimit = 100;
+  constructor() {}
+
+  /**
+   * Connect to template subscriptions - call this in connectedCallback
+   */
+  connect(): void {
+    this._connected = true;
+    // Restore any cached results
+    this._templateResults.forEach((_, template) => {
+      if (templateCache.has(template)) {
+        this._templateResults.set(template, templateCache.get(template)!);
+      }
+    });
   }
 
   /**
-   * Evaluates a Home Assistant template using the correct API
+   * Disconnect from all template subscriptions - call this in disconnectedCallback
+   * Saves current results to cache for quick restore on reconnect
+   */
+  async disconnect(): Promise<void> {
+    this._connected = false;
+    
+    // Save current results to cache before disconnecting
+    this._templateResults.forEach((result, template) => {
+      templateCache.set(template, result);
+    });
+    
+    // Unsubscribe from all templates
+    for (const [template, unsubPromise] of this._unsubRenderTemplates.entries()) {
+      try {
+        const unsub = await unsubPromise;
+        unsub();
+      } catch (err: any) {
+        // Connection might already be closed, ignore these errors
+        if (err.code !== 'not_found' && err.code !== 'template_error') {
+          console.warn('[TimeFlow] Error unsubscribing from template:', err);
+        }
+      }
+    }
+    this._unsubRenderTemplates.clear();
+  }
+
+  /**
+   * Subscribe to a template and get real-time updates
+   * Uses WebSocket subscription - much more efficient than HTTP polling
+   */
+  private async _subscribeToTemplate(template: string): Promise<void> {
+    const hass = this.card?.hass;
+    
+    if (!hass || !hass.connection || !this._connected) {
+      return;
+    }
+    
+    // Already subscribed to this template
+    if (this._unsubRenderTemplates.has(template)) {
+      return;
+    }
+    
+    // Check cache first for immediate display
+    if (templateCache.has(template)) {
+      this._templateResults.set(template, templateCache.get(template)!);
+    }
+    
+    try {
+      const sub = subscribeRenderTemplate(
+        hass.connection,
+        (result: RenderTemplateResult) => {
+          // Store the result and trigger card update
+          this._templateResults.set(template, result);
+          // Also update the cache for persistence
+          templateCache.set(template, result);
+          // Request card update to reflect new value
+          if (this.card && (this.card as any).requestUpdate) {
+            (this.card as any).requestUpdate();
+          }
+        },
+        {
+          template: template,
+          variables: {
+            user: hass.user?.name ?? 'User',
+          },
+          strict: true, // Fail on invalid templates
+        }
+      );
+      
+      this._unsubRenderTemplates.set(template, sub);
+      await sub;
+    } catch (err: any) {
+      // Template subscription failed - use fallback value
+      const fallback = this.extractFallbackFromTemplate(template);
+      this._templateResults.set(template, {
+        result: fallback,
+        listeners: {
+          all: false,
+          domains: [],
+          entities: [],
+          time: false,
+        },
+      });
+      // Remove the failed subscription attempt
+      this._unsubRenderTemplates.delete(template);
+    }
+  }
+
+  /**
+   * Unsubscribe from a specific template
+   */
+  async unsubscribeFromTemplate(template: string): Promise<void> {
+    const unsubPromise = this._unsubRenderTemplates.get(template);
+    if (!unsubPromise) return;
+    
+    try {
+      const unsub = await unsubPromise;
+      unsub();
+      this._unsubRenderTemplates.delete(template);
+      this._templateResults.delete(template);
+    } catch (err: any) {
+      if (err.code !== 'not_found' && err.code !== 'template_error') {
+        console.warn('[TimeFlow] Error unsubscribing from template:', err);
+      }
+    }
+  }
+
+  /**
+   * Evaluates a Home Assistant template using WebSocket subscription
+   * Returns cached value immediately if available, subscribes for updates
+   * 
    * @param {string} template - Template string to evaluate
-   * @param {Object} hass - Home Assistant object
+   * @param {Object} hass - Home Assistant object (not used directly but kept for API compatibility)
    * @returns {Promise<*>} - Evaluated template result
    */
   async evaluateTemplate(template: string, hass: HomeAssistant | null): Promise<any> {
-    if (!hass || !template) {
+    if (!template) {
       return template;
     }
 
-    // Check cache first
-    const cacheKey = template;
-    if (this.templateResults.has(cacheKey)) {
-      const cached = this.templateResults.get(cacheKey);
-      // Check if cache is still valid (within 5 seconds)
-      if (cached && Date.now() - cached.timestamp < 5000) {
-        return cached.result;
-      }
+    // Ensure we're subscribed to this template
+    if (this._connected && this.card?.hass?.connection) {
+      await this._subscribeToTemplate(template);
     }
 
-    try {
-      // Validate template format before making API call
-      if (!this.isValidTemplate(template)) {
-        throw new Error('Invalid template format');
-      }
-
-      // Use callApi method like card-tools and button-card for HA templates
-      const result = await hass.callApi('POST', 'template', { 
-        template: template 
-      });
-      
-      // Check if the template evaluation succeeded but returned 'unknown'
-      if (result === 'unknown' || result === 'unavailable' || result === '' || result === null) {
-        // Try to extract fallback from the template itself
-        const fallback = this.extractFallbackFromTemplate(template);
-        if (fallback && fallback !== template) {
-          // Cache the fallback result
-          this.templateResults.set(cacheKey, {
-            result: fallback,
-            timestamp: Date.now()
-          });
-          
-          // Enforce cache size limits
-          this.enforceTemplateCacheLimit();
-          
-          return fallback;
-        }
-      }
-      
-      // Cache the result
-      this.templateResults.set(cacheKey, {
-        result: result,
-        timestamp: Date.now()
-      });
-      
-      // Enforce cache size limits
-      this.enforceTemplateCacheLimit();
-      
-      return result;
-    } catch (error: any) {
-      // Template evaluation failed, use fallback
-      const fallback = this.extractFallbackFromTemplate(template);
-      
-      // Cache the fallback to prevent repeated failed calls
-      this.templateResults.set(cacheKey, {
-        result: fallback,
-        timestamp: Date.now()
-      });
-      
-      this.enforceTemplateCacheLimit();
-      return fallback;
+    // Return cached result if available
+    if (this._templateResults.has(template)) {
+      return this._templateResults.get(template)!.result;
     }
+    
+    // Check global cache
+    if (templateCache.has(template)) {
+      const cached = templateCache.get(template)!;
+      this._templateResults.set(template, cached);
+      return cached.result;
+    }
+
+    // No cached result yet, return fallback
+    return this.extractFallbackFromTemplate(template);
   }
 
   /**
@@ -209,29 +333,15 @@ export class TemplateService {
   }
 
   /**
-   * Clears template cache when entities change
+   * Clears template subscriptions and results
+   * Note: With WebSocket subscriptions, this is less commonly needed
+   * as the subscriptions auto-update when dependencies change
    */
-  clearTemplateCache() {
-    this.templateResults.clear();
-  }
-
-  /**
-   * Enforces template cache size limits to prevent memory growth
-   */
-  enforceTemplateCacheLimit() {
-    if (this.templateResults.size <= this.templateCacheLimit) {
-      return;
-    }
-
-    // Convert to array and sort by timestamp (oldest first)
-    const cacheEntries = Array.from(this.templateResults.entries())
-      .sort((a, b) => a[1].timestamp - b[1].timestamp);
-
-    // Remove oldest entries until we're under the limit
-    const entriesToRemove = cacheEntries.length - this.templateCacheLimit;
-    for (let i = 0; i < entriesToRemove; i++) {
-      this.templateResults.delete(cacheEntries[i][0]);
-    }
+  clearTemplateCache(): void {
+    // Disconnect from all subscriptions
+    this.disconnect();
+    // Clear local results
+    this._templateResults.clear();
   }
 
   /**

@@ -1,7 +1,7 @@
 import { HomeAssistant, TimeFlowCard, RenderTemplateResult, subscribeRenderTemplate, UnsubscribeFunc } from '../types/index';
 
 /**
- * CacheManager - Simple cache with time-based expiration (inspired by Mushroom)
+ * CacheManager - Simple cache with time-based expiration 
  * Used to persist template results across disconnect/reconnect
  */
 class CacheManager<T> {
@@ -51,17 +51,17 @@ const templateCache = new CacheManager<RenderTemplateResult>(60000);
 export class TemplateService {
   // Map of template string -> subscription unsubscribe function
   private _unsubRenderTemplates: Map<string, Promise<UnsubscribeFunc>> = new Map();
-  
+
   // Map of template string -> current result
   private _templateResults: Map<string, RenderTemplateResult> = new Map();
-  
+
   // Reference to the card component
   public card?: TimeFlowCard;
-  
+
   // Flag to track connection state
   private _connected: boolean = false;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Connect to template subscriptions - call this in connectedCallback
@@ -82,12 +82,12 @@ export class TemplateService {
    */
   async disconnect(): Promise<void> {
     this._connected = false;
-    
+
     // Save current results to cache before disconnecting
     this._templateResults.forEach((result, template) => {
       templateCache.set(template, result);
     });
-    
+
     // Unsubscribe from all templates
     for (const [template, unsubPromise] of this._unsubRenderTemplates.entries()) {
       try {
@@ -109,21 +109,21 @@ export class TemplateService {
    */
   private async _subscribeToTemplate(template: string): Promise<void> {
     const hass = this.card?.hass;
-    
+
     if (!hass || !hass.connection || !this._connected) {
       return;
     }
-    
+
     // Already subscribed to this template
     if (this._unsubRenderTemplates.has(template)) {
       return;
     }
-    
+
     // Check cache first for immediate display
     if (templateCache.has(template)) {
       this._templateResults.set(template, templateCache.get(template)!);
     }
-    
+
     try {
       const sub = subscribeRenderTemplate(
         hass.connection,
@@ -145,7 +145,7 @@ export class TemplateService {
           strict: true, // Fail on invalid templates
         }
       );
-      
+
       this._unsubRenderTemplates.set(template, sub);
       await sub;
     } catch (err: any) {
@@ -171,7 +171,7 @@ export class TemplateService {
   async unsubscribeFromTemplate(template: string): Promise<void> {
     const unsubPromise = this._unsubRenderTemplates.get(template);
     if (!unsubPromise) return;
-    
+
     try {
       const unsub = await unsubPromise;
       unsub();
@@ -206,7 +206,7 @@ export class TemplateService {
     if (this._templateResults.has(template)) {
       return this._templateResults.get(template)!.result;
     }
-    
+
     // Check global cache
     if (templateCache.has(template)) {
       const cached = templateCache.get(template)!;
@@ -231,11 +231,11 @@ export class TemplateService {
     try {
       // Remove the outer {{ }} to work with the inner expression
       const innerTemplate = template.replace(/^\{\{\s*/, '').replace(/\s*\}\}$/, '').trim();
-      
+
       // Look for patterns like "states('entity') or 'fallback'"
       const simpleOrPattern = /^(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
       const simpleOrMatch = innerTemplate.match(simpleOrPattern);
-      
+
       if (simpleOrMatch && simpleOrMatch[2]) {
         return simpleOrMatch[2];
       }
@@ -243,7 +243,7 @@ export class TemplateService {
       // Look for chained or patterns like "states('entity1') or states('entity2') or 'fallback'"
       const chainedOrPattern = /^(.+?)\s+or\s+(.+?)\s+or\s+['"`]([^'"`]+)['"`]$/;
       const chainedMatch = innerTemplate.match(chainedOrPattern);
-      
+
       if (chainedMatch && chainedMatch[3]) {
         return chainedMatch[3];
       }
@@ -251,7 +251,7 @@ export class TemplateService {
       // Look for conditional patterns like "'value' if condition else 'fallback'"
       const conditionalPattern = /^['"`]([^'"`]+)['"`]\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
       const conditionalMatch = innerTemplate.match(conditionalPattern);
-      
+
       if (conditionalMatch && conditionalMatch[3]) {
         return conditionalMatch[3];
       }
@@ -259,7 +259,7 @@ export class TemplateService {
       // Look for reverse conditional patterns like "condition if test else 'fallback'"
       const reverseConditionalPattern = /^(.+?)\s+if\s+(.+?)\s+else\s+['"`]([^'"`]+)['"`]$/;
       const reverseMatch = innerTemplate.match(reverseConditionalPattern);
-      
+
       if (reverseMatch && reverseMatch[3]) {
         return reverseMatch[3];
       }
@@ -277,9 +277,9 @@ export class TemplateService {
    * @returns {boolean} - Whether the value is a template
    */
   isTemplate(value: any): boolean {
-    return typeof value === 'string' && 
-           value.includes('{{') && 
-           value.includes('}}');
+    return typeof value === 'string' &&
+      value.includes('{{') &&
+      value.includes('}}');
   }
 
   /**
@@ -289,19 +289,19 @@ export class TemplateService {
    */
   isValidTemplate(template: string): boolean {
     if (!template || typeof template !== 'string') return false;
-    
+
     // Check for basic template format
     if (!template.includes('{{') || !template.includes('}}')) return false;
-    
+
     // Check for balanced braces
     const openBraces = (template.match(/\{\{/g) || []).length;
     const closeBraces = (template.match(/\}\}/g) || []).length;
     if (openBraces !== closeBraces) return false;
-    
+
     // Check for empty template
     const content = template.replace(/\{\{\s*/, '').replace(/\s*\}\}/, '').trim();
     if (!content) return false;
-    
+
     return true;
   }
 
@@ -351,14 +351,14 @@ export class TemplateService {
    */
   hasTemplatesInConfig(config: any): boolean {
     if (!config) return false;
-    
+
     // Check common template-enabled properties
     const templateProperties = [
       'target_date', 'creation_date', 'title', 'subtitle',
       'color', 'background_color', 'progress_color', 'primary_color', 'secondary_color'
     ];
-    
-    return templateProperties.some(prop => 
+
+    return templateProperties.some(prop =>
       config[prop] && this.isTemplate(config[prop])
     );
   }

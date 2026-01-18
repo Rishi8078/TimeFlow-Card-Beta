@@ -9,7 +9,7 @@ const TARGET_DIR = path.resolve(__dirname, '../../timeflow-card'); // timeflow-c
 // EXCLUDING rollup.config.js and package.json to preserve Main's build identity
 const INCLUDED_PATHS = [
   'src',
-  'tsconfig.json' 
+  'tsconfig.json'
 ];
 
 // Special file renames (Source -> Target)
@@ -26,7 +26,7 @@ const REPLACEMENTS = [
   { from: /<error-display-beta/g, to: '<error-display' },
   { from: /<\/error-display-beta>/g, to: '</error-display>' },
   { from: /<timeflow-card-beta-editor/g, to: '<timeflow-card-editor' }, // unlikely in HTML but good practice
-  
+
   // 2. Custom Element Registration (Strings)
   { from: /'progress-circle-beta'/g, to: "'progress-circle'" },
   { from: /"progress-circle-beta"/g, to: '"progress-circle"' },
@@ -35,11 +35,11 @@ const REPLACEMENTS = [
   { from: /'timeflow-card-beta'/g, to: "'timeflow-card'" },
   { from: /"timeflow-card-beta"/g, to: '"timeflow-card"' },
   { from: /'timeflow-card-beta-editor'/g, to: "'timeflow-card-editor'" },
-  
+
   // 3. Configuration Types
   { from: /type: 'custom:timeflow-card-beta'/g, to: "type: 'custom:timeflow-card'" },
   { from: /type: "custom:timeflow-card-beta"/g, to: 'type: "custom:timeflow-card"' },
-  
+
   // 4. Class Names & Imports
   { from: /class TimeFlowCardBeta/g, to: 'class TimeFlowCard' },
   { from: /class ProgressCircleBeta/g, to: 'class ProgressCircle' },
@@ -47,13 +47,13 @@ const REPLACEMENTS = [
   { from: /class TimeFlowCardEditorBeta/g, to: 'class TimeFlowCardEditor' },
   { from: /export { TimeFlowCardBeta/g, to: 'export { TimeFlowCard' },
   { from: /TimeFlowCardBeta, ProgressCircleBeta/g, to: 'TimeFlowCard, ProgressCircle' }, // Index export line
-  
+
   // 5. File Headers & Comments
   { from: /\/\/TimeFlowCardBeta.ts/g, to: '//TimeFlowCard.ts' },
   { from: /\/\/ ProgressCircleBeta.ts/g, to: '// ProgressCircle.ts' },
   { from: /\* TimeFlow Card Editor Beta/g, to: '* TimeFlow Card Editor' },
   { from: /\(Beta version\)/g, to: '' },
-  
+
   // 6. Generic "Beta" stripping (Use with caution, kept for safety on missed items)
   // Replaced generic stripping with targeted ones above to be safer.
   // We explicitly replace the import paths now:
@@ -61,28 +61,32 @@ const REPLACEMENTS = [
   { from: /import { ProgressCircleBeta }/g, to: 'import { ProgressCircle }' },
   { from: /import { ErrorDisplayBeta }/g, to: 'import { ErrorDisplay }' },
   { from: /import { TimeFlowCardEditorBeta }/g, to: 'import { TimeFlowCardEditor }' },
-  
+
   // 7. Fix Component Definitions
   { from: /customElements.get\('timeflow-card-beta'\)/g, to: "customElements.get('timeflow-card')" },
   { from: /customElements.define\('timeflow-card-beta'/g, to: "customElements.define('timeflow-card'" },
-  
+
   // 8. Fix Editor Element Creation
   { from: /document.createElement\('timeflow-card-beta-editor'\)/g, to: "document.createElement('timeflow-card-editor')" },
-  
+
   // 9. Fix remaining Beta references (standalone usages)
   { from: /TimeFlowCardBeta\./g, to: 'TimeFlowCard.' },
   { from: /ProgressCircleBeta\b/g, to: 'ProgressCircle' },
   { from: /ErrorDisplayBeta\b/g, to: 'ErrorDisplay' },
   { from: /TimeFlowCardEditorBeta\b/g, to: 'TimeFlowCardEditor' },
   { from: /TimeFlowCardBeta\b/g, to: 'TimeFlowCard' },
-  
+
   // 10. Fix import paths for renamed files
   { from: /from '\.\/components\/TimeFlowCardEditorBeta'/g, to: "from './components/TimeFlowCardEditor'" },
   { from: /from "\.\/components\/TimeFlowCardEditorBeta"/g, to: 'from "./components/TimeFlowCardEditor"' },
-  
+
   // 11. Fix card name in customCards registration
   { from: /name: 'TimeFlow Card beta'/g, to: "name: 'TimeFlow Card'" },
-  { from: /name: "TimeFlow Card beta"/g, to: 'name: "TimeFlow Card"' }
+  { from: /name: "TimeFlow Card beta"/g, to: 'name: "TimeFlow Card"' },
+
+  // 12. Fix fallback type patterns (with || operator)
+  { from: /\|\| 'custom:timeflow-card-beta'/g, to: "|| 'custom:timeflow-card'" },
+  { from: /\|\| "custom:timeflow-card-beta"/g, to: '|| "custom:timeflow-card"' }
 ];
 
 // Ensure target directory exists
@@ -123,11 +127,11 @@ function traverseDirectory(currentPath, relativePath = '') {
       // Check if this file should be renamed
       const fileName = item.name;
       const targetFileName = FILE_RENAMES[fileName] || fileName;
-      
+
       // Construct target path with potential rename
       const dirName = path.dirname(itemRelativePath);
       const targetRelativePath = path.join(dirName, targetFileName);
-      
+
       const targetPath = path.join(TARGET_DIR, targetRelativePath);
       processFile(itemPath, targetPath);
     }

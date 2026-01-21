@@ -133,6 +133,18 @@ export class TimeFlowCardBeta extends LitElement {
         margin-bottom: 0;
       }
       
+      .header-icon {
+        flex-shrink: 0;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .header-icon ha-icon {
+        display: flex;
+      }
+      
       .title-section {
         flex: 1;
         display: flex;
@@ -368,7 +380,10 @@ export class TimeFlowCardBeta extends LitElement {
       'progress_color',
       'primary_color',
       'secondary_color',
-      'expired_text'
+      'expired_text',
+      'header_icon',
+      'header_icon_color',
+      'header_icon_background'
     ] as const;
 
     // Resolve templates where applicable
@@ -557,6 +572,19 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content">
           <header class="header">
+            ${this._resolvedConfig.header_icon ? html`
+              <div class="header-icon">
+                <ha-icon 
+                  icon="${this._resolvedConfig.header_icon}"
+                  style="
+                    width: ${this._resolvedConfig.header_icon_size || 24}px;
+                    height: ${this._resolvedConfig.header_icon_size || 24}px;
+                    color: ${this._resolvedConfig.header_icon_color || 'var(--primary-text-color)'};
+                    ${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: 12px; padding: 10px;` : ''}
+                  "
+                ></ha-icon>
+              </div>
+            ` : ''}
             <div class="title-section">
               <h2 class="title" aria-live="polite">${titleText}</h2>
               <p class="subtitle" aria-live="polite">${subtitleText}</p>

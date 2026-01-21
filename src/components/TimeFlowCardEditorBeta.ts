@@ -183,6 +183,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
             // Progress Circle
             'stroke_width': 'Thickness of the progress circle ring',
             'icon_size': 'Size of the progress circle',
+
+            // Header Icon
+            'header_icon': 'Material Design icon name (e.g., "mdi:cake-variant")',
+            'header_icon_color': 'Icon color (hex, name, or template)',
+            'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
+            'header_icon_size': 'Icon size in pixels (default: 24)',
         };
         return helpers[schema.name] || '';
     }
@@ -216,6 +222,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'stroke_width': 'Stroke Width',
             'icon_size': 'Circle Size',
             'aspect_ratio': 'Aspect Ratio',
+            'header_icon': 'Header Icon',
+            'header_icon_color': 'Icon Color',
+            'header_icon_background': 'Icon Background',
+            'header_icon_size': 'Icon Size',
         };
 
         if (labels[schema.name]) return labels[schema.name];
@@ -342,6 +352,26 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ]
             },
             { name: 'expired_text', selector: { text: {} } },
+
+            // ═══════════════════════════════════════════════════════════
+            // HEADER ICON - Expandable
+            // ═══════════════════════════════════════════════════════════
+            {
+                type: "expandable",
+                title: "Header Icon",
+                icon: "mdi:image-filter-vintage",
+                schema: [
+                    { name: 'header_icon', selector: { icon: {} } },
+                    {
+                        type: 'grid',
+                        schema: [
+                            { name: 'header_icon_color', selector: { text: {} } },
+                            { name: 'header_icon_background', selector: { text: {} } },
+                        ]
+                    },
+                    { name: 'header_icon_size', selector: { number: { min: 12, max: 100, step: 1 } } },
+                ]
+            },
 
             // ═══════════════════════════════════════════════════════════
             // TIME UNITS - Always visible as grid

@@ -117,6 +117,12 @@ export interface CardConfig {
   subtitle_prefix?: string;  // Text to prepend to countdown (e.g., "in", "Only")
   subtitle_suffix?: string;  // Text to append to countdown (e.g., "left", "remaining")
 
+  // Header icon configuration
+  header_icon?: string;           // Icon to display next to title (e.g., "mdi:cake-variant")
+  header_icon_color?: string;     // Icon color (e.g., "#3b82f6")
+  header_icon_background?: string; // Icon background color (e.g., "rgba(59, 130, 246, 0.2)")
+  header_icon_size?: number;      // Icon size in pixels (default: 24)
+
   // Time unit visibility
   show_months?: boolean;
   show_days?: boolean;

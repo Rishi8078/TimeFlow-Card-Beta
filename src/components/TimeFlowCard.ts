@@ -579,7 +579,7 @@ export class TimeFlowCardBeta extends LitElement {
         <div class="card-content">
           <header class="header" style="${this._resolvedConfig.header_icon ? `--header-icon-container-size: calc(${proportionalSizes.titleSize}rem * 1.3 + ${proportionalSizes.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${proportionalSizes.titleSize}rem * 0.9 + ${proportionalSizes.subtitleSize}rem * 0.7);` : ''}">
             ${this._resolvedConfig.header_icon ? html`
-              <div class="header-icon" style="${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: 12px;` : ''}">
+              <div class="header-icon" style="${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);` : ''}">
                 <ha-icon 
                   icon="${this._resolvedConfig.header_icon}"
                   style="color: ${this._resolvedConfig.header_icon_color || 'var(--primary-text-color)'}"

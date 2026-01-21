@@ -188,7 +188,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon': 'Material Design icon name (e.g., "mdi:cake-variant")',
             'header_icon_color': 'Icon color (hex, name, or template)',
             'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
-            'header_icon_size': 'Icon size in pixels (default: 24)',
         };
         return helpers[schema.name] || '';
     }
@@ -225,7 +224,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon': 'Header Icon',
             'header_icon_color': 'Icon Color',
             'header_icon_background': 'Icon Background',
-            'header_icon_size': 'Icon Size',
         };
 
         if (labels[schema.name]) return labels[schema.name];
@@ -369,7 +367,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                             { name: 'header_icon_background', selector: { text: {} } },
                         ]
                     },
-                    { name: 'header_icon_size', selector: { number: { min: 12, max: 100, step: 1 } } },
                 ]
             },
 

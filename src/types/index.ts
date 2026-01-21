@@ -121,7 +121,6 @@ export interface CardConfig {
   header_icon?: string;           // Icon to display next to title (e.g., "mdi:cake-variant")
   header_icon_color?: string;     // Icon color (e.g., "#3b82f6")
   header_icon_background?: string; // Icon background color (e.g., "rgba(59, 130, 246, 0.2)")
-  header_icon_size?: number;      // Icon size in pixels (default: 24)
 
   // Time unit visibility
   show_months?: boolean;

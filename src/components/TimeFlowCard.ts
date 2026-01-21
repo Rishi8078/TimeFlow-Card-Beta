@@ -139,10 +139,16 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
+        /* Size matches title + subtitle height */
+        width: var(--header-icon-container-size, 44px);
+        height: var(--header-icon-container-size, 44px);
       }
       
       .header-icon ha-icon {
         display: flex;
+        align-items: center;
+        justify-content: center;
+        --mdc-icon-size: var(--header-icon-size, 24px);
       }
       
       .title-section {
@@ -571,17 +577,12 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content">
-          <header class="header">
+          <header class="header" style="${this._resolvedConfig.header_icon ? `--header-icon-container-size: calc(${proportionalSizes.titleSize}rem * 1.3 + ${proportionalSizes.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${proportionalSizes.titleSize}rem * 0.9 + ${proportionalSizes.subtitleSize}rem * 0.7);` : ''}">
             ${this._resolvedConfig.header_icon ? html`
-              <div class="header-icon">
+              <div class="header-icon" style="${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: 12px;` : ''}">
                 <ha-icon 
                   icon="${this._resolvedConfig.header_icon}"
-                  style="
-                    width: ${this._resolvedConfig.header_icon_size || 24}px;
-                    height: ${this._resolvedConfig.header_icon_size || 24}px;
-                    color: ${this._resolvedConfig.header_icon_color || 'var(--primary-text-color)'};
-                    ${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: 12px; padding: 10px;` : ''}
-                  "
+                  style="color: ${this._resolvedConfig.header_icon_color || 'var(--primary-text-color)'}"
                 ></ha-icon>
               </div>
             ` : ''}

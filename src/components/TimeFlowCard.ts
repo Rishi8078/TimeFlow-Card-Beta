@@ -577,7 +577,7 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content">
-          <header class="header" style="${this._resolvedConfig.header_icon ? `--header-icon-container-size: calc(${proportionalSizes.titleSize}rem * 1.3 + ${proportionalSizes.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${proportionalSizes.titleSize}rem * 0.9 + ${proportionalSizes.subtitleSize}rem * 0.7);` : ''}">
+          <header class="header" style="${this._resolvedConfig.header_icon ? `--header-icon-container-size: calc(var(--timeflow-title-size) * 1.3 + var(--timeflow-subtitle-size) * 1.2 + 2px); --header-icon-size: calc(var(--timeflow-title-size) * 0.9 + var(--timeflow-subtitle-size) * 0.7);` : ''}">
             ${this._resolvedConfig.header_icon ? html`
               <div class="header-icon" style="${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);` : ''}">
                 <ha-icon 

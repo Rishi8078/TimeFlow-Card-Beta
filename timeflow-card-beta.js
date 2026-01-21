@@ -212,7 +212,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         @action=${R&&this.hass?function(e,t){return e=>{Ae(e.target,0,t,e.detail.action)}}(this.hass,N):void 0}
       >
         <div class="card-content">
-          <header class="header" style="${this._resolvedConfig.header_icon?`--header-icon-container-size: calc(${A.titleSize}rem * 1.3 + ${A.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${A.titleSize}rem * 0.9 + ${A.subtitleSize}rem * 0.7);`:""}">
+          <header class="header" style="${this._resolvedConfig.header_icon?"--header-icon-container-size: calc(var(--timeflow-title-size) * 1.3 + var(--timeflow-subtitle-size) * 1.2 + 2px); --header-icon-size: calc(var(--timeflow-title-size) * 0.9 + var(--timeflow-subtitle-size) * 0.7);":""}">
             ${this._resolvedConfig.header_icon?j`
               <div class="header-icon" style="${this._resolvedConfig.header_icon_background?`background: ${this._resolvedConfig.header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);`:""}">
                 <ha-icon 

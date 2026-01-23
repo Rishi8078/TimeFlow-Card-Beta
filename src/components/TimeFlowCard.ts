@@ -10,7 +10,7 @@ import { StyleManager } from '../utils/StyleManager';
 import { setupLocalize, LocalizeFunction } from '../utils/localize';
 import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/action-handler';
-import { DEFAULT_BACKGROUND, DEFAULT_TEXT_COLOR, parseMillisecondsToUnits } from '../utils/TimeUtils';
+import { DEFAULT_BACKGROUND, DEFAULT_TEXT_COLOR, parseMillisecondsToUnits, getUnitLabel } from '../utils/TimeUtils';
 import '../utils/ErrorDisplay';
 
 export class TimeFlowCardBeta extends LitElement {
@@ -20,10 +20,10 @@ export class TimeFlowCardBeta extends LitElement {
 
   // Reactive properties to trigger updates
   @property({ type: Object }) hass: HomeAssistant | null = null;
-  @property({ type: Object }) config: CardConfig = this.getStubConfig();
+  @property({ type: Object }) config: CardConfig = TimeFlowCardBeta.getStubConfig();
 
   // Internal reactive state for resolved config props and countdown state
-  @state() private _resolvedConfig: CardConfig = this.getStubConfig();
+  @state() private _resolvedConfig: CardConfig = TimeFlowCardBeta.getStubConfig();
   @state() private _progress: number = 0;
   @state() private _countdown: CountdownState = {
     months: 0,
@@ -301,7 +301,7 @@ export class TimeFlowCardBeta extends LitElement {
   constructor() {
     super();
     // Initialize with proper stub config
-    const stubConfig = this.getStubConfig();
+    const stubConfig = TimeFlowCardBeta.getStubConfig();
     this.config = stubConfig;
     this._resolvedConfig = stubConfig;
   }
@@ -327,11 +327,6 @@ export class TimeFlowCardBeta extends LitElement {
     };
   }
 
-  // Instance method for internal use
-  getStubConfig(): CardConfig {
-    return TimeFlowCardBeta.getStubConfig();
-  }
-
   setConfig(config: CardConfig): void {
     try {
       // Validate the config with new enhanced validation
@@ -341,7 +336,7 @@ export class TimeFlowCardBeta extends LitElement {
       // Determine if we should proceed with the configuration
       if (validationResult.hasCriticalErrors) {
         // Use safe config if available, otherwise use stub config
-        this.config = validationResult.safeConfig || this.getStubConfig();
+        this.config = validationResult.safeConfig || TimeFlowCardBeta.getStubConfig();
         this._resolvedConfig = { ...this.config };
       } else if (validationResult.hasWarnings) {
         // Configuration has warnings - don't proceed with normal flow
@@ -380,10 +375,10 @@ export class TimeFlowCardBeta extends LitElement {
         }],
         hasCriticalErrors: true,
         hasWarnings: false,
-        safeConfig: this.getStubConfig()
+        safeConfig: TimeFlowCardBeta.getStubConfig()
       };
 
-      this.config = this.getStubConfig();
+      this.config = TimeFlowCardBeta.getStubConfig();
       this._resolvedConfig = { ...this.config };
       this._initialized = true; // Make sure we're initialized to render the error
 
@@ -778,21 +773,21 @@ export class TimeFlowCardBeta extends LitElement {
 
     // First, try to return an enabled unit that has a non-zero value
     if (show_months !== false && months > 0) {
-      return { primaryValue: months, primaryUnit: months === 1 ? 'MONTH' : 'MONTHS' };
+      return { primaryValue: months, primaryUnit: getUnitLabel('month', months, 'eventy') };
     }
     if (show_days !== false && days > 0) {
       // Calculate total days including months if months are hidden
       const totalDays = (show_months === false ? months * 30 : 0) + days;
-      return { primaryValue: totalDays, primaryUnit: totalDays === 1 ? 'DAY' : 'DAYS' };
+      return { primaryValue: totalDays, primaryUnit: getUnitLabel('day', totalDays, 'eventy') };
     }
     if (show_hours !== false && hours > 0) {
-      return { primaryValue: hours, primaryUnit: hours === 1 ? 'HOUR' : 'HOURS' };
+      return { primaryValue: hours, primaryUnit: getUnitLabel('hour', hours, 'eventy') };
     }
     if (show_minutes !== false && minutes > 0) {
-      return { primaryValue: minutes, primaryUnit: minutes === 1 ? 'MIN' : 'MINS' };
+      return { primaryValue: minutes, primaryUnit: getUnitLabel('minute', minutes, 'eventy') };
     }
     if (show_seconds !== false && seconds > 0) {
-      return { primaryValue: seconds, primaryUnit: seconds === 1 ? 'SEC' : 'SECS' };
+      return { primaryValue: seconds, primaryUnit: getUnitLabel('second', seconds, 'eventy') };
     }
 
     // Fallback: All enabled units are zero, calculate from total milliseconds
@@ -801,7 +796,7 @@ export class TimeFlowCardBeta extends LitElement {
     
     if (totalMs <= 0) {
       // Countdown is complete
-      return { primaryValue: 0, primaryUnit: show_seconds !== false ? 'SECS' : 'DAYS' };
+      return { primaryValue: 0, primaryUnit: show_seconds !== false ? getUnitLabel('second', 0, 'eventy') : getUnitLabel('day', 0, 'eventy') };
     }
 
     // Calculate fallback values from total milliseconds using shared utility
@@ -809,20 +804,20 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Return the highest non-zero fallback unit
     if (fallback.days > 0) {
-      return { primaryValue: fallback.days, primaryUnit: fallback.days === 1 ? 'DAY' : 'DAYS' };
+      return { primaryValue: fallback.days, primaryUnit: getUnitLabel('day', fallback.days, 'eventy') };
     }
     if (fallback.hours > 0) {
-      return { primaryValue: fallback.hours, primaryUnit: fallback.hours === 1 ? 'HOUR' : 'HOURS' };
+      return { primaryValue: fallback.hours, primaryUnit: getUnitLabel('hour', fallback.hours, 'eventy') };
     }
     if (fallback.minutes > 0) {
-      return { primaryValue: fallback.minutes, primaryUnit: fallback.minutes === 1 ? 'MIN' : 'MINS' };
+      return { primaryValue: fallback.minutes, primaryUnit: getUnitLabel('minute', fallback.minutes, 'eventy') };
     }
     if (fallback.seconds > 0) {
-      return { primaryValue: fallback.seconds, primaryUnit: fallback.seconds === 1 ? 'SEC' : 'SECS' };
+      return { primaryValue: fallback.seconds, primaryUnit: getUnitLabel('second', fallback.seconds, 'eventy') };
     }
 
     // Truly at zero
-    return { primaryValue: 0, primaryUnit: 'SECS' };
+    return { primaryValue: 0, primaryUnit: getUnitLabel('second', 0, 'eventy') };
   }
 
   /**

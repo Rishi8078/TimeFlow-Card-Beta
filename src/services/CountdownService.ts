@@ -10,7 +10,8 @@ import {
   SECONDS_PER_MINUTE,
   SECONDS_PER_HOUR,
   parseMillisecondsToUnits,
-  parseSecondsToUnits
+  parseSecondsToUnits,
+  getUnitLabel
 } from '../utils/TimeUtils';
 
 /**
@@ -339,15 +340,15 @@ export class CountdownService {
           if (TimerEntityService.isTimerExpired(timerData)) {
             return { value: '🔔', label: TimerEntityService.getTimerSubtitle(timerData, false) };
           }
-          if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
-          if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
-          return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
+          if (hours > 0) return { value: hours.toString(), label: getUnitLabel('hour', hours, 'mainDisplay') };
+          if (minutes > 0) return { value: minutes.toString(), label: getUnitLabel('minute', minutes, 'mainDisplay') };
+          return { value: seconds.toString(), label: getUnitLabel('second', seconds, 'mainDisplay') };
         }
 
         // Standard timer handling
-        if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour' : 'hours' };
-        if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute' : 'minutes' };
-        return { value: seconds.toString(), label: seconds === 1 ? 'second' : 'seconds' };
+        if (hours > 0) return { value: hours.toString(), label: getUnitLabel('hour', hours, 'timer') };
+        if (minutes > 0) return { value: minutes.toString(), label: getUnitLabel('minute', minutes, 'timer') };
+        return { value: seconds.toString(), label: getUnitLabel('second', seconds, 'timer') };
       }
     }
 
@@ -364,9 +365,9 @@ export class CountdownService {
         if (TimerEntityService.isTimerExpired(timerData)) {
           return { value: '🔔', label: TimerEntityService.getTimerSubtitle(timerData, false) };
         }
-        if (hours > 0) return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
-        if (minutes > 0) return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
-        return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
+        if (hours > 0) return { value: hours.toString(), label: getUnitLabel('hour', hours, 'mainDisplay') };
+        if (minutes > 0) return { value: minutes.toString(), label: getUnitLabel('minute', minutes, 'mainDisplay') };
+        return { value: seconds.toString(), label: getUnitLabel('second', seconds, 'mainDisplay') };
       }
 
       // No timer found; check if auto-discovery was enabled
@@ -394,18 +395,18 @@ export class CountdownService {
 
     // Show the largest time unit that is enabled and has a value > 0
     if (show_months && months > 0) {
-      return { value: months.toString(), label: months === 1 ? 'month left' : 'months left' };
+      return { value: months.toString(), label: getUnitLabel('month', months, 'mainDisplay') };
     } else if (show_days && days > 0) {
-      return { value: days.toString(), label: days === 1 ? 'day left' : 'days left' };
+      return { value: days.toString(), label: getUnitLabel('day', days, 'mainDisplay') };
     } else if (show_hours && hours > 0) {
-      return { value: hours.toString(), label: hours === 1 ? 'hour left' : 'hours left' };
+      return { value: hours.toString(), label: getUnitLabel('hour', hours, 'mainDisplay') };
     } else if (show_minutes && minutes > 0) {
-      return { value: minutes.toString(), label: minutes === 1 ? 'minute left' : 'minutes left' };
+      return { value: minutes.toString(), label: getUnitLabel('minute', minutes, 'mainDisplay') };
     } else if (show_seconds && seconds >= 0) {
-      return { value: seconds.toString(), label: seconds === 1 ? 'second left' : 'seconds left' };
+      return { value: seconds.toString(), label: getUnitLabel('second', seconds, 'mainDisplay') };
     }
 
-    return { value: '0', label: 'seconds left' };
+    return { value: '0', label: getUnitLabel('second', 0, 'mainDisplay') };
   }
 
   /**

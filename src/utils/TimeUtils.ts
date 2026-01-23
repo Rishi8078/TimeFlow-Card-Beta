@@ -78,3 +78,53 @@ export function parseSecondsToUnits(totalSeconds: number): TimeUnits {
   
   return { days, hours, minutes, seconds };
 }
+
+// ============================================================================
+// Singular/Plural Label Utilities
+// ============================================================================
+
+/**
+ * Unit label definitions for consistent singular/plural handling
+ * Maps time units to their singular and plural forms for different display contexts
+ */
+export const TIME_UNIT_LABELS = {
+  // Compact uppercase labels (for Eventy style)
+  eventy: {
+    month: { singular: 'MONTH', plural: 'MONTHS' },
+    day: { singular: 'DAY', plural: 'DAYS' },
+    hour: { singular: 'HOUR', plural: 'HOURS' },
+    minute: { singular: 'MIN', plural: 'MINS' },
+    second: { singular: 'SEC', plural: 'SECS' },
+  },
+  // Standard labels with "left" suffix (for main display)
+  mainDisplay: {
+    month: { singular: 'month left', plural: 'months left' },
+    day: { singular: 'day left', plural: 'days left' },
+    hour: { singular: 'hour left', plural: 'hours left' },
+    minute: { singular: 'minute left', plural: 'minutes left' },
+    second: { singular: 'second left', plural: 'seconds left' },
+  },
+  // Standard labels without suffix (for timer displays)
+  timer: {
+    month: { singular: 'month', plural: 'months' },
+    day: { singular: 'day', plural: 'days' },
+    hour: { singular: 'hour', plural: 'hours' },
+    minute: { singular: 'minute', plural: 'minutes' },
+    second: { singular: 'second', plural: 'seconds' },
+  },
+} as const;
+
+export type TimeUnitType = 'month' | 'day' | 'hour' | 'minute' | 'second';
+export type LabelStyle = keyof typeof TIME_UNIT_LABELS;
+
+/**
+ * Gets the appropriate singular or plural label for a time unit
+ * @param unit - The time unit type (month, day, hour, minute, second)
+ * @param value - The numeric value to determine singular/plural
+ * @param style - The label style ('eventy', 'mainDisplay', or 'timer')
+ * @returns The appropriate label string
+ */
+export function getUnitLabel(unit: TimeUnitType, value: number, style: LabelStyle = 'mainDisplay'): string {
+  const labels = TIME_UNIT_LABELS[style][unit];
+  return value === 1 ? labels.singular : labels.plural;
+}

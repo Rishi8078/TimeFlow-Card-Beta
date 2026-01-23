@@ -816,34 +816,64 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * Gets the primary countdown value and unit to display in list layout
+   * Gets the primary countdown value and unit to display in Eventy layout
    * Returns the largest non-zero unit (e.g., "11" and "DAYS")
+   * Auto-switches to next available unit when current unit reaches 0 (same as Classic style)
    */
   private _getPrimaryCountdownUnit(): { primaryValue: number; primaryUnit: string } {
-    const { months, days, hours, minutes, seconds } = this._countdown;
+    const { months, days, hours, minutes, seconds, total } = this._countdown;
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._resolvedConfig;
 
-    // Return the first enabled unit that has a value, or largest enabled unit
+    // First, try to return an enabled unit that has a non-zero value
     if (show_months !== false && months > 0) {
       return { primaryValue: months, primaryUnit: months === 1 ? 'MONTH' : 'MONTHS' };
     }
-    if (show_days !== false && (days > 0 || months === 0)) {
+    if (show_days !== false && days > 0) {
       // Calculate total days including months if months are hidden
       const totalDays = (show_months === false ? months * 30 : 0) + days;
       return { primaryValue: totalDays, primaryUnit: totalDays === 1 ? 'DAY' : 'DAYS' };
     }
-    if (show_hours !== false && (hours > 0 || (days === 0 && months === 0))) {
+    if (show_hours !== false && hours > 0) {
       return { primaryValue: hours, primaryUnit: hours === 1 ? 'HOUR' : 'HOURS' };
     }
-    if (show_minutes !== false && (minutes > 0 || (hours === 0 && days === 0 && months === 0))) {
+    if (show_minutes !== false && minutes > 0) {
       return { primaryValue: minutes, primaryUnit: minutes === 1 ? 'MIN' : 'MINS' };
     }
-    if (show_seconds !== false) {
+    if (show_seconds !== false && seconds > 0) {
       return { primaryValue: seconds, primaryUnit: seconds === 1 ? 'SEC' : 'SECS' };
     }
 
-    // Fallback to days
-    return { primaryValue: days, primaryUnit: days === 1 ? 'DAY' : 'DAYS' };
+    // Fallback: All enabled units are zero, calculate from total milliseconds
+    // This handles cases like: user only enabled "days" but less than 24 hours remain
+    const totalMs = total || 0;
+    
+    if (totalMs <= 0) {
+      // Countdown is complete
+      return { primaryValue: 0, primaryUnit: show_seconds !== false ? 'SECS' : 'DAYS' };
+    }
+
+    // Calculate fallback values from total milliseconds
+    const fallbackDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+    const fallbackHours = Math.floor((totalMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const fallbackMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+    const fallbackSeconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+
+    // Return the highest non-zero fallback unit
+    if (fallbackDays > 0) {
+      return { primaryValue: fallbackDays, primaryUnit: fallbackDays === 1 ? 'DAY' : 'DAYS' };
+    }
+    if (fallbackHours > 0) {
+      return { primaryValue: fallbackHours, primaryUnit: fallbackHours === 1 ? 'HOUR' : 'HOURS' };
+    }
+    if (fallbackMinutes > 0) {
+      return { primaryValue: fallbackMinutes, primaryUnit: fallbackMinutes === 1 ? 'MIN' : 'MINS' };
+    }
+    if (fallbackSeconds > 0) {
+      return { primaryValue: fallbackSeconds, primaryUnit: fallbackSeconds === 1 ? 'SEC' : 'SECS' };
+    }
+
+    // Truly at zero
+    return { primaryValue: 0, primaryUnit: 'SECS' };
   }
 
   /**

@@ -128,3 +128,38 @@ export function getUnitLabel(unit: TimeUnitType, value: number, style: LabelStyl
   const labels = TIME_UNIT_LABELS[style][unit];
   return value === 1 ? labels.singular : labels.plural;
 }
+
+/**
+ * Translation key mapping for eventy-style labels
+ * Maps unit type and plurality to the correct localization key
+ */
+const EVENTY_TRANSLATION_KEYS: Record<TimeUnitType, { singular: string; plural: string }> = {
+  month: { singular: 'time.month_eventy', plural: 'time.months_eventy' },
+  day: { singular: 'time.day_eventy', plural: 'time.days_eventy' },
+  hour: { singular: 'time.hour_eventy', plural: 'time.hours_eventy' },
+  minute: { singular: 'time.minute_eventy', plural: 'time.minutes_eventy' },
+  second: { singular: 'time.second_eventy', plural: 'time.seconds_eventy' },
+};
+
+/**
+ * LocalizeFunction type - matches the signature from localize.ts
+ */
+type LocalizeFn = (key: string, args?: Record<string, any>) => string;
+
+/**
+ * Gets the appropriate localized label for a time unit in Eventy style
+ * @param unit - The time unit type (month, day, hour, minute, second)
+ * @param value - The numeric value to determine singular/plural
+ * @param localize - The localization function from setupLocalize()
+ * @returns The localized label string (e.g., 'DÍAS' in Spanish for days > 1)
+ */
+export function getLocalizedEventyLabel(unit: TimeUnitType, value: number, localize?: LocalizeFn): string {
+  // If no localize function provided, fall back to hardcoded English
+  if (!localize) {
+    return getUnitLabel(unit, value, 'eventy');
+  }
+  
+  const keys = EVENTY_TRANSLATION_KEYS[unit];
+  const key = value === 1 ? keys.singular : keys.plural;
+  return localize(key);
+}

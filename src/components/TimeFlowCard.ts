@@ -10,7 +10,7 @@ import { StyleManager } from '../utils/StyleManager';
 import { setupLocalize, LocalizeFunction } from '../utils/localize';
 import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/action-handler';
-import { DEFAULT_BACKGROUND, DEFAULT_TEXT_COLOR, parseMillisecondsToUnits, getUnitLabel } from '../utils/TimeUtils';
+import { DEFAULT_BACKGROUND, DEFAULT_TEXT_COLOR, parseMillisecondsToUnits, getUnitLabel, getLocalizedEventyLabel } from '../utils/TimeUtils';
 import '../utils/ErrorDisplay';
 
 export class TimeFlowCardBeta extends LitElement {
@@ -766,28 +766,30 @@ export class TimeFlowCardBeta extends LitElement {
    * Gets the primary countdown value and unit to display in Eventy layout
    * Returns the largest non-zero unit (e.g., "11" and "DAYS")
    * Auto-switches to next available unit when current unit reaches 0 (same as Classic style)
+   * Supports localization for multi-language displays
    */
   private _getPrimaryCountdownUnit(): { primaryValue: number; primaryUnit: string } {
     const { months, days, hours, minutes, seconds, total } = this._countdown;
     const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._resolvedConfig;
+    const t = this._localize || undefined;
 
     // First, try to return an enabled unit that has a non-zero value
     if (show_months !== false && months > 0) {
-      return { primaryValue: months, primaryUnit: getUnitLabel('month', months, 'eventy') };
+      return { primaryValue: months, primaryUnit: getLocalizedEventyLabel('month', months, t) };
     }
     if (show_days !== false && days > 0) {
       // Calculate total days including months if months are hidden
       const totalDays = (show_months === false ? months * 30 : 0) + days;
-      return { primaryValue: totalDays, primaryUnit: getUnitLabel('day', totalDays, 'eventy') };
+      return { primaryValue: totalDays, primaryUnit: getLocalizedEventyLabel('day', totalDays, t) };
     }
     if (show_hours !== false && hours > 0) {
-      return { primaryValue: hours, primaryUnit: getUnitLabel('hour', hours, 'eventy') };
+      return { primaryValue: hours, primaryUnit: getLocalizedEventyLabel('hour', hours, t) };
     }
     if (show_minutes !== false && minutes > 0) {
-      return { primaryValue: minutes, primaryUnit: getUnitLabel('minute', minutes, 'eventy') };
+      return { primaryValue: minutes, primaryUnit: getLocalizedEventyLabel('minute', minutes, t) };
     }
     if (show_seconds !== false && seconds > 0) {
-      return { primaryValue: seconds, primaryUnit: getUnitLabel('second', seconds, 'eventy') };
+      return { primaryValue: seconds, primaryUnit: getLocalizedEventyLabel('second', seconds, t) };
     }
 
     // Fallback: All enabled units are zero, calculate from total milliseconds
@@ -796,7 +798,7 @@ export class TimeFlowCardBeta extends LitElement {
     
     if (totalMs <= 0) {
       // Countdown is complete
-      return { primaryValue: 0, primaryUnit: show_seconds !== false ? getUnitLabel('second', 0, 'eventy') : getUnitLabel('day', 0, 'eventy') };
+      return { primaryValue: 0, primaryUnit: show_seconds !== false ? getLocalizedEventyLabel('second', 0, t) : getLocalizedEventyLabel('day', 0, t) };
     }
 
     // Calculate fallback values from total milliseconds using shared utility
@@ -804,20 +806,20 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Return the highest non-zero fallback unit
     if (fallback.days > 0) {
-      return { primaryValue: fallback.days, primaryUnit: getUnitLabel('day', fallback.days, 'eventy') };
+      return { primaryValue: fallback.days, primaryUnit: getLocalizedEventyLabel('day', fallback.days, t) };
     }
     if (fallback.hours > 0) {
-      return { primaryValue: fallback.hours, primaryUnit: getUnitLabel('hour', fallback.hours, 'eventy') };
+      return { primaryValue: fallback.hours, primaryUnit: getLocalizedEventyLabel('hour', fallback.hours, t) };
     }
     if (fallback.minutes > 0) {
-      return { primaryValue: fallback.minutes, primaryUnit: getUnitLabel('minute', fallback.minutes, 'eventy') };
+      return { primaryValue: fallback.minutes, primaryUnit: getLocalizedEventyLabel('minute', fallback.minutes, t) };
     }
     if (fallback.seconds > 0) {
-      return { primaryValue: fallback.seconds, primaryUnit: getUnitLabel('second', fallback.seconds, 'eventy') };
+      return { primaryValue: fallback.seconds, primaryUnit: getLocalizedEventyLabel('second', fallback.seconds, t) };
     }
 
     // Truly at zero
-    return { primaryValue: 0, primaryUnit: getUnitLabel('second', 0, 'eventy') };
+    return { primaryValue: 0, primaryUnit: getLocalizedEventyLabel('second', 0, t) };
   }
 
   /**

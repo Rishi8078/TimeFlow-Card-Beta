@@ -532,6 +532,18 @@ export class CountdownService {
     };
 
     if (parts.length === 0) {
+      // Fallback: show the highest available time unit when selected units have no remaining time
+      // This handles cases like: user selected only "days" but less than 24 hours remain
+      if (hours > 0) {
+        return applyPrefixSuffix(`${hours} ${hours === 1 ? t('time.hour_full') : t('time.hours_full')}`);
+      }
+      if (minutes > 0) {
+        return applyPrefixSuffix(`${minutes} ${minutes === 1 ? t('time.minute_full') : t('time.minutes_full')}`);
+      }
+      if (seconds > 0) {
+        return applyPrefixSuffix(`${seconds} ${seconds === 1 ? t('time.second_full') : t('time.seconds_full')}`);
+      }
+      // Only show "0 seconds" or "starting" if truly at zero
       if (show_seconds) return applyPrefixSuffix(`0 ${t('time.seconds_full')}`);
       return t('countdown.starting');
     }

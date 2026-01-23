@@ -554,9 +554,8 @@ export class TimeFlowCardBeta extends LitElement {
     const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
     const useCompact = compact_format === true || (compact_format !== false && enabledUnits >= 3);
 
-    // FIXED: Ensure background color has a sensible default
-    const cardBackground = background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))';
-    const textColor = text_color || 'var(--primary-text-color, #fff)';
+    // Get card colors using helper
+    const { cardBackground, textColor } = this._getCardColors();
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
 
     // Calculate dynamic circle size based on card dimensions to prevent overflow
@@ -624,44 +623,14 @@ export class TimeFlowCardBeta extends LitElement {
       }
     }
 
-    // Compose title text with fallback
-    let titleText = title;
-    if (titleText === undefined || titleText === null || (typeof titleText === 'string' && titleText.trim() === '')) {
-      if (this._resolvedConfig.timer_entity && this.hass) {
-        titleText = TimerEntityService.getTimerTitle(
-          this._resolvedConfig.timer_entity,
-          this.hass
-        );
-      } else {
-        // For auto-discovery, avoid stale expired_text as title
-        titleText = (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
-      }
-    }
+    // Compose title text with fallback using helper
+    const titleText = this._getTitleText();
 
-    // FIXED: Determine card classes including initialization state
-    const cardClasses = [
-      this._initialized ? 'initialized' : '',
-      (this._expired && expired_animation) ? 'expired' : ''
-    ].filter(Boolean).join(' ');
+    // Get card classes using helper
+    const cardClasses = this._getCardClasses(expired_animation);
 
-    // Create resolved config 
-    const configWithDefaults = { ...this._resolvedConfig };
-
-    // Map timer_entity to entity field for action handling compatibility
-    if (configWithDefaults.timer_entity && !configWithDefaults.entity) {
-      configWithDefaults.entity = configWithDefaults.timer_entity;
-    }
-
-    // Following timer-bar-card pattern: Set default tap action if entity exists but no tap action defined
-    if (configWithDefaults.entity && !configWithDefaults.tap_action) {
-      configWithDefaults.tap_action = { action: 'more-info' };
-    }
-
-    // Check if tap action should show pointer cursor (following timer-bar-card logic)
-    const shouldShowPointer = configWithDefaults.tap_action?.action !== "none";
-
-    // Enable action handlers when we have actions (following timer-bar-card pattern)
-    const shouldEnableActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
+    // Get action config using helper
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
 
     return html`
       <ha-card 
@@ -729,9 +698,8 @@ export class TimeFlowCardBeta extends LitElement {
     // Determine the primary countdown unit to display prominently
     const { primaryValue, primaryUnit } = this._getPrimaryCountdownUnit();
 
-    // Card styling
-    const cardBackground = background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))';
-    const textColor = text_color || 'var(--primary-text-color, #fff)';
+    // Get card colors using helper
+    const { cardBackground, textColor } = this._getCardColors();
 
     const cardStyles = [
       `background: ${cardBackground}`,
@@ -740,11 +708,8 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-card-text-color: ${textColor}`,
     ].join('; ');
 
-    // Card classes
-    const cardClasses = [
-      this._initialized ? 'initialized' : '',
-      (this._expired && expired_animation) ? 'expired' : ''
-    ].filter(Boolean).join(' ');
+    // Get card classes using helper
+    const cardClasses = this._getCardClasses(expired_animation);
 
     // Compose subtitle text - for Eventy style, show formatted target date
     let subtitleText: string;
@@ -759,25 +724,11 @@ export class TimeFlowCardBeta extends LitElement {
       subtitleText = this._formatTargetDate();
     }
 
-    // Compose title text
-    let titleText = title;
-    if (titleText === undefined || titleText === null || (typeof titleText === 'string' && titleText.trim() === '')) {
-      if (this._resolvedConfig.timer_entity && this.hass) {
-        titleText = TimerEntityService.getTimerTitle(this._resolvedConfig.timer_entity, this.hass);
-      } else {
-        titleText = (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
-      }
-    }
+    // Get title text using helper
+    const titleText = this._getTitleText();
 
-    // Config for action handling
-    const configWithDefaults = { ...this._resolvedConfig };
-    if (configWithDefaults.timer_entity && !configWithDefaults.entity) {
-      configWithDefaults.entity = configWithDefaults.timer_entity;
-    }
-    if (configWithDefaults.entity && !configWithDefaults.tap_action) {
-      configWithDefaults.tap_action = { action: 'more-info' };
-    }
-    const shouldEnableActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
+    // Get action config using helper
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
 
     return html`
       <ha-card 
@@ -901,6 +852,71 @@ export class TimeFlowCardBeta extends LitElement {
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Gets card background and text colors with proper fallbacks
+   */
+  private _getCardColors(): { cardBackground: string; textColor: string } {
+    const { background_color, text_color } = this._resolvedConfig;
+    return {
+      cardBackground: background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))',
+      textColor: text_color || 'var(--primary-text-color, #fff)'
+    };
+  }
+
+  /**
+   * Gets card CSS classes based on initialization and expired state
+   */
+  private _getCardClasses(expired_animation: boolean = true): string {
+    return [
+      this._initialized ? 'initialized' : '',
+      (this._expired && expired_animation) ? 'expired' : ''
+    ].filter(Boolean).join(' ');
+  }
+
+  /**
+   * Gets title text with fallback logic for timers and auto-discovery
+   */
+  private _getTitleText(): string {
+    const { title, expired_text = '' } = this._resolvedConfig;
+    
+    if (title !== undefined && title !== null && !(typeof title === 'string' && title.trim() === '')) {
+      return title;
+    }
+    
+    // Fallback: try to get title from timer entity
+    if (this._resolvedConfig.timer_entity && this.hass) {
+      return TimerEntityService.getTimerTitle(this._resolvedConfig.timer_entity, this.hass);
+    }
+    
+    // Fallback: for auto-discovery or expired state
+    if (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) {
+      return 'Countdown Timer';
+    }
+    
+    return this._expired ? expired_text || 'Countdown Timer' : 'Countdown Timer';
+  }
+
+  /**
+   * Gets action handler configuration with proper defaults
+   */
+  private _getActionConfig(): { configWithDefaults: CardConfig; shouldEnableActions: boolean } {
+    const configWithDefaults = { ...this._resolvedConfig };
+    
+    // Map timer_entity to entity field for action handling compatibility
+    if (configWithDefaults.timer_entity && !configWithDefaults.entity) {
+      configWithDefaults.entity = configWithDefaults.timer_entity;
+    }
+    
+    // Set default tap action if entity exists but no tap action defined
+    if (configWithDefaults.entity && !configWithDefaults.tap_action) {
+      configWithDefaults.tap_action = { action: 'more-info' };
+    }
+    
+    const shouldEnableActions = !!(configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action);
+    
+    return { configWithDefaults, shouldEnableActions };
   }
 
   /**

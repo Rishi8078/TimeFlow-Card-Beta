@@ -188,6 +188,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon': 'Material Design icon name (e.g., "mdi:cake-variant")',
             'header_icon_color': 'Icon color (hex, name, or template)',
             'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
+
+            // Layout
+            'layout': 'Card style: Default shows circle progress, List shows compact horizontal view',
         };
         return helpers[schema.name] || '';
     }
@@ -224,6 +227,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon': 'Header Icon',
             'header_icon_color': 'Icon Color',
             'header_icon_background': 'Icon Background',
+            'layout': 'Card Layout',
         };
 
         if (labels[schema.name]) return labels[schema.name];
@@ -323,6 +327,22 @@ export class TimeFlowCardEditorBeta extends LitElement {
         };
 
         const schema = [
+            // ═══════════════════════════════════════════════════════════
+            // LAYOUT STYLE - Choose card appearance
+            // ═══════════════════════════════════════════════════════════
+            { 
+                name: 'layout', 
+                selector: { 
+                    select: { 
+                        options: [
+                            { value: 'default', label: 'Default (Circle Progress)' },
+                            { value: 'list', label: 'List (Compact Horizontal)' }
+                        ],
+                        mode: 'dropdown'
+                    } 
+                } 
+            },
+
             // ═══════════════════════════════════════════════════════════
             // TIMER SOURCE - Most important, always visible at top
             // ═══════════════════════════════════════════════════════════

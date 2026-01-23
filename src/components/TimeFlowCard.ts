@@ -194,6 +194,89 @@ export class TimeFlowCardBeta extends LitElement {
         opacity: 0.9;
       }
       
+      /* ═══════════════════════════════════════════════════════════════════════
+         LIST LAYOUT STYLES - Compact horizontal view
+         ═══════════════════════════════════════════════════════════════════════ */
+      
+      .card-content-list {
+        display: grid;
+        grid-template-areas: "icon title countdown";
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        min-height: auto;
+      }
+      
+      .list-icon {
+        grid-area: icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--list-icon-size, 44px);
+        height: var(--list-icon-size, 44px);
+        border-radius: 12px;
+        flex-shrink: 0;
+      }
+      
+      .list-icon ha-icon {
+        --mdc-icon-size: calc(var(--list-icon-size, 44px) * 0.55);
+      }
+      
+      .list-title-section {
+        grid-area: title;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0; /* Allow text truncation */
+      }
+      
+      .list-title {
+        font-weight: 600;
+        font-size: var(--list-title-size, 16px);
+        line-height: 1.2;
+        color: var(--primary-text-color);
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .list-subtitle {
+        font-size: var(--list-subtitle-size, 13px);
+        font-weight: 400;
+        line-height: 1.2;
+        color: var(--secondary-text-color);
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .list-countdown {
+        grid-area: countdown;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      
+      .list-countdown-value {
+        font-size: var(--list-countdown-size, 26px);
+        font-weight: 700;
+        color: var(--primary-text-color);
+      }
+      
+      .list-countdown-unit {
+        font-size: 10px;
+        font-weight: 700;
+        opacity: 0.6;
+        margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
       @keyframes celebration {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -428,7 +511,14 @@ export class TimeFlowCardBeta extends LitElement {
       `;
     }
 
-    // Render normal card only if validation passed completely
+    // Choose layout based on config
+    const layout = this._resolvedConfig.layout || 'default';
+    
+    if (layout === 'list') {
+      return this._renderListCard();
+    }
+    
+    // Default: circle progress layout
     return this._renderCard();
   }
 
@@ -610,10 +700,186 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
+   * Renders the list layout - compact horizontal view with icon, title/subtitle, and countdown
+   */
+  private _renderListCard(): TemplateResult {
+    const {
+      title,
+      subtitle,
+      text_color,
+      background_color,
+      expired_animation = true,
+      expired_text = '',
+      header_icon = 'mdi:calendar-clock',
+      header_icon_color = 'var(--primary-color)',
+      header_icon_background = 'rgba(var(--rgb-primary-color), 0.2)',
+      show_months,
+      show_days,
+      show_hours,
+      show_minutes,
+      show_seconds,
+      compact_format
+    } = this._resolvedConfig;
+
+    // Determine the primary countdown unit to display prominently
+    const { primaryValue, primaryUnit } = this._getPrimaryCountdownUnit();
+
+    // Card styling
+    const cardBackground = background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))';
+    const textColor = text_color || 'var(--primary-text-color, #fff)';
+
+    const cardStyles = [
+      `background: ${cardBackground}`,
+      `color: ${textColor}`,
+      `--timeflow-card-background-color: ${cardBackground}`,
+      `--timeflow-card-text-color: ${textColor}`,
+    ].join('; ');
+
+    // Card classes
+    const cardClasses = [
+      this._initialized ? 'initialized' : '',
+      (this._expired && expired_animation) ? 'expired' : ''
+    ].filter(Boolean).join(' ');
+
+    // Determine if this is a timer display
+    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
+    
+    // Compute effective compact_format state for subtitle
+    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
+    const useCompact = compact_format === true || (compact_format !== false && enabledUnits >= 3);
+    const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
+
+    // Compose subtitle text
+    let subtitleText: string;
+    if (this._resolvedConfig.timer_entity && this.hass) {
+      const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
+      if (timerData) {
+        if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
+          subtitleText = TimerEntityService.getTimerSubtitle(
+            timerData,
+            this._resolvedConfig.show_seconds !== false,
+            this._localize || undefined,
+            timeFormatCompact
+          );
+        } else if (!this._expired) {
+          subtitleText = subtitle || TimerEntityService.getTimerSubtitle(
+            timerData,
+            this._resolvedConfig.show_seconds !== false,
+            this._localize || undefined,
+            timeFormatCompact
+          );
+        } else {
+          subtitleText = expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+        }
+      } else {
+        subtitleText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
+      }
+    } else {
+      if (this._resolvedConfig.auto_discover_alexa) {
+        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+      } else {
+        subtitleText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
+      }
+    }
+
+    // Compose title text
+    let titleText = title;
+    if (titleText === undefined || titleText === null || (typeof titleText === 'string' && titleText.trim() === '')) {
+      if (this._resolvedConfig.timer_entity && this.hass) {
+        titleText = TimerEntityService.getTimerTitle(this._resolvedConfig.timer_entity, this.hass);
+      } else {
+        titleText = (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) ? 'Countdown Timer' : (this._expired ? expired_text : 'Countdown Timer');
+      }
+    }
+
+    // Config for action handling
+    const configWithDefaults = { ...this._resolvedConfig };
+    if (configWithDefaults.timer_entity && !configWithDefaults.entity) {
+      configWithDefaults.entity = configWithDefaults.timer_entity;
+    }
+    if (configWithDefaults.entity && !configWithDefaults.tap_action) {
+      configWithDefaults.tap_action = { action: 'more-info' };
+    }
+    const shouldEnableActions = configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action;
+
+    return html`
+      <ha-card 
+        class="${cardClasses}" 
+        style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+      >
+        <div class="card-content-list">
+          <!-- Icon -->
+          <div 
+            class="list-icon" 
+            style="background: ${header_icon_background};"
+          >
+            <ha-icon 
+              icon="${header_icon}"
+              style="color: ${header_icon_color}"
+            ></ha-icon>
+          </div>
+          
+          <!-- Title & Subtitle -->
+          <div class="list-title-section">
+            <h2 class="list-title">${titleText}</h2>
+            <p class="list-subtitle">${subtitleText}</p>
+          </div>
+          
+          <!-- Countdown Display -->
+          <div class="list-countdown">
+            <span class="list-countdown-value">${primaryValue}</span>
+            <span class="list-countdown-unit">${primaryUnit}</span>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Gets the primary countdown value and unit to display in list layout
+   * Returns the largest non-zero unit (e.g., "11" and "DAYS")
+   */
+  private _getPrimaryCountdownUnit(): { primaryValue: number; primaryUnit: string } {
+    const { months, days, hours, minutes, seconds } = this._countdown;
+    const { show_months, show_days, show_hours, show_minutes, show_seconds } = this._resolvedConfig;
+
+    // Return the first enabled unit that has a value, or largest enabled unit
+    if (show_months !== false && months > 0) {
+      return { primaryValue: months, primaryUnit: months === 1 ? 'MONTH' : 'MONTHS' };
+    }
+    if (show_days !== false && (days > 0 || months === 0)) {
+      // Calculate total days including months if months are hidden
+      const totalDays = (show_months === false ? months * 30 : 0) + days;
+      return { primaryValue: totalDays, primaryUnit: totalDays === 1 ? 'DAY' : 'DAYS' };
+    }
+    if (show_hours !== false && (hours > 0 || (days === 0 && months === 0))) {
+      return { primaryValue: hours, primaryUnit: hours === 1 ? 'HOUR' : 'HOURS' };
+    }
+    if (show_minutes !== false && (minutes > 0 || (hours === 0 && days === 0 && months === 0))) {
+      return { primaryValue: minutes, primaryUnit: minutes === 1 ? 'MIN' : 'MINS' };
+    }
+    if (show_seconds !== false) {
+      return { primaryValue: seconds, primaryUnit: seconds === 1 ? 'SEC' : 'SECS' };
+    }
+
+    // Fallback to days
+    return { primaryValue: days, primaryUnit: days === 1 ? 'DAY' : 'DAYS' };
+  }
+
+  /**
    * Helper: Returns card size (in Home Assistant's grid rows approx)
    */
   getCardSize(): number {
-    const { aspect_ratio = '2/1', height } = this.config;
+    const { aspect_ratio = '2/1', height, layout } = this.config;
+    
+    // List layout is always compact (1 row)
+    if (layout === 'list') {
+      return 1;
+    }
+    
     if (height) {
       const heightValue = parseInt(typeof height === 'string' ? height : height.toString());
       if (heightValue <= 100) return 1;

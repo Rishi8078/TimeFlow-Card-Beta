@@ -189,8 +189,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon_color': 'Icon color (hex, name, or template)',
             'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
 
-            // Layout
-            'layout': 'Card style: Default shows circle progress, List shows compact horizontal view',
+            // Style
+            'style': 'Card style: Classic shows circle progress, Eventy shows compact horizontal view',
         };
         return helpers[schema.name] || '';
     }
@@ -227,7 +227,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon': 'Header Icon',
             'header_icon_color': 'Icon Color',
             'header_icon_background': 'Icon Background',
-            'layout': 'Card Layout',
+            'style': 'Card Style',
         };
 
         if (labels[schema.name]) return labels[schema.name];
@@ -328,15 +328,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         const schema = [
             // ═══════════════════════════════════════════════════════════
-            // LAYOUT STYLE - Choose card appearance
-            // ═══════════════════════════════════════════════════════════
+            // CARD STYLE - Choose card appearance
+            // ═══════════════════════════════════════════════════════════════════════════════
             { 
-                name: 'layout', 
+                name: 'style', 
                 selector: { 
                     select: { 
                         options: [
-                            { value: 'default', label: 'Default (Circle Progress)' },
-                            { value: 'list', label: 'List (Compact Horizontal)' }
+                            { value: 'classic', label: 'Classic (Circle Progress)' },
+                            { value: 'eventy', label: 'Eventy (Compact Horizontal)' }
                         ],
                         mode: 'dropdown'
                     } 

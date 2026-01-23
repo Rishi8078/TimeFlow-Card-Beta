@@ -511,14 +511,14 @@ export class TimeFlowCardBeta extends LitElement {
       `;
     }
 
-    // Choose layout based on config
-    const layout = this._resolvedConfig.layout || 'default';
+    // Choose style based on config
+    const style = this._resolvedConfig.style || 'classic';
     
-    if (layout === 'list') {
-      return this._renderListCard();
+    if (style === 'eventy') {
+      return this._renderEventyCard();
     }
     
-    // Default: circle progress layout
+    // Classic: circle progress style
     return this._renderCard();
   }
 
@@ -700,9 +700,9 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * Renders the list layout - compact horizontal view with icon, title/subtitle, and countdown
+   * Renders the Eventy style - compact horizontal view with icon, title/subtitle, and countdown
    */
-  private _renderListCard(): TemplateResult {
+  private _renderEventyCard(): TemplateResult {
     const {
       title,
       subtitle,
@@ -873,10 +873,10 @@ export class TimeFlowCardBeta extends LitElement {
    * Helper: Returns card size (in Home Assistant's grid rows approx)
    */
   getCardSize(): number {
-    const { aspect_ratio = '2/1', height, layout } = this.config;
+    const { aspect_ratio = '2/1', height, style } = this.config;
     
-    // List layout is always compact (1 row)
-    if (layout === 'list') {
+    // Eventy style is always compact (1 row)
+    if (style === 'eventy') {
       return 1;
     }
     

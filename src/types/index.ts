@@ -97,14 +97,14 @@ export interface ActionHandlerEvent extends Event {
   };
 }
 
-// Layout style options for the card
-export type CardLayout = 'default' | 'list';
+// Card style options
+export type CardStyle = 'classic' | 'eventy';
 
 export interface CardConfig {
   type: string;
 
-  // Layout style
-  layout?: CardLayout;  // 'default' = circle progress, 'list' = compact horizontal
+  // Card style
+  style?: CardStyle;  // 'classic' = circle progress, 'eventy' = compact horizontal
 
   // Basic countdown configuration
   target_date?: string;

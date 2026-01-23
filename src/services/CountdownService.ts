@@ -2,6 +2,16 @@ import { TemplateService } from './TemplateService';
 import { HomeAssistant, CountdownState, CardConfig } from '../types/index';
 import { TimerEntityService, TimerData } from './Timer';
 import { LocalizeFunction } from '../utils/localize';
+import { 
+  MS_PER_SECOND, 
+  MS_PER_MINUTE, 
+  MS_PER_HOUR, 
+  MS_PER_DAY,
+  SECONDS_PER_MINUTE,
+  SECONDS_PER_HOUR,
+  parseMillisecondsToUnits,
+  parseSecondsToUnits
+} from '../utils/TimeUtils';
 
 /**
  * CountdownService - Enhanced with Alexa Timer support
@@ -192,8 +202,8 @@ export class CountdownService {
         }
 
         if (show_days) {
-          days = Math.floor(totalMilliseconds / (1000 * 60 * 60 * 24));
-          totalMilliseconds %= (1000 * 60 * 60 * 24);
+          days = Math.floor(totalMilliseconds / MS_PER_DAY);
+          totalMilliseconds %= MS_PER_DAY;
         } else if (show_months && !show_days) {
           // If days are disabled but months are enabled, convert remaining days to additional months
           // Use calendar logic: count how many more full months fit in the remaining time
@@ -206,43 +216,43 @@ export class CountdownService {
         }
 
         if (show_hours) {
-          hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
-          totalMilliseconds %= (1000 * 60 * 60);
+          hours = Math.floor(totalMilliseconds / MS_PER_HOUR);
+          totalMilliseconds %= MS_PER_HOUR;
         } else if ((show_months || show_days) && !show_hours) {
           // If hours are disabled but larger units are enabled, add hours to the largest enabled unit
-          const extraHours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
+          const extraHours = Math.floor(totalMilliseconds / MS_PER_HOUR);
           if (show_days) {
             days += Math.floor(extraHours / 24);
           }
           // Note: We don't add hours to months anymore since calendar months are precise
-          totalMilliseconds %= (1000 * 60 * 60);
+          totalMilliseconds %= MS_PER_HOUR;
         }
 
         if (show_minutes) {
-          minutes = Math.floor(totalMilliseconds / (1000 * 60));
-          totalMilliseconds %= (1000 * 60);
+          minutes = Math.floor(totalMilliseconds / MS_PER_MINUTE);
+          totalMilliseconds %= MS_PER_MINUTE;
         } else if ((show_months || show_days || show_hours) && !show_minutes) {
           // If minutes are disabled but larger units are enabled, add minutes to the largest enabled unit
-          const extraMinutes = Math.floor(totalMilliseconds / (1000 * 60));
+          const extraMinutes = Math.floor(totalMilliseconds / MS_PER_MINUTE);
           if (show_hours) {
-            hours += Math.floor(extraMinutes / 60);
+            hours += Math.floor(extraMinutes / SECONDS_PER_MINUTE);
           } else if (show_days) {
-            days += Math.floor(extraMinutes / (60 * 24));
+            days += Math.floor(extraMinutes / (SECONDS_PER_MINUTE * 24));
           }
-          totalMilliseconds %= (1000 * 60);
+          totalMilliseconds %= MS_PER_MINUTE;
         }
 
         if (show_seconds) {
-          seconds = Math.floor(totalMilliseconds / 1000);
+          seconds = Math.floor(totalMilliseconds / MS_PER_SECOND);
         } else if ((show_months || show_days || show_hours || show_minutes) && !show_seconds) {
           // If seconds are disabled but larger units are enabled, add seconds to the largest enabled unit
-          const extraSeconds = Math.floor(totalMilliseconds / 1000);
+          const extraSeconds = Math.floor(totalMilliseconds / MS_PER_SECOND);
           if (show_minutes) {
-            minutes += Math.floor(extraSeconds / 60);
+            minutes += Math.floor(extraSeconds / SECONDS_PER_MINUTE);
           } else if (show_hours) {
-            hours += Math.floor(extraSeconds / (60 * 60));
+            hours += Math.floor(extraSeconds / SECONDS_PER_HOUR);
           } else if (show_days) {
-            days += Math.floor(extraSeconds / (60 * 60 * 24));
+            days += Math.floor(extraSeconds / (SECONDS_PER_HOUR * 24));
           }
         }
 
@@ -472,18 +482,16 @@ export class CountdownService {
       // This handles cases like: user selected only "days" but less than 24 hours remain
       // We need to calculate from total since disabled units may not be populated
       const totalMs = this.timeRemaining?.total || 0;
-      const fallbackHours = Math.floor(totalMs / (1000 * 60 * 60));
-      const fallbackMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
-      const fallbackSeconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+      const fallback = parseMillisecondsToUnits(totalMs);
 
-      if (fallbackHours > 0) {
-        return applyPrefixSuffix(`${fallbackHours} ${fallbackHours === 1 ? t('time.hour_full') : t('time.hours_full')}`);
+      if (fallback.hours > 0) {
+        return applyPrefixSuffix(`${fallback.hours} ${fallback.hours === 1 ? t('time.hour_full') : t('time.hours_full')}`);
       }
-      if (fallbackMinutes > 0) {
-        return applyPrefixSuffix(`${fallbackMinutes} ${fallbackMinutes === 1 ? t('time.minute_full') : t('time.minutes_full')}`);
+      if (fallback.minutes > 0) {
+        return applyPrefixSuffix(`${fallback.minutes} ${fallback.minutes === 1 ? t('time.minute_full') : t('time.minutes_full')}`);
       }
-      if (fallbackSeconds > 0) {
-        return applyPrefixSuffix(`${fallbackSeconds} ${fallbackSeconds === 1 ? t('time.second_full') : t('time.seconds_full')}`);
+      if (fallback.seconds > 0) {
+        return applyPrefixSuffix(`${fallback.seconds} ${fallback.seconds === 1 ? t('time.second_full') : t('time.seconds_full')}`);
       }
       // Only show "0 seconds" or "starting" if truly at zero
       if (show_seconds) return applyPrefixSuffix(`0 ${t('time.seconds_full')}`);
@@ -506,17 +514,20 @@ export class CountdownService {
 
     // Full format for 2 units
     return applyPrefixSuffix(parts.map(p => `${p.value} ${p.unit}`).join(' '));
-  }  /**
+  }
+
+  /**
    * Converts TimerData to CountdownState for unified interface
    */
   private _timerDataToCountdownState(timerData: any): CountdownState {
+    const units = parseSecondsToUnits(timerData.remaining);
     return {
       months: 0,
-      days: 0,
-      hours: Math.floor(timerData.remaining / 3600),
-      minutes: Math.floor((timerData.remaining % 3600) / 60),
-      seconds: Math.floor(timerData.remaining % 60),
-      total: timerData.remaining * 1000 // ms for consistency
+      days: units.days,
+      hours: units.hours,
+      minutes: units.minutes,
+      seconds: units.seconds,
+      total: timerData.remaining * MS_PER_SECOND // ms for consistency
     };
   }
 

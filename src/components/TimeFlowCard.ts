@@ -10,6 +10,7 @@ import { StyleManager } from '../utils/StyleManager';
 import { setupLocalize, LocalizeFunction } from '../utils/localize';
 import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/action-handler';
+import { DEFAULT_BACKGROUND, DEFAULT_TEXT_COLOR, parseMillisecondsToUnits } from '../utils/TimeUtils';
 import '../utils/ErrorDisplay';
 
 export class TimeFlowCardBeta extends LitElement {
@@ -803,24 +804,21 @@ export class TimeFlowCardBeta extends LitElement {
       return { primaryValue: 0, primaryUnit: show_seconds !== false ? 'SECS' : 'DAYS' };
     }
 
-    // Calculate fallback values from total milliseconds
-    const fallbackDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
-    const fallbackHours = Math.floor((totalMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const fallbackMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
-    const fallbackSeconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+    // Calculate fallback values from total milliseconds using shared utility
+    const fallback = parseMillisecondsToUnits(totalMs);
 
     // Return the highest non-zero fallback unit
-    if (fallbackDays > 0) {
-      return { primaryValue: fallbackDays, primaryUnit: fallbackDays === 1 ? 'DAY' : 'DAYS' };
+    if (fallback.days > 0) {
+      return { primaryValue: fallback.days, primaryUnit: fallback.days === 1 ? 'DAY' : 'DAYS' };
     }
-    if (fallbackHours > 0) {
-      return { primaryValue: fallbackHours, primaryUnit: fallbackHours === 1 ? 'HOUR' : 'HOURS' };
+    if (fallback.hours > 0) {
+      return { primaryValue: fallback.hours, primaryUnit: fallback.hours === 1 ? 'HOUR' : 'HOURS' };
     }
-    if (fallbackMinutes > 0) {
-      return { primaryValue: fallbackMinutes, primaryUnit: fallbackMinutes === 1 ? 'MIN' : 'MINS' };
+    if (fallback.minutes > 0) {
+      return { primaryValue: fallback.minutes, primaryUnit: fallback.minutes === 1 ? 'MIN' : 'MINS' };
     }
-    if (fallbackSeconds > 0) {
-      return { primaryValue: fallbackSeconds, primaryUnit: fallbackSeconds === 1 ? 'SEC' : 'SECS' };
+    if (fallback.seconds > 0) {
+      return { primaryValue: fallback.seconds, primaryUnit: fallback.seconds === 1 ? 'SEC' : 'SECS' };
     }
 
     // Truly at zero
@@ -860,8 +858,8 @@ export class TimeFlowCardBeta extends LitElement {
   private _getCardColors(): { cardBackground: string; textColor: string } {
     const { background_color, text_color } = this._resolvedConfig;
     return {
-      cardBackground: background_color || 'var(--ha-card-background, var(--ha-card-background-color, #1a1a1a))',
-      textColor: text_color || 'var(--primary-text-color, #fff)'
+      cardBackground: background_color || DEFAULT_BACKGROUND,
+      textColor: text_color || DEFAULT_TEXT_COLOR
     };
   }
 

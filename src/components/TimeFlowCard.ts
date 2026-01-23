@@ -73,8 +73,13 @@ export class TimeFlowCardBeta extends LitElement {
         border-color: var(--ha-card-border-color, var(--divider-color, #e0e0e0));
         /* REMOVED: transition that causes flash - only animate specific properties if needed */
         /* transition: background-color 0.3s ease; */
-        min-height: 120px; /* Prevent layout shift */
+        /* min-height removed - let content determine height, especially for eventy style */
         user-select: none; /* Prevent text selection during interactions */
+      }
+      
+      /* Classic style needs minimum height */
+      ha-card:not(:has(.card-content-list)) {
+        min-height: 120px;
       }
       
       /* Make card interactive when actions are configured */
@@ -741,45 +746,17 @@ export class TimeFlowCardBeta extends LitElement {
       (this._expired && expired_animation) ? 'expired' : ''
     ].filter(Boolean).join(' ');
 
-    // Determine if this is a timer display
-    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
-    
-    // Compute effective compact_format state for subtitle
-    const enabledUnits = [show_months, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
-    const useCompact = compact_format === true || (compact_format !== false && enabledUnits >= 3);
-    const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
-
-    // Compose subtitle text
+    // Compose subtitle text - for Eventy style, show formatted target date
     let subtitleText: string;
-    if (this._resolvedConfig.timer_entity && this.hass) {
-      const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
-      if (timerData) {
-        if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
-          subtitleText = TimerEntityService.getTimerSubtitle(
-            timerData,
-            this._resolvedConfig.show_seconds !== false,
-            this._localize || undefined,
-            timeFormatCompact
-          );
-        } else if (!this._expired) {
-          subtitleText = subtitle || TimerEntityService.getTimerSubtitle(
-            timerData,
-            this._resolvedConfig.show_seconds !== false,
-            this._localize || undefined,
-            timeFormatCompact
-          );
-        } else {
-          subtitleText = expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
-        }
-      } else {
-        subtitleText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
-      }
+    if (subtitle) {
+      // Use custom subtitle if provided
+      subtitleText = subtitle;
+    } else if (this._expired) {
+      // Show expired text when countdown is complete
+      subtitleText = expired_text || 'Completed';
     } else {
-      if (this._resolvedConfig.auto_discover_alexa) {
-        subtitleText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
-      } else {
-        subtitleText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
-      }
+      // Format target date for display (e.g., "Tue, Feb 3")
+      subtitleText = this._formatTargetDate();
     }
 
     // Compose title text
@@ -867,6 +844,33 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Fallback to days
     return { primaryValue: days, primaryUnit: days === 1 ? 'DAY' : 'DAYS' };
+  }
+
+  /**
+   * Formats the target date for display in Eventy style (e.g., "Tue, Feb 3")
+   */
+  private _formatTargetDate(): string {
+    const targetDate = this._resolvedConfig.target_date;
+    if (!targetDate) return '';
+
+    try {
+      const date = new Date(targetDate);
+      if (isNaN(date.getTime())) return '';
+
+      // Get user's locale from Home Assistant or browser
+      const locale = this.hass?.locale?.language || navigator.language || 'en';
+
+      // Format: "Tue, Feb 3" style
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      };
+
+      return date.toLocaleDateString(locale, options);
+    } catch {
+      return '';
+    }
   }
 
   /**

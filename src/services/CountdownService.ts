@@ -534,14 +534,20 @@ export class CountdownService {
     if (parts.length === 0) {
       // Fallback: show the highest available time unit when selected units have no remaining time
       // This handles cases like: user selected only "days" but less than 24 hours remain
-      if (hours > 0) {
-        return applyPrefixSuffix(`${hours} ${hours === 1 ? t('time.hour_full') : t('time.hours_full')}`);
+      // We need to calculate from total since disabled units may not be populated
+      const totalMs = this.timeRemaining?.total || 0;
+      const fallbackHours = Math.floor(totalMs / (1000 * 60 * 60));
+      const fallbackMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+      const fallbackSeconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+
+      if (fallbackHours > 0) {
+        return applyPrefixSuffix(`${fallbackHours} ${fallbackHours === 1 ? t('time.hour_full') : t('time.hours_full')}`);
       }
-      if (minutes > 0) {
-        return applyPrefixSuffix(`${minutes} ${minutes === 1 ? t('time.minute_full') : t('time.minutes_full')}`);
+      if (fallbackMinutes > 0) {
+        return applyPrefixSuffix(`${fallbackMinutes} ${fallbackMinutes === 1 ? t('time.minute_full') : t('time.minutes_full')}`);
       }
-      if (seconds > 0) {
-        return applyPrefixSuffix(`${seconds} ${seconds === 1 ? t('time.second_full') : t('time.seconds_full')}`);
+      if (fallbackSeconds > 0) {
+        return applyPrefixSuffix(`${fallbackSeconds} ${fallbackSeconds === 1 ? t('time.second_full') : t('time.seconds_full')}`);
       }
       // Only show "0 seconds" or "starting" if truly at zero
       if (show_seconds) return applyPrefixSuffix(`0 ${t('time.seconds_full')}`);

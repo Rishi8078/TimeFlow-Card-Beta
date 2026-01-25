@@ -98,13 +98,13 @@ export interface ActionHandlerEvent extends Event {
 }
 
 // Card style options
-export type CardStyle = 'classic' | 'eventy';
+export type CardStyle = 'classic' | 'eventy' | 'classic-compact';
 
 export interface CardConfig {
   type: string;
 
   // Card style
-  style?: CardStyle;  // 'classic' = circle progress, 'eventy' = compact horizontal
+  style?: CardStyle;  // 'classic' = circle progress, 'eventy' = compact horizontal, 'classic-compact' = horizontal with circle
 
   // Basic countdown configuration
   target_date?: string;

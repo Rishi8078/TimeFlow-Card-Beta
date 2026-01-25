@@ -283,6 +283,78 @@ export class TimeFlowCardBeta extends LitElement {
         letter-spacing: 0.5px;
       }
       
+      /* ═══════════════════════════════════════════════════════════════════════
+         CLASSIC COMPACT LAYOUT STYLES - Horizontal view with progress circle
+         ═══════════════════════════════════════════════════════════════════════ */
+      
+      .card-content-compact {
+        display: grid;
+        grid-template-areas: "icon title progress";
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        min-height: auto;
+      }
+      
+      .compact-icon {
+        grid-area: icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--compact-icon-size, 44px);
+        height: var(--compact-icon-size, 44px);
+        border-radius: var(--ha-card-border-radius, 12px);
+        flex-shrink: 0;
+      }
+      
+      .compact-icon ha-icon {
+        --mdc-icon-size: calc(var(--compact-icon-size, 44px) * 0.55);
+      }
+      
+      .compact-title-section {
+        grid-area: title;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0; /* Allow text truncation */
+      }
+      
+      .compact-title {
+        font-weight: 600;
+        font-size: var(--compact-title-size, 16px);
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .compact-subtitle {
+        font-size: var(--compact-subtitle-size, 13px);
+        font-weight: 400;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        opacity: 0.7;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .compact-progress {
+        grid-area: progress;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .compact-progress progress-circle-beta {
+        opacity: 0.9;
+      }
+      
       @keyframes celebration {
         0% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -518,6 +590,10 @@ export class TimeFlowCardBeta extends LitElement {
     
     if (style === 'eventy') {
       return this._renderEventyCard();
+    }
+    
+    if (style === 'classic-compact') {
+      return this._renderClassicCompactCard();
     }
     
     // Classic: circle progress style
@@ -757,6 +833,105 @@ export class TimeFlowCardBeta extends LitElement {
           <div class="list-countdown">
             <span class="list-countdown-value">${primaryValue}</span>
             <span class="list-countdown-unit">${primaryUnit}</span>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Renders the Classic Compact style - horizontal view with icon, title/subtitle, and progress circle
+   */
+  private _renderClassicCompactCard(): TemplateResult {
+    const {
+      title,
+      subtitle,
+      text_color,
+      background_color,
+      progress_color,
+      stroke_width = 15,
+      icon_size = 100,
+      expired_animation = true,
+      expired_text = '',
+      header_icon = 'mdi:calendar-clock',
+      header_icon_color,
+      header_icon_background,
+      compact_format
+    } = this._resolvedConfig;
+
+    // Get card colors using helper
+    const { cardBackground, textColor } = this._getCardColors();
+
+    const cardStyles = [
+      `background: ${cardBackground}`,
+      `color: ${textColor}`,
+      `--timeflow-card-background-color: ${cardBackground}`,
+      `--timeflow-card-text-color: ${textColor}`,
+    ].join('; ');
+
+    // Get card classes using helper
+    const cardClasses = this._getCardClasses(expired_animation);
+
+    // Compose subtitle text - show countdown time like classic
+    const timeFormatCompact = compact_format !== false;
+    let subtitleText: string;
+    if (subtitle) {
+      subtitleText = subtitle;
+    } else if (this._expired) {
+      subtitleText = expired_text || 'Completed';
+    } else {
+      subtitleText = this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+    }
+
+    // Get title text using helper
+    const titleText = this._getTitleText();
+
+    // Get action config using helper
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+
+    // Calculate dynamic circle size for compact layout (smaller than classic)
+    const baseCircleSize = icon_size || 100;
+    const compactCircleSize = Math.min(baseCircleSize, 50); // Max 50px for compact
+    const compactStroke = Math.max(4, (stroke_width || 15) * 0.4); // Proportionally thinner
+
+    // Get progress color
+    const mainProgressColor = progress_color || 'var(--primary-color)';
+
+    return html`
+      <ha-card 
+        class="${cardClasses}" 
+        style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+      >
+        <div class="card-content-compact">
+          <!-- Icon -->
+          <div 
+            class="compact-icon" 
+            style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
+          >
+            <ha-icon 
+              icon="${header_icon}"
+              style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
+            ></ha-icon>
+          </div>
+          
+          <!-- Title & Subtitle -->
+          <div class="compact-title-section">
+            <h2 class="compact-title">${titleText}</h2>
+            <p class="compact-subtitle">${subtitleText}</p>
+          </div>
+          
+          <!-- Progress Circle -->
+          <div class="compact-progress">
+            <progress-circle-beta
+              .progress="${this._progress}"
+              .color="${mainProgressColor}"
+              .size="${compactCircleSize}"
+              .strokeWidth="${compactStroke}"
+              aria-label="Countdown progress: ${Math.round(this._progress)}%"
+            ></progress-circle-beta>
           </div>
         </div>
       </ha-card>

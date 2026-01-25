@@ -36,9 +36,20 @@ const REPLACEMENTS = [
   { from: /"timeflow-card-beta"/g, to: '"timeflow-card"' },
   { from: /'timeflow-card-beta-editor'/g, to: "'timeflow-card-editor'" },
 
-  // 3. Configuration Types
+  // 2b. CSS class attributes (e.g., class="progress-circle-beta")
+  { from: /class="progress-circle-beta"/g, to: 'class="progress-circle"' },
+
+  // 2c. CSS selectors using element names (e.g., .compact-progress progress-circle-beta)
+  { from: / progress-circle-beta\s*\{/g, to: ' progress-circle {' },
+  { from: / progress-circle-beta\s/g, to: ' progress-circle ' },
+
+  // 3. Configuration Types (with custom: prefix)
   { from: /type: 'custom:timeflow-card-beta'/g, to: "type: 'custom:timeflow-card'" },
   { from: /type: "custom:timeflow-card-beta"/g, to: 'type: "custom:timeflow-card"' },
+
+  // 3b. Type registration (without custom: prefix, used in window.customCards)
+  { from: /type: 'timeflow-card-beta'/g, to: "type: 'timeflow-card'" },
+  { from: /type: "timeflow-card-beta"/g, to: 'type: "timeflow-card"' },
 
   // 4. Class Names & Imports
   { from: /class TimeFlowCardBeta/g, to: 'class TimeFlowCard' },

@@ -243,7 +243,7 @@ function e(e,t,i,s){var r,a=arguments.length,n=a<3?t:null===s?s=Object.getOwnPro
         font-size: var(--list-subtitle-size, 13px);
         font-weight: 400;
         line-height: 1.2;
-        color: var(--secondary-text-color);
+        color: var(--timeflow-card-text-color, var(--secondary-text-color));
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;

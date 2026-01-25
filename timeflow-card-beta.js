@@ -38,7 +38,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           `)}
         </ul>
       </div>
-    `}}e([de({type:Array})],je.prototype,"errors",void 0),e([de({type:String})],je.prototype,"title",void 0),customElements.define("error-display-beta",je);class We extends oe{static async getConfigElement(){return document.createElement("timeflow-card-beta-editor")}static get styles(){return o`
+    `}}e([de({type:Array})],je.prototype,"errors",void 0),e([de({type:String})],je.prototype,"title",void 0);class We extends oe{static async getConfigElement(){return document.createElement("timeflow-card-beta-editor")}static get styles(){return o`
       :host {
         display: block;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;

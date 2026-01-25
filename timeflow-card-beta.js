@@ -212,7 +212,7 @@ function e(e,t,i,s){var r,a=arguments.length,n=a<3?t:null===s?s=Object.getOwnPro
         justify-content: center;
         width: var(--list-icon-size, 44px);
         height: var(--list-icon-size, 44px);
-        border-radius: 12px;
+        border-radius: var(--ha-card-border-radius, 12px);
         flex-shrink: 0;
       }
       
@@ -329,7 +329,7 @@ function e(e,t,i,s){var r,a=arguments.length,n=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderEventyCard(){const{title:e,subtitle:t,text_color:i,background_color:s,expired_animation:r=!0,expired_text:a="",header_icon:n="mdi:calendar-clock",header_icon_color:o="var(--primary-color)",header_icon_background:l="rgba(var(--rgb-primary-color), 0.2)",show_months:c,show_days:d,show_hours:u,show_minutes:h,show_seconds:m,compact_format:p}=this._resolvedConfig,{primaryValue:g,primaryUnit:_}=this._getPrimaryCountdownUnit(),{cardBackground:f,textColor:v}=this._getCardColors(),y=[`background: ${f}`,`color: ${v}`,`--timeflow-card-background-color: ${f}`,`--timeflow-card-text-color: ${v}`].join("; "),b=this._getCardClasses(r);let x;x=t||(this._expired?a||"Completed":this._formatTargetDate());const w=this._getTitleText(),{configWithDefaults:T,shouldEnableActions:S}=this._getActionConfig();return V`
+    `}_renderEventyCard(){const{title:e,subtitle:t,text_color:i,background_color:s,expired_animation:r=!0,expired_text:a="",header_icon:n="mdi:calendar-clock",header_icon_color:o,header_icon_background:l,show_months:c,show_days:d,show_hours:u,show_minutes:h,show_seconds:m,compact_format:p}=this._resolvedConfig,{primaryValue:g,primaryUnit:_}=this._getPrimaryCountdownUnit(),{cardBackground:f,textColor:v}=this._getCardColors(),y=[`background: ${f}`,`color: ${v}`,`--timeflow-card-background-color: ${f}`,`--timeflow-card-text-color: ${v}`].join("; "),b=this._getCardClasses(r);let x;x=t||(this._expired?a||"Completed":this._formatTargetDate());const w=this._getTitleText(),{configWithDefaults:T,shouldEnableActions:S}=this._getActionConfig();return V`
       <ha-card 
         class="${b}" 
         style="${y}"
@@ -341,11 +341,11 @@ function e(e,t,i,s){var r,a=arguments.length,n=a<3?t:null===s?s=Object.getOwnPro
           <!-- Icon -->
           <div 
             class="list-icon" 
-            style="background: ${l};"
+            style="background: ${l||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
           >
             <ha-icon 
               icon="${n}"
-              style="color: ${o}"
+              style="color: ${o||"var(--primary-color, var(--primary-text-color))"}"
             ></ha-icon>
           </div>
           

@@ -221,7 +221,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         width: var(--list-icon-size, 44px);
         height: var(--list-icon-size, 44px);
-        border-radius: 12px;
+        border-radius: var(--ha-card-border-radius, 12px);
         flex-shrink: 0;
       }
       
@@ -682,8 +682,8 @@ export class TimeFlowCardBeta extends LitElement {
       expired_animation = true,
       expired_text = '',
       header_icon = 'mdi:calendar-clock',
-      header_icon_color = 'var(--primary-color)',
-      header_icon_background = 'rgba(var(--rgb-primary-color), 0.2)',
+      header_icon_color,
+      header_icon_background,
       show_months,
       show_days,
       show_hours,
@@ -739,11 +739,11 @@ export class TimeFlowCardBeta extends LitElement {
           <!-- Icon -->
           <div 
             class="list-icon" 
-            style="background: ${header_icon_background};"
+            style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
           >
             <ha-icon 
               icon="${header_icon}"
-              style="color: ${header_icon_color}"
+              style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
             ></ha-icon>
           </div>
           

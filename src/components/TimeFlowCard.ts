@@ -210,8 +210,8 @@ export class TimeFlowCardBeta extends LitElement {
         grid-template-columns: auto 1fr auto;
         align-items: center;
         gap: 12px;
-        padding: 12px 18px;
-        min-height: auto;
+        padding: 12px 20px;
+        min-height: 50px;
       }
       
       .list-icon {
@@ -294,7 +294,7 @@ export class TimeFlowCardBeta extends LitElement {
         align-items: center;
         gap: 12px;
         padding: 12px 16px;
-        min-height: auto;
+        min-height: 50px;
       }
       
       .compact-icon {

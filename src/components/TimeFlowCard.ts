@@ -476,9 +476,10 @@ export class TimeFlowCardBeta extends LitElement {
       'header_icon_background'
     ] as const;
 
-    // Resolve templates where applicable
+    // Resolve templates AND entity IDs where applicable
+    // The resolveValue method handles both templates ({{ }}) and entity IDs (sensor.xxx)
     for (const key of templateKeys) {
-      if (typeof resolvedConfig[key] === 'string' && this.templateService.isTemplate(resolvedConfig[key] as string)) {
+      if (typeof resolvedConfig[key] === 'string') {
         const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
         resolvedConfig[key] = resolvedValue || undefined;
       }

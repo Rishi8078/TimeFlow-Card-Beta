@@ -550,10 +550,21 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Resolve templates AND entity IDs where applicable
     // The resolveValue method handles both templates ({{ }}) and entity IDs (sensor.xxx)
+    // EXCEPTION: timer_entity should NOT be resolved - it must remain as an entity ID
+    // for TimerEntityService to look up directly via hass.states[entityId]
     for (const key of templateKeys) {
       if (typeof resolvedConfig[key] === 'string') {
-        const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
-        resolvedConfig[key] = resolvedValue || undefined;
+        // timer_entity should only be resolved if it's a template, not if it's a plain entity ID
+        if (key === 'timer_entity') {
+          if (this.templateService.isTemplate(resolvedConfig[key] as string)) {
+            const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
+            resolvedConfig[key] = resolvedValue || undefined;
+          }
+          // Otherwise keep the entity ID as-is
+        } else {
+          const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
+          resolvedConfig[key] = resolvedValue || undefined;
+        }
       }
     }
 

@@ -241,7 +241,7 @@ export class TimeFlowCardBeta extends LitElement {
         font-weight: 600;
         font-size: var(--list-title-size, 16px);
         line-height: 1.2;
-        color: var(--primary-text-color);
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -271,7 +271,7 @@ export class TimeFlowCardBeta extends LitElement {
       .list-countdown-value {
         font-size: var(--list-countdown-size, 26px);
         font-weight: 700;
-        color: var(--primary-text-color);
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
       }
       
       .list-countdown-unit {

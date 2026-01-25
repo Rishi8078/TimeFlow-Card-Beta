@@ -78,8 +78,8 @@ export class TimeFlowCardBeta extends LitElement {
         user-select: none; /* Prevent text selection during interactions */
       }
       
-      /* Classic style needs minimum height */
-      ha-card:not(:has(.card-content-list)) {
+      /* Classic style needs minimum height, but compact styles should auto-size */
+      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)) {
         min-height: 120px;
       }
       

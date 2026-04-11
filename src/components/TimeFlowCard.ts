@@ -215,6 +215,11 @@ export class TimeFlowCardBeta extends LitElement {
         padding: 12px 20px;
         min-height: 50px;
       }
+
+      .card-content-list.no-list-icon {
+        grid-template-areas: "title countdown";
+        grid-template-columns: 1fr auto;
+      }
       
       .list-icon {
         grid-area: icon;
@@ -297,6 +302,11 @@ export class TimeFlowCardBeta extends LitElement {
         gap: 12px;
         padding: 12px 16px;
         min-height: 50px;
+      }
+
+      .card-content-compact.no-compact-icon {
+        grid-template-areas: "title progress";
+        grid-template-columns: 1fr auto;
       }
       
       .compact-icon {
@@ -716,6 +726,7 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Get action config using helper
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+    const hasHeaderIcon = this._hasHeaderIcon();
 
     return html`
       <ha-card 
@@ -726,8 +737,8 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content">
-          <header class="header" style="${this._resolvedConfig.header_icon ? `--header-icon-container-size: calc(${proportionalSizes.titleSize}rem * 1.3 + ${proportionalSizes.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${proportionalSizes.titleSize}rem * 0.9 + ${proportionalSizes.subtitleSize}rem * 0.7);` : ''}">
-            ${this._resolvedConfig.header_icon ? html`
+          <header class="header" style="${hasHeaderIcon ? `--header-icon-container-size: calc(${proportionalSizes.titleSize}rem * 1.3 + ${proportionalSizes.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${proportionalSizes.titleSize}rem * 0.9 + ${proportionalSizes.subtitleSize}rem * 0.7);` : ''}">
+            ${hasHeaderIcon ? html`
               <div class="header-icon" style="${this._resolvedConfig.header_icon_background ? `background: ${this._resolvedConfig.header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);` : ''}">
                 <ha-icon 
                   icon="${this._resolvedConfig.header_icon}"
@@ -771,7 +782,7 @@ export class TimeFlowCardBeta extends LitElement {
       background_color,
       expired_animation = true,
       expired_text = '',
-      header_icon = 'mdi:calendar-clock',
+      header_icon,
       header_icon_color,
       header_icon_background,
       show_months,
@@ -814,6 +825,7 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Get action config using helper
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
 
     return html`
       <ha-card 
@@ -823,17 +835,18 @@ export class TimeFlowCardBeta extends LitElement {
         .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
-        <div class="card-content-list">
-          <!-- Icon -->
-          <div 
-            class="list-icon" 
-            style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
-          >
-            <ha-icon 
-              icon="${header_icon}"
-              style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
-            ></ha-icon>
-          </div>
+        <div class="card-content-list ${hasHeaderIcon ? '' : 'no-list-icon'}">
+          ${hasHeaderIcon ? html`
+            <div 
+              class="list-icon" 
+              style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
+            >
+              <ha-icon 
+                icon="${header_icon}"
+                style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
+              ></ha-icon>
+            </div>
+          ` : ''}
           
           <!-- Title & Subtitle -->
           <div class="list-title-section">
@@ -865,7 +878,7 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size = 100,
       expired_animation = true,
       expired_text = '',
-      header_icon = 'mdi:calendar-clock',
+      header_icon,
       header_icon_color,
       header_icon_background,
       compact_format
@@ -898,6 +911,7 @@ export class TimeFlowCardBeta extends LitElement {
 
     // Get action config using helper
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
 
     // Calculate dynamic circle size for compact layout (smaller than classic)
     const baseCircleSize = icon_size || 100;
@@ -915,17 +929,18 @@ export class TimeFlowCardBeta extends LitElement {
         .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
-        <div class="card-content-compact">
-          <!-- Icon -->
-          <div 
-            class="compact-icon" 
-            style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
-          >
-            <ha-icon 
-              icon="${header_icon}"
-              style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
-            ></ha-icon>
-          </div>
+        <div class="card-content-compact ${hasHeaderIcon ? '' : 'no-compact-icon'}">
+          ${hasHeaderIcon ? html`
+            <div 
+              class="compact-icon" 
+              style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
+            >
+              <ha-icon 
+                icon="${header_icon}"
+                style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
+              ></ha-icon>
+            </div>
+          ` : ''}
           
           <!-- Title & Subtitle -->
           <div class="compact-title-section">
@@ -1106,6 +1121,13 @@ export class TimeFlowCardBeta extends LitElement {
     const shouldEnableActions = !!(configWithDefaults.tap_action || configWithDefaults.hold_action || configWithDefaults.double_tap_action);
     
     return { configWithDefaults, shouldEnableActions };
+  }
+
+  /**
+   * Returns true only when a non-empty header icon value was explicitly configured.
+   */
+  private _hasHeaderIcon(icon: unknown = this._resolvedConfig?.header_icon): boolean {
+    return typeof icon === 'string' && icon.trim().length > 0;
   }
 
   /**

@@ -204,6 +204,11 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         padding: 12px 20px;
         min-height: 50px;
       }
+
+      .card-content-list.no-list-icon {
+        grid-template-areas: "title countdown";
+        grid-template-columns: 1fr auto;
+      }
       
       .list-icon {
         grid-area: icon;
@@ -287,6 +292,11 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         padding: 12px 16px;
         min-height: 50px;
       }
+
+      .card-content-compact.no-compact-icon {
+        grid-template-areas: "title progress";
+        grid-template-columns: 1fr auto;
+      }
       
       .compact-icon {
         grid-area: icon;
@@ -363,7 +373,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           .errors="${this._validationResult.errors}"
           .title="${this._validationResult.hasCriticalErrors?"Configuration Error":"Configuration Issues"}"
         ></error-display-beta>
-      `;const e=this._resolvedConfig.style||"classic";return"eventy"===e?this._renderEventyCard():"classic-compact"===e?this._renderClassicCompactCard():this._renderCard()}_renderCard(){var e;const{title:t,subtitle:i,text_color:s,background_color:r,progress_color:a,stroke_width:o,icon_size:n,expired_animation:l=!0,expired_text:c="",width:d,height:u,aspect_ratio:m,show_months:h,show_days:p,show_hours:_,show_minutes:g,show_seconds:f,compact_format:y}=this._resolvedConfig,v=[this._resolvedConfig.show_years,h,this._resolvedConfig.show_weeks,p,_,g,f].filter(e=>!0===e).length,b=!0===y||!1!==y&&v>=3,{cardBackground:w,textColor:x}=this._getCardColors(),T=a||s||"var(--progress-color, #4caf50)",S=this.styleManager.calculateDynamicIconSize(d,u,m,n),$=this.styleManager.calculateDynamicStrokeWidth(S,o),A=this.styleManager.calculateProportionalSizes(d,u,m),C=this.styleManager.generateCardDimensionStyles(d,u,m),D=[...w?[`background: ${w}`,`--timeflow-card-background-color: ${w}`]:[],...x?[`color: ${x}`,`--timeflow-card-text-color: ${x}`,`--progress-text-color: ${x}`]:[],`--timeflow-card-progress-color: ${T}`,`--timeflow-card-icon-size: ${S}px`,`--timeflow-card-stroke-width: ${$}`,`--timeflow-title-size: ${A.titleSize}rem`,`--timeflow-subtitle-size: ${A.subtitleSize}rem`,...C].join("; "),k=this._resolvedConfig.timer_entity||this._resolvedConfig.auto_discover_alexa||this._resolvedConfig.auto_discover_google?!1!==y:b;let E;if(this._resolvedConfig.timer_entity&&this.hass){const e=_e.getTimerData(this._resolvedConfig.timer_entity,this.hass);E=e?this._expired&&(e.isAlexaTimer||e.isGoogleTimer)?_e.getTimerSubtitle(e,!1!==this._resolvedConfig.show_seconds,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||_e.getTimerSubtitle(e,!1!==this._resolvedConfig.show_seconds,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k)}else E=this._resolvedConfig.auto_discover_alexa?i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k);const M=this._getTitleText(),I=this._getCardClasses(l),{configWithDefaults:N,shouldEnableActions:R}=this._getActionConfig();return V`
+      `;const e=this._resolvedConfig.style||"classic";return"eventy"===e?this._renderEventyCard():"classic-compact"===e?this._renderClassicCompactCard():this._renderCard()}_renderCard(){var e;const{title:t,subtitle:i,text_color:s,background_color:r,progress_color:a,stroke_width:o,icon_size:n,expired_animation:l=!0,expired_text:c="",width:d,height:u,aspect_ratio:m,show_months:h,show_days:p,show_hours:_,show_minutes:g,show_seconds:f,compact_format:y}=this._resolvedConfig,v=[this._resolvedConfig.show_years,h,this._resolvedConfig.show_weeks,p,_,g,f].filter(e=>!0===e).length,b=!0===y||!1!==y&&v>=3,{cardBackground:w,textColor:x}=this._getCardColors(),T=a||s||"var(--progress-color, #4caf50)",S=this.styleManager.calculateDynamicIconSize(d,u,m,n),$=this.styleManager.calculateDynamicStrokeWidth(S,o),A=this.styleManager.calculateProportionalSizes(d,u,m),C=this.styleManager.generateCardDimensionStyles(d,u,m),D=[...w?[`background: ${w}`,`--timeflow-card-background-color: ${w}`]:[],...x?[`color: ${x}`,`--timeflow-card-text-color: ${x}`,`--progress-text-color: ${x}`]:[],`--timeflow-card-progress-color: ${T}`,`--timeflow-card-icon-size: ${S}px`,`--timeflow-card-stroke-width: ${$}`,`--timeflow-title-size: ${A.titleSize}rem`,`--timeflow-subtitle-size: ${A.subtitleSize}rem`,...C].join("; "),k=this._resolvedConfig.timer_entity||this._resolvedConfig.auto_discover_alexa||this._resolvedConfig.auto_discover_google?!1!==y:b;let E;if(this._resolvedConfig.timer_entity&&this.hass){const e=_e.getTimerData(this._resolvedConfig.timer_entity,this.hass);E=e?this._expired&&(e.isAlexaTimer||e.isGoogleTimer)?_e.getTimerSubtitle(e,!1!==this._resolvedConfig.show_seconds,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||_e.getTimerSubtitle(e,!1!==this._resolvedConfig.show_seconds,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k)}else E=this._resolvedConfig.auto_discover_alexa?i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):this._expired?c||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k):i||this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,k);const M=this._getTitleText(),I=this._getCardClasses(l),{configWithDefaults:N,shouldEnableActions:R}=this._getActionConfig(),z=this._hasHeaderIcon();return V`
       <ha-card 
         class="${I}" 
         style="${D}"
@@ -372,8 +382,8 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         @action=${R&&this.hass?We(this.hass,N):void 0}
       >
         <div class="card-content">
-          <header class="header" style="${this._resolvedConfig.header_icon?`--header-icon-container-size: calc(${A.titleSize}rem * 1.3 + ${A.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${A.titleSize}rem * 0.9 + ${A.subtitleSize}rem * 0.7);`:""}">
-            ${this._resolvedConfig.header_icon?V`
+          <header class="header" style="${z?`--header-icon-container-size: calc(${A.titleSize}rem * 1.3 + ${A.subtitleSize}rem * 1.2 + 2px); --header-icon-size: calc(${A.titleSize}rem * 0.9 + ${A.subtitleSize}rem * 0.7);`:""}">
+            ${z?V`
               <div class="header-icon" style="${this._resolvedConfig.header_icon_background?`background: ${this._resolvedConfig.header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);`:""}">
                 <ha-icon 
                   icon="${this._resolvedConfig.header_icon}"
@@ -403,7 +413,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderEventyCard(){const{title:e,subtitle:t,text_color:i,background_color:s,expired_animation:r=!0,expired_text:a="",header_icon:o="mdi:calendar-clock",header_icon_color:n,header_icon_background:l,show_months:c,show_days:d,show_hours:u,show_minutes:m,show_seconds:h,compact_format:p}=this._resolvedConfig,{primaryValue:_,primaryUnit:g}=this._getPrimaryCountdownUnit(),{cardBackground:f,textColor:y}=this._getCardColors(),v=[...f?[`background: ${f}`,`--timeflow-card-background-color: ${f}`]:[],...y?[`color: ${y}`,`--timeflow-card-text-color: ${y}`]:[]].join("; "),b=this._getCardClasses(r);let w;w=t||(this._expired?a||"Completed":this._formatTargetDate());const x=this._getTitleText(),{configWithDefaults:T,shouldEnableActions:S}=this._getActionConfig();return V`
+    `}_renderEventyCard(){const{title:e,subtitle:t,text_color:i,background_color:s,expired_animation:r=!0,expired_text:a="",header_icon:o,header_icon_color:n,header_icon_background:l,show_months:c,show_days:d,show_hours:u,show_minutes:m,show_seconds:h,compact_format:p}=this._resolvedConfig,{primaryValue:_,primaryUnit:g}=this._getPrimaryCountdownUnit(),{cardBackground:f,textColor:y}=this._getCardColors(),v=[...f?[`background: ${f}`,`--timeflow-card-background-color: ${f}`]:[],...y?[`color: ${y}`,`--timeflow-card-text-color: ${y}`]:[]].join("; "),b=this._getCardClasses(r);let w;w=t||(this._expired?a||"Completed":this._formatTargetDate());const x=this._getTitleText(),{configWithDefaults:T,shouldEnableActions:S}=this._getActionConfig(),$=this._hasHeaderIcon(o);return V`
       <ha-card 
         class="${b}" 
         style="${v}"
@@ -411,17 +421,18 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         .actionHandler=${S?Ve(T):void 0}
         @action=${S&&this.hass?We(this.hass,T):void 0}
       >
-        <div class="card-content-list">
-          <!-- Icon -->
-          <div 
-            class="list-icon" 
-            style="background: ${l||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
-          >
-            <ha-icon 
-              icon="${o}"
-              style="color: ${n||"var(--primary-color, var(--primary-text-color))"}"
-            ></ha-icon>
-          </div>
+        <div class="card-content-list ${$?"":"no-list-icon"}">
+          ${$?V`
+            <div 
+              class="list-icon" 
+              style="background: ${l||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
+            >
+              <ha-icon 
+                icon="${o}"
+                style="color: ${n||"var(--primary-color, var(--primary-text-color))"}"
+              ></ha-icon>
+            </div>
+          `:""}
           
           <!-- Title & Subtitle -->
           <div class="list-title-section">
@@ -436,7 +447,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderClassicCompactCard(){var e;const{title:t,subtitle:i,text_color:s,background_color:r,progress_color:a,stroke_width:o=15,icon_size:n=100,expired_animation:l=!0,expired_text:c="",header_icon:d="mdi:calendar-clock",header_icon_color:u,header_icon_background:m,compact_format:h}=this._resolvedConfig,{cardBackground:p,textColor:_}=this._getCardColors(),g=[...p?[`background: ${p}`,`--timeflow-card-background-color: ${p}`]:[],..._?[`color: ${_}`,`--timeflow-card-text-color: ${_}`]:[]].join("; "),f=this._getCardClasses(l),y=!1!==h;let v;v=i||(this._expired?c||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,y));const b=this._getTitleText(),{configWithDefaults:w,shouldEnableActions:x}=this._getActionConfig(),T=n||100,S=Math.min(T,50),$=Math.max(4,.4*(o||15)),A=a||"var(--primary-color)";return V`
+    `}_renderClassicCompactCard(){var e;const{title:t,subtitle:i,text_color:s,background_color:r,progress_color:a,stroke_width:o=15,icon_size:n=100,expired_animation:l=!0,expired_text:c="",header_icon:d,header_icon_color:u,header_icon_background:m,compact_format:h}=this._resolvedConfig,{cardBackground:p,textColor:_}=this._getCardColors(),g=[...p?[`background: ${p}`,`--timeflow-card-background-color: ${p}`]:[],..._?[`color: ${_}`,`--timeflow-card-text-color: ${_}`]:[]].join("; "),f=this._getCardClasses(l),y=!1!==h;let v;v=i||(this._expired?c||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,y));const b=this._getTitleText(),{configWithDefaults:w,shouldEnableActions:x}=this._getActionConfig(),T=this._hasHeaderIcon(d),S=n||100,$=Math.min(S,50),A=Math.max(4,.4*(o||15)),C=a||"var(--primary-color)";return V`
       <ha-card 
         class="${f}" 
         style="${g}"
@@ -444,17 +455,18 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         .actionHandler=${x?Ve(w):void 0}
         @action=${x&&this.hass?We(this.hass,w):void 0}
       >
-        <div class="card-content-compact">
-          <!-- Icon -->
-          <div 
-            class="compact-icon" 
-            style="background: ${m||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
-          >
-            <ha-icon 
-              icon="${d}"
-              style="color: ${u||"var(--primary-color, var(--primary-text-color))"}"
-            ></ha-icon>
-          </div>
+        <div class="card-content-compact ${T?"":"no-compact-icon"}">
+          ${T?V`
+            <div 
+              class="compact-icon" 
+              style="background: ${m||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
+            >
+              <ha-icon 
+                icon="${d}"
+                style="color: ${u||"var(--primary-color, var(--primary-text-color))"}"
+              ></ha-icon>
+            </div>
+          `:""}
           
           <!-- Title & Subtitle -->
           <div class="compact-title-section">
@@ -466,9 +478,9 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           <div class="compact-progress">
             <progress-circle-beta
               .progress="${this._progress}"
-              .color="${A}"
-              .size="${S}"
-              .strokeWidth="${$}"
+              .color="${C}"
+              .size="${$}"
+              .strokeWidth="${A}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
               aria-label="Countdown progress: ${Math.round(this._progress)}%"
@@ -476,7 +488,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_getPrimaryCountdownUnit(){const{years:e,months:t,weeks:i,days:s,hours:r,minutes:a,seconds:o,total:n}=this._countdown,{show_years:l,show_months:c,show_weeks:d,show_days:u,show_hours:m,show_minutes:h,show_seconds:p}=this._resolvedConfig,_=this._localize||void 0;if(!1!==l&&e>0)return{primaryValue:e,primaryUnit:Me("year",e,_)};if(!1!==c&&t>0)return{primaryValue:t,primaryUnit:Me("month",t,_)};if(!1!==d&&i>0)return{primaryValue:i,primaryUnit:Me("week",i,_)};if(!1!==u&&s>0){const e=(!1===c?30*t:0)+s;return{primaryValue:e,primaryUnit:Me("day",e,_)}}if(!1!==m&&r>0)return{primaryValue:r,primaryUnit:Me("hour",r,_)};if(!1!==h&&a>0)return{primaryValue:a,primaryUnit:Me("minute",a,_)};if(!1!==p&&o>0)return{primaryValue:o,primaryUnit:Me("second",o,_)};const g=n||0;if(g<=0)return{primaryValue:0,primaryUnit:Me(!1!==p?"second":"day",0,_)};const f=Ce(g);return f.days>0?{primaryValue:f.days,primaryUnit:Me("day",f.days,_)}:f.hours>0?{primaryValue:f.hours,primaryUnit:Me("hour",f.hours,_)}:f.minutes>0?{primaryValue:f.minutes,primaryUnit:Me("minute",f.minutes,_)}:f.seconds>0?{primaryValue:f.seconds,primaryUnit:Me("second",f.seconds,_)}:{primaryValue:0,primaryUnit:Me("second",0,_)}}_formatTargetDate(){var e,t;const i=this._resolvedConfig.target_date;if(!i)return"";try{const s=new Date(i);if(isNaN(s.getTime()))return"";const r=(null===(t=null===(e=this.hass)||void 0===e?void 0:e.locale)||void 0===t?void 0:t.language)||navigator.language||"en",a={weekday:"short",month:"short",day:"numeric"};return s.toLocaleDateString(r,a)}catch{return""}}_getCardColors(){const{background_color:e,text_color:t}=this._resolvedConfig;return{cardBackground:e||"",textColor:t||""}}_getCardClasses(e=!0){return[this._initialized?"initialized":"",this._expired&&e?"expired":""].filter(Boolean).join(" ")}_getTitleText(){const{title:e,expired_text:t=""}=this._resolvedConfig;return null==e||"string"==typeof e&&""===e.trim()?this._resolvedConfig.timer_entity&&this.hass?_e.getTimerTitle(this._resolvedConfig.timer_entity,this.hass):this._resolvedConfig.auto_discover_alexa||this._resolvedConfig.auto_discover_google?"Countdown Timer":this._expired&&t||"Countdown Timer":e}_getActionConfig(){const e={...this._resolvedConfig};e.timer_entity&&!e.entity&&(e.entity=e.timer_entity),e.entity&&!e.tap_action&&(e.tap_action={action:"more-info"});return{configWithDefaults:e,shouldEnableActions:!!(e.tap_action||e.hold_action||e.double_tap_action)}}getCardSize(){const{aspect_ratio:e="2/1",height:t,style:i}=this.config;if("eventy"===i)return 1;if(t){const e=parseInt("string"==typeof t?t:t.toString());return e<=100?1:e<=150?2:e<=200?3:4}if(e){const[t,i]=e.split("/").map(Number);if(!t||!i)return 3;const s=i/t;return s>=1.5?4:s>=1?3:2}return 3}static get version(){return"3.2"}}e([de({type:Object})],Ge.prototype,"hass",void 0),e([de({type:Object})],Ge.prototype,"config",void 0),e([ue()],Ge.prototype,"_resolvedConfig",void 0),e([ue()],Ge.prototype,"_progress",void 0),e([ue()],Ge.prototype,"_countdown",void 0),e([ue()],Ge.prototype,"_expired",void 0),e([ue()],Ge.prototype,"_validationResult",void 0),e([ue()],Ge.prototype,"_initialized",void 0),e([ue()],Ge.prototype,"_localize",void 0);class Be extends oe{static get styles(){return o`
+    `}_getPrimaryCountdownUnit(){const{years:e,months:t,weeks:i,days:s,hours:r,minutes:a,seconds:o,total:n}=this._countdown,{show_years:l,show_months:c,show_weeks:d,show_days:u,show_hours:m,show_minutes:h,show_seconds:p}=this._resolvedConfig,_=this._localize||void 0;if(!1!==l&&e>0)return{primaryValue:e,primaryUnit:Me("year",e,_)};if(!1!==c&&t>0)return{primaryValue:t,primaryUnit:Me("month",t,_)};if(!1!==d&&i>0)return{primaryValue:i,primaryUnit:Me("week",i,_)};if(!1!==u&&s>0){const e=(!1===c?30*t:0)+s;return{primaryValue:e,primaryUnit:Me("day",e,_)}}if(!1!==m&&r>0)return{primaryValue:r,primaryUnit:Me("hour",r,_)};if(!1!==h&&a>0)return{primaryValue:a,primaryUnit:Me("minute",a,_)};if(!1!==p&&o>0)return{primaryValue:o,primaryUnit:Me("second",o,_)};const g=n||0;if(g<=0)return{primaryValue:0,primaryUnit:Me(!1!==p?"second":"day",0,_)};const f=Ce(g);return f.days>0?{primaryValue:f.days,primaryUnit:Me("day",f.days,_)}:f.hours>0?{primaryValue:f.hours,primaryUnit:Me("hour",f.hours,_)}:f.minutes>0?{primaryValue:f.minutes,primaryUnit:Me("minute",f.minutes,_)}:f.seconds>0?{primaryValue:f.seconds,primaryUnit:Me("second",f.seconds,_)}:{primaryValue:0,primaryUnit:Me("second",0,_)}}_formatTargetDate(){var e,t;const i=this._resolvedConfig.target_date;if(!i)return"";try{const s=new Date(i);if(isNaN(s.getTime()))return"";const r=(null===(t=null===(e=this.hass)||void 0===e?void 0:e.locale)||void 0===t?void 0:t.language)||navigator.language||"en",a={weekday:"short",month:"short",day:"numeric"};return s.toLocaleDateString(r,a)}catch{return""}}_getCardColors(){const{background_color:e,text_color:t}=this._resolvedConfig;return{cardBackground:e||"",textColor:t||""}}_getCardClasses(e=!0){return[this._initialized?"initialized":"",this._expired&&e?"expired":""].filter(Boolean).join(" ")}_getTitleText(){const{title:e,expired_text:t=""}=this._resolvedConfig;return null==e||"string"==typeof e&&""===e.trim()?this._resolvedConfig.timer_entity&&this.hass?_e.getTimerTitle(this._resolvedConfig.timer_entity,this.hass):this._resolvedConfig.auto_discover_alexa||this._resolvedConfig.auto_discover_google?"Countdown Timer":this._expired&&t||"Countdown Timer":e}_getActionConfig(){const e={...this._resolvedConfig};e.timer_entity&&!e.entity&&(e.entity=e.timer_entity),e.entity&&!e.tap_action&&(e.tap_action={action:"more-info"});return{configWithDefaults:e,shouldEnableActions:!!(e.tap_action||e.hold_action||e.double_tap_action)}}_hasHeaderIcon(e){var t;return void 0===e&&(e=null===(t=this._resolvedConfig)||void 0===t?void 0:t.header_icon),"string"==typeof e&&e.trim().length>0}getCardSize(){const{aspect_ratio:e="2/1",height:t,style:i}=this.config;if("eventy"===i)return 1;if(t){const e=parseInt("string"==typeof t?t:t.toString());return e<=100?1:e<=150?2:e<=200?3:4}if(e){const[t,i]=e.split("/").map(Number);if(!t||!i)return 3;const s=i/t;return s>=1.5?4:s>=1?3:2}return 3}static get version(){return"3.2"}}e([de({type:Object})],Ge.prototype,"hass",void 0),e([de({type:Object})],Ge.prototype,"config",void 0),e([ue()],Ge.prototype,"_resolvedConfig",void 0),e([ue()],Ge.prototype,"_progress",void 0),e([ue()],Ge.prototype,"_countdown",void 0),e([ue()],Ge.prototype,"_expired",void 0),e([ue()],Ge.prototype,"_validationResult",void 0),e([ue()],Ge.prototype,"_initialized",void 0),e([ue()],Ge.prototype,"_localize",void 0);class Be extends oe{static get styles(){return o`
       :host {
         display: inline-block;
         vertical-align: middle;

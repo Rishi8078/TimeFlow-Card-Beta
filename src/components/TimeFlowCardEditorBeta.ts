@@ -227,6 +227,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'text_color': 'Text Color',
             'stroke_width': 'Stroke Width',
             'icon_size': 'Circle Size',
+            'progress_bg_stroke': 'Background Stroke Color',
+            'progress_bg_opacity': 'Background Opacity',
             'aspect_ratio': 'Aspect Ratio',
             'header_icon': 'Header Icon',
             'header_icon_color': 'Icon Color',

@@ -408,6 +408,7 @@ export class TimeFlowCardBeta extends LitElement {
       background_color: "",
       stroke_width: 15,
       icon_size: 100,
+      invert_progress: false,
       expired_animation: false,
       expired_text: '',
     };
@@ -637,6 +638,7 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size,
       expired_animation = true,
       expired_text = '',
+      invert_progress = false,
       width,
       height,
       aspect_ratio,
@@ -727,6 +729,7 @@ export class TimeFlowCardBeta extends LitElement {
     // Get action config using helper
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
     const hasHeaderIcon = this._hasHeaderIcon();
+    const displayProgress = invert_progress ? 100 - this._progress : this._progress;
 
     return html`
       <ha-card 
@@ -756,13 +759,13 @@ export class TimeFlowCardBeta extends LitElement {
             <div class="progress-section">
               <progress-circle-beta
                 class="progress-circle"
-                .progress="${this._progress}"
+                .progress="${displayProgress}"
                 .color="${mainProgressColor}"
                 .size="${dynamicCircleSize}"
                 .strokeWidth="${dynamicStroke}"
                 .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
                 .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
-                aria-label="Countdown progress: ${Math.round(this._progress)}%"
+                aria-label="Countdown progress: ${Math.round(displayProgress)}%"
               ></progress-circle-beta>
             </div>
           </div>
@@ -878,6 +881,7 @@ export class TimeFlowCardBeta extends LitElement {
       icon_size = 100,
       expired_animation = true,
       expired_text = '',
+      invert_progress = false,
       header_icon,
       header_icon_color,
       header_icon_background,
@@ -912,6 +916,7 @@ export class TimeFlowCardBeta extends LitElement {
     // Get action config using helper
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
     const hasHeaderIcon = this._hasHeaderIcon(header_icon);
+    const displayProgress = invert_progress ? 100 - this._progress : this._progress;
 
     // Calculate dynamic circle size for compact layout (smaller than classic)
     const baseCircleSize = icon_size || 100;
@@ -951,13 +956,13 @@ export class TimeFlowCardBeta extends LitElement {
           <!-- Progress Circle -->
           <div class="compact-progress">
             <progress-circle-beta
-              .progress="${this._progress}"
+              .progress="${displayProgress}"
               .color="${mainProgressColor}"
               .size="${compactCircleSize}"
               .strokeWidth="${compactStroke}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
               .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
-              aria-label="Countdown progress: ${Math.round(this._progress)}%"
+              aria-label="Countdown progress: ${Math.round(displayProgress)}%"
             ></progress-circle-beta>
           </div>
         </div>

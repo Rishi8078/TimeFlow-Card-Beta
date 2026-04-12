@@ -26,6 +26,7 @@ export class ProgressGridBeta extends LitElement {
       }
 
       .dot {
+        display: block;
         border-radius: 999px;
         transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
       }
@@ -81,8 +82,9 @@ export class ProgressGridBeta extends LitElement {
             <span
               class="dot ${active ? 'active' : ''}"
               style="
-                width: min(${dotSize}px, 100%);
-                height: min(${dotSize}px, 100%);
+                width: 100%;
+                max-width: ${dotSize}px;
+                aspect-ratio: 1 / 1;
                 background-color: ${active ? this.color : this.bgStroke};
                 opacity: ${active ? 1 : inactiveOpacity};
               "

@@ -675,6 +675,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       }
 
       .dot {
+        display: block;
         border-radius: 999px;
         transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
       }
@@ -696,8 +697,9 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
             <span
               class="dot ${i?"active":""}"
               style="
-                width: min(${s}px, 100%);
-                height: min(${s}px, 100%);
+                width: 100%;
+                max-width: ${s}px;
+                aspect-ratio: 1 / 1;
                 background-color: ${i?this.color:this.bgStroke};
                 opacity: ${i?1:n};
               "

@@ -380,6 +380,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
       .gridy-title-group {
         display: flex;
         align-items: center;
+        gap: 12px;
         min-width: 0;
         flex: 1;
       }
@@ -416,7 +417,6 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
         justify-content: flex-start;
         width: 100%;
         box-sizing: border-box;
-        padding-left: var(--gridy-progress-inset-start, 0px);
         overflow: hidden;
       }
 
@@ -573,33 +573,36 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:o=!0,expired_text:a="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),w=this._hasHeaderIcon(m),x=w?44:0,S=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,`--gridy-progress-inset-start: ${x}px`,...v].join("; "),T=!1!==h;let $;$=t||(this._expired?a||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,T));const C=this._getTitleText(),A=this._getCardClasses(o),{configWithDefaults:D,shouldEnableActions:M}=this._getActionConfig(),k=n?100-this._progress:this._progress,E=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(k)}%`;return V`
+    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:o=!0,expired_text:a="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),w=this._hasHeaderIcon(m),x=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,...v].join("; "),S=!1!==h;let T;T=t||(this._expired?a||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,S));const $=this._getTitleText(),C=this._getCardClasses(o),{configWithDefaults:A,shouldEnableActions:D}=this._getActionConfig(),M=n?100-this._progress:this._progress,k=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(M)}%`;return V`
       <ha-card
-        class="${A}"
-        style="${S}"
-        ?actionHandler=${M}
-        .actionHandler=${M?Ge(D):void 0}
-        @action=${M&&this.hass?We(this.hass,D):void 0}
+        class="${C}"
+        style="${x}"
+        ?actionHandler=${D}
+        .actionHandler=${D?Ge(A):void 0}
+        @action=${D&&this.hass?We(this.hass,A):void 0}
       >
         <div class="card-content-gridy">
           <div class="gridy-header">
-            <div class="gridy-title-group" style="${w?"--header-icon-container-size: 32px; --header-icon-size: 18px;":""}">
+            <div class="gridy-title-group">
               ${w?V`
-                <div class="header-icon" style="${_?`background: ${_}; border-radius: var(--ha-card-border-radius, 12px);`:""}">
+                <div
+                  class="compact-icon"
+                  style="background: ${_||"rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)"};"
+                >
                   <ha-icon
                     icon="${m}"
-                    style="color: ${p||"var(--primary-text-color)"}"
+                    style="color: ${p||"var(--primary-color, var(--primary-text-color))"}"
                   ></ha-icon>
                 </div>
               `:""}
-              <h2 class="gridy-title" aria-live="polite">${C}</h2>
+              <h2 class="gridy-title" aria-live="polite">${$}</h2>
             </div>
-            <p class="gridy-status" aria-live="polite">${$}</p>
+            <p class="gridy-status" aria-live="polite">${T}</p>
           </div>
 
           <div class="gridy-progress" role="group" aria-label="${"count_up"===l?"Elapsed Progress":"Countdown Progress"}">
             <progress-grid-beta
-              .progress="${k}"
+              .progress="${M}"
               .color="${y}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
@@ -609,7 +612,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
               .columns="${20}"
               .dotSize="${10}"
               .gap="${6}"
-              aria-label="${E}"
+              aria-label="${k}"
             ></progress-grid-beta>
           </div>
         </div>

@@ -391,6 +391,7 @@ export class TimeFlowCardBeta extends LitElement {
       .gridy-title-group {
         display: flex;
         align-items: center;
+        gap: 12px;
         min-width: 0;
         flex: 1;
       }
@@ -427,7 +428,6 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: flex-start;
         width: 100%;
         box-sizing: border-box;
-        padding-left: var(--gridy-progress-inset-start, 0px);
         overflow: hidden;
       }
 
@@ -1097,7 +1097,6 @@ export class TimeFlowCardBeta extends LitElement {
     const minColumns = 10;
     const rows = 5;
     const hasHeaderIcon = this._hasHeaderIcon(header_icon);
-    const progressInsetStart = hasHeaderIcon ? 44 : 0;
     const gap = 6;
     const dotSize = 10;
 
@@ -1106,7 +1105,6 @@ export class TimeFlowCardBeta extends LitElement {
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
       `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
-      `--gridy-progress-inset-start: ${progressInsetStart}px`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1136,12 +1134,15 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content-gridy">
           <div class="gridy-header">
-            <div class="gridy-title-group" style="${hasHeaderIcon ? '--header-icon-container-size: 32px; --header-icon-size: 18px;' : ''}">
+            <div class="gridy-title-group">
               ${hasHeaderIcon ? html`
-                <div class="header-icon" style="${header_icon_background ? `background: ${header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);` : ''}">
+                <div
+                  class="compact-icon"
+                  style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
+                >
                   <ha-icon
                     icon="${header_icon}"
-                    style="color: ${header_icon_color || 'var(--primary-text-color)'}"
+                    style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
                   ></ha-icon>
                 </div>
               ` : ''}

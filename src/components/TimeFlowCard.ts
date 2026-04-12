@@ -1084,9 +1084,6 @@ export class TimeFlowCardBeta extends LitElement {
       height,
       aspect_ratio,
       compact_format,
-      header_icon,
-      header_icon_color,
-      header_icon_background
     } = this._resolvedConfig;
 
     const { cardBackground, textColor } = this._getCardColors();
@@ -1096,7 +1093,6 @@ export class TimeFlowCardBeta extends LitElement {
     const columns = 20;
     const minColumns = 10;
     const rows = 5;
-    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
     const gap = 6;
     const dotSize = 10;
 
@@ -1135,17 +1131,6 @@ export class TimeFlowCardBeta extends LitElement {
         <div class="card-content-gridy">
           <div class="gridy-header">
             <div class="gridy-title-group">
-              ${hasHeaderIcon ? html`
-                <div
-                  class="compact-icon"
-                  style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
-                >
-                  <ha-icon
-                    icon="${header_icon}"
-                    style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
-                  ></ha-icon>
-                </div>
-              ` : ''}
               <h2 class="gridy-title" aria-live="polite">${titleText}</h2>
             </div>
             <p class="gridy-status" aria-live="polite">${statusText}</p>

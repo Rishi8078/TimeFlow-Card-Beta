@@ -81,7 +81,7 @@ export class TimeFlowCardBeta extends LitElement {
       }
       
       /* Classic style needs minimum height, but compact styles should auto-size */
-      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)) {
+      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)):not(:has(.card-content-gridy)) {
         min-height: 120px;
       }
       
@@ -366,6 +366,88 @@ export class TimeFlowCardBeta extends LitElement {
       .compact-progress progress-circle-beta {
         opacity: 0.9;
       }
+
+      /* ═══════════════════════════════════════════════════════════════════════
+         GRIDY LAYOUT STYLES - Header row with dot-grid progress
+         ═══════════════════════════════════════════════════════════════════════ */
+
+      .card-content-gridy {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px 20px;
+        min-height: 120px;
+        box-sizing: border-box;
+        background: inherit;
+      }
+
+      .gridy-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .gridy-title-group {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .gridy-title {
+        margin: 0;
+        font-size: var(--timeflow-title-size, 1.45rem);
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, inherit);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .gridy-status {
+        margin: 0;
+        max-width: 45%;
+        flex-shrink: 0;
+        font-size: var(--timeflow-subtitle-size, 1rem);
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, inherit);
+        opacity: 0.8;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .gridy-progress {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .gridy-progress progress-grid-beta {
+        opacity: 0.95;
+      }
+
+      @media (max-width: 480px) {
+        .card-content-gridy {
+          gap: 12px;
+        }
+
+        .gridy-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .gridy-status {
+          max-width: 100%;
+          text-align: left;
+        }
+      }
       
       @keyframes celebration {
         0% { transform: scale(1); }
@@ -623,6 +705,10 @@ export class TimeFlowCardBeta extends LitElement {
     
     if (style === 'classic-compact') {
       return this._renderClassicCompactCard();
+    }
+
+    if (style === 'gridy') {
+      return this._renderGridyCard();
     }
     
     // Classic: circle progress style
@@ -972,6 +1058,106 @@ export class TimeFlowCardBeta extends LitElement {
               .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
               aria-label="${progressAriaLabel}"
             ></progress-circle-beta>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Renders the Gridy style - title/status row with a dot-grid progress indicator.
+   */
+  private _renderGridyCard(): TemplateResult {
+    const {
+      subtitle,
+      text_color,
+      background_color,
+      progress_color,
+      expired_animation = true,
+      expired_text = '',
+      invert_progress = false,
+      mode = 'count_down',
+      width,
+      height,
+      aspect_ratio,
+      compact_format,
+      header_icon,
+      header_icon_color,
+      header_icon_background
+    } = this._resolvedConfig;
+
+    const { cardBackground, textColor } = this._getCardColors();
+    const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, aspect_ratio);
+    const { cardWidth } = this.styleManager.getCardDimensions(width, height, aspect_ratio);
+    const columns = 20;
+    const rows = 5;
+    const availableWidth = Math.max(220, Math.floor(cardWidth) - 44);
+    const gap = Math.max(4, Math.min(8, Math.floor(availableWidth / 60)));
+    const dotSize = Math.max(6, Math.min(12, Math.floor((availableWidth - gap * (columns - 1)) / columns)));
+
+    const cardStyles = [
+      ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
+      ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
+      `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
+      `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
+      ...dimensionStyles
+    ].join('; ');
+
+    const timeFormatCompact = compact_format !== false;
+    let statusText: string;
+    if (subtitle) {
+      statusText = subtitle;
+    } else if (this._expired) {
+      statusText = expired_text || 'Completed';
+    } else {
+      statusText = this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+    }
+
+    const titleText = this._getTitleText();
+    const cardClasses = this._getCardClasses(expired_animation);
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
+    const displayProgress = invert_progress ? 100 - this._progress : this._progress;
+    const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
+
+    return html`
+      <ha-card
+        class="${cardClasses}"
+        style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+      >
+        <div class="card-content-gridy">
+          <div class="gridy-header">
+            <div class="gridy-title-group" style="${hasHeaderIcon ? '--header-icon-container-size: 32px; --header-icon-size: 18px;' : ''}">
+              ${hasHeaderIcon ? html`
+                <div class="header-icon" style="${header_icon_background ? `background: ${header_icon_background}; border-radius: var(--ha-card-border-radius, 12px);` : ''}">
+                  <ha-icon
+                    icon="${header_icon}"
+                    style="color: ${header_icon_color || 'var(--primary-text-color)'}"
+                  ></ha-icon>
+                </div>
+              ` : ''}
+              <h2 class="gridy-title" aria-live="polite">${titleText}</h2>
+            </div>
+            <p class="gridy-status" aria-live="polite">${statusText}</p>
+          </div>
+
+          <div class="gridy-progress" role="group" aria-label="${mode === 'count_up' ? 'Elapsed Progress' : 'Countdown Progress'}">
+            <progress-grid-beta
+              .progress="${displayProgress}"
+              .color="${mainProgressColor}"
+              .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
+              .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
+              .rows="${rows}"
+              .columns="${columns}"
+              .dotSize="${dotSize}"
+              .gap="${gap}"
+              aria-label="${progressAriaLabel}"
+            ></progress-grid-beta>
           </div>
         </div>
       </ha-card>

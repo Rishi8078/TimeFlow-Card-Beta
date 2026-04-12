@@ -18,6 +18,7 @@ declare global {
 
 import { TimeFlowCardBeta } from './components/TimeFlowCard';
 import { ProgressCircleBeta } from './components/ProgressCircle';
+import { ProgressGridBeta } from './components/ProgressGrid';
 import { ErrorDisplayBeta } from './utils/ErrorDisplay';
 import { TimeFlowCardEditorBeta } from './components/TimeFlowCardEditorBeta';
 
@@ -30,6 +31,12 @@ if (!customElements.get('error-display-beta')) {
 
 if (!customElements.get('progress-circle-beta')) {
   customElements.define('progress-circle-beta', ProgressCircleBeta);
+} else {
+  // Component already registered
+}
+
+if (!customElements.get('progress-grid-beta')) {
+  customElements.define('progress-grid-beta', ProgressGridBeta);
 } else {
   // Component already registered
 }
@@ -57,4 +64,4 @@ window.customCards.push({
 });
 
 // Export main classes for external use or testing
-export { TimeFlowCardBeta, ProgressCircleBeta, ErrorDisplayBeta, TimeFlowCardEditorBeta };
+export { TimeFlowCardBeta, ProgressCircleBeta, ProgressGridBeta, ErrorDisplayBeta, TimeFlowCardEditorBeta };

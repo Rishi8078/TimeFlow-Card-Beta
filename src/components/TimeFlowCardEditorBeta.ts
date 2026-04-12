@@ -199,7 +199,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
 
             // Style
-            'style': 'Card style: Classic (vertical with circle), Eventy (compact horizontal), Classic Compact (horizontal with circle)',
+            'style': 'Card style: Classic (vertical with circle), Eventy (compact horizontal), Classic Compact (horizontal with circle), or Gridy (dot-grid progress)',
         };
         return helpers[schema.name] || '';
     }
@@ -372,7 +372,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         options: [
                             { value: 'classic', label: 'Classic (Circle Progress)' },
                             { value: 'eventy', label: 'Eventy (Compact Horizontal)' },
-                            { value: 'classic-compact', label: 'Classic Compact (Horizontal + Circle)' }
+                            { value: 'classic-compact', label: 'Classic Compact (Horizontal + Circle)' },
+                            { value: 'gridy', label: 'Gridy (Header + Dot Grid)' }
                         ],
                         mode: 'dropdown'
                     } 

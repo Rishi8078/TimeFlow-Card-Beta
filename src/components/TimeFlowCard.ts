@@ -1093,14 +1093,13 @@ export class TimeFlowCardBeta extends LitElement {
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, aspect_ratio);
-    const { cardWidth } = this.styleManager.getCardDimensions(width, height, aspect_ratio);
     const columns = 20;
+    const minColumns = 10;
     const rows = 5;
     const hasHeaderIcon = this._hasHeaderIcon(header_icon);
     const progressInsetStart = hasHeaderIcon ? 44 : 0;
-    const availableWidth = Math.max(160, Math.floor(cardWidth) - 40 - progressInsetStart);
-    const gap = Math.max(4, Math.min(8, Math.floor(availableWidth / 60)));
-    const dotSize = Math.max(6, Math.min(12, Math.floor((availableWidth - gap * (columns - 1)) / columns)));
+    const gap = 6;
+    const dotSize = 10;
 
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
@@ -1158,6 +1157,7 @@ export class TimeFlowCardBeta extends LitElement {
               .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
               .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
               .fullWidth="${true}"
+              .minColumns="${minColumns}"
               .rows="${rows}"
               .columns="${columns}"
               .dotSize="${dotSize}"

@@ -23,6 +23,8 @@ const REPLACEMENTS = [
   // 1. Custom Element Tags (HTML templates)
   { from: /<progress-circle-beta/g, to: '<progress-circle' },
   { from: /<\/progress-circle-beta>/g, to: '</progress-circle>' },
+  { from: /<progress-grid-beta/g, to: '<progress-grid' },
+  { from: /<\/progress-grid-beta>/g, to: '</progress-grid>' },
   { from: /<error-display-beta/g, to: '<error-display' },
   { from: /<\/error-display-beta>/g, to: '</error-display>' },
   { from: /<timeflow-card-beta-editor/g, to: '<timeflow-card-editor' }, // unlikely in HTML but good practice
@@ -30,6 +32,8 @@ const REPLACEMENTS = [
   // 2. Custom Element Registration (Strings)
   { from: /'progress-circle-beta'/g, to: "'progress-circle'" },
   { from: /"progress-circle-beta"/g, to: '"progress-circle"' },
+  { from: /'progress-grid-beta'/g, to: "'progress-grid'" },
+  { from: /"progress-grid-beta"/g, to: '"progress-grid"' },
   { from: /'error-display-beta'/g, to: "'error-display'" },
   { from: /"error-display-beta"/g, to: '"error-display"' },
   { from: /'timeflow-card-beta'/g, to: "'timeflow-card'" },
@@ -38,10 +42,13 @@ const REPLACEMENTS = [
 
   // 2b. CSS class attributes (e.g., class="progress-circle-beta")
   { from: /class="progress-circle-beta"/g, to: 'class="progress-circle"' },
+  { from: /class="progress-grid-beta"/g, to: 'class="progress-grid"' },
 
   // 2c. CSS selectors using element names (e.g., .compact-progress progress-circle-beta)
   { from: / progress-circle-beta\s*\{/g, to: ' progress-circle {' },
   { from: / progress-circle-beta\s/g, to: ' progress-circle ' },
+  { from: / progress-grid-beta\s*\{/g, to: ' progress-grid {' },
+  { from: / progress-grid-beta\s/g, to: ' progress-grid ' },
 
   // 3. Configuration Types (with custom: prefix)
   { from: /type: 'custom:timeflow-card-beta'/g, to: "type: 'custom:timeflow-card'" },
@@ -54,9 +61,11 @@ const REPLACEMENTS = [
   // 4. Class Names & Imports
   { from: /class TimeFlowCardBeta/g, to: 'class TimeFlowCard' },
   { from: /class ProgressCircleBeta/g, to: 'class ProgressCircle' },
+  { from: /class ProgressGridBeta/g, to: 'class ProgressGrid' },
   { from: /class ErrorDisplayBeta/g, to: 'class ErrorDisplay' },
   { from: /class TimeFlowCardEditorBeta/g, to: 'class TimeFlowCardEditor' },
   { from: /export { TimeFlowCardBeta/g, to: 'export { TimeFlowCard' },
+  { from: /TimeFlowCardBeta, ProgressCircleBeta, ProgressGridBeta/g, to: 'TimeFlowCard, ProgressCircle, ProgressGrid' },
   { from: /TimeFlowCardBeta, ProgressCircleBeta/g, to: 'TimeFlowCard, ProgressCircle' }, // Index export line
 
   // 5. File Headers & Comments
@@ -70,12 +79,15 @@ const REPLACEMENTS = [
   // We explicitly replace the import paths now:
   { from: /import { TimeFlowCardBeta }/g, to: 'import { TimeFlowCard }' },
   { from: /import { ProgressCircleBeta }/g, to: 'import { ProgressCircle }' },
+  { from: /import { ProgressGridBeta }/g, to: 'import { ProgressGrid }' },
   { from: /import { ErrorDisplayBeta }/g, to: 'import { ErrorDisplay }' },
   { from: /import { TimeFlowCardEditorBeta }/g, to: 'import { TimeFlowCardEditor }' },
 
   // 7. Fix Component Definitions
   { from: /customElements.get\('timeflow-card-beta'\)/g, to: "customElements.get('timeflow-card')" },
   { from: /customElements.define\('timeflow-card-beta'/g, to: "customElements.define('timeflow-card'" },
+  { from: /customElements.get\('progress-grid-beta'\)/g, to: "customElements.get('progress-grid')" },
+  { from: /customElements.define\('progress-grid-beta'/g, to: "customElements.define('progress-grid'" },
 
   // 8. Fix Editor Element Creation
   { from: /document.createElement\('timeflow-card-beta-editor'\)/g, to: "document.createElement('timeflow-card-editor')" },
@@ -83,6 +95,7 @@ const REPLACEMENTS = [
   // 9. Fix remaining Beta references (standalone usages)
   { from: /TimeFlowCardBeta\./g, to: 'TimeFlowCard.' },
   { from: /ProgressCircleBeta\b/g, to: 'ProgressCircle' },
+  { from: /ProgressGridBeta\b/g, to: 'ProgressGrid' },
   { from: /ErrorDisplayBeta\b/g, to: 'ErrorDisplay' },
   { from: /TimeFlowCardEditorBeta\b/g, to: 'TimeFlowCardEditor' },
   { from: /TimeFlowCardBeta\b/g, to: 'TimeFlowCard' },

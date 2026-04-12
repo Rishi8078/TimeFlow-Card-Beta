@@ -445,9 +445,7 @@ export class CountdownService {
       return { value: weeks, unit: 'week' };
     }
     if (show_days !== false && days > 0) {
-      const fallbackDays = parseMillisecondsToUnits(total).days;
-      const primaryDays = show_hours === false ? fallbackDays : ((show_months === false ? months * 30 : 0) + days);
-      return { value: primaryDays, unit: 'day' };
+      return { value: days, unit: 'day' };
     }
     if (show_hours !== false && hours > 0) {
       return { value: hours, unit: 'hour' };

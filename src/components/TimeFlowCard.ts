@@ -424,13 +424,16 @@ export class TimeFlowCardBeta extends LitElement {
       .gridy-progress {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
+        box-sizing: border-box;
+        padding-left: var(--gridy-progress-inset-start, 0px);
         overflow: hidden;
       }
 
       .gridy-progress progress-grid-beta {
         opacity: 0.95;
+        width: 100%;
       }
 
       @media (max-width: 480px) {
@@ -1093,7 +1096,9 @@ export class TimeFlowCardBeta extends LitElement {
     const { cardWidth } = this.styleManager.getCardDimensions(width, height, aspect_ratio);
     const columns = 20;
     const rows = 5;
-    const availableWidth = Math.max(220, Math.floor(cardWidth) - 40);
+    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
+    const progressInsetStart = hasHeaderIcon ? 44 : 0;
+    const availableWidth = Math.max(160, Math.floor(cardWidth) - 40 - progressInsetStart);
     const gap = Math.max(4, Math.min(8, Math.floor(availableWidth / 60)));
     const dotSize = Math.max(6, Math.min(12, Math.floor((availableWidth - gap * (columns - 1)) / columns)));
 
@@ -1102,6 +1107,7 @@ export class TimeFlowCardBeta extends LitElement {
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
       `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
+      `--gridy-progress-inset-start: ${progressInsetStart}px`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1118,7 +1124,6 @@ export class TimeFlowCardBeta extends LitElement {
     const titleText = this._getTitleText();
     const cardClasses = this._getCardClasses(expired_animation);
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
-    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
 
@@ -1152,6 +1157,7 @@ export class TimeFlowCardBeta extends LitElement {
               .color="${mainProgressColor}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
               .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
+              .fullWidth="${true}"
               .rows="${rows}"
               .columns="${columns}"
               .dotSize="${dotSize}"

@@ -413,13 +413,16 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .gridy-progress {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
+        box-sizing: border-box;
+        padding-left: var(--gridy-progress-inset-start, 0px);
         overflow: hidden;
       }
 
       .gridy-progress progress-grid-beta {
         opacity: 0.95;
+        width: 100%;
       }
 
       @media (max-width: 480px) {
@@ -570,18 +573,18 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:a=!0,expired_text:o="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),{cardWidth:w}=this.styleManager.getCardDimensions(c,d,u),x=Math.max(220,Math.floor(w)-40),T=Math.max(4,Math.min(8,Math.floor(x/60))),S=Math.max(6,Math.min(12,Math.floor((x-19*T)/20))),$=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,...v].join("; "),C=!1!==h;let A;A=t||(this._expired?o||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,C));const D=this._getTitleText(),M=this._getCardClasses(a),{configWithDefaults:k,shouldEnableActions:E}=this._getActionConfig(),N=this._hasHeaderIcon(m),I=n?100-this._progress:this._progress,z=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(I)}%`;return G`
+    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:a=!0,expired_text:o="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),{cardWidth:w}=this.styleManager.getCardDimensions(c,d,u),x=this._hasHeaderIcon(m),T=x?44:0,S=Math.max(160,Math.floor(w)-40-T),$=Math.max(4,Math.min(8,Math.floor(S/60))),C=Math.max(6,Math.min(12,Math.floor((S-19*$)/20))),A=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,`--gridy-progress-inset-start: ${T}px`,...v].join("; "),D=!1!==h;let M;M=t||(this._expired?o||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,D));const k=this._getTitleText(),E=this._getCardClasses(a),{configWithDefaults:N,shouldEnableActions:I}=this._getActionConfig(),z=n?100-this._progress:this._progress,R=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(z)}%`;return G`
       <ha-card
-        class="${M}"
-        style="${$}"
-        ?actionHandler=${E}
-        .actionHandler=${E?Ve(k):void 0}
-        @action=${E&&this.hass?We(this.hass,k):void 0}
+        class="${E}"
+        style="${A}"
+        ?actionHandler=${I}
+        .actionHandler=${I?Ve(N):void 0}
+        @action=${I&&this.hass?We(this.hass,N):void 0}
       >
         <div class="card-content-gridy">
           <div class="gridy-header">
-            <div class="gridy-title-group" style="${N?"--header-icon-container-size: 32px; --header-icon-size: 18px;":""}">
-              ${N?G`
+            <div class="gridy-title-group" style="${x?"--header-icon-container-size: 32px; --header-icon-size: 18px;":""}">
+              ${x?G`
                 <div class="header-icon" style="${_?`background: ${_}; border-radius: var(--ha-card-border-radius, 12px);`:""}">
                   <ha-icon
                     icon="${m}"
@@ -589,22 +592,23 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
                   ></ha-icon>
                 </div>
               `:""}
-              <h2 class="gridy-title" aria-live="polite">${D}</h2>
+              <h2 class="gridy-title" aria-live="polite">${k}</h2>
             </div>
-            <p class="gridy-status" aria-live="polite">${A}</p>
+            <p class="gridy-status" aria-live="polite">${M}</p>
           </div>
 
           <div class="gridy-progress" role="group" aria-label="${"count_up"===l?"Elapsed Progress":"Countdown Progress"}">
             <progress-grid-beta
-              .progress="${I}"
+              .progress="${z}"
               .color="${y}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
+              .fullWidth="${!0}"
               .rows="${5}"
               .columns="${20}"
-              .dotSize="${S}"
-              .gap="${T}"
-              aria-label="${z}"
+              .dotSize="${C}"
+              .gap="${$}"
+              aria-label="${R}"
             ></progress-grid-beta>
           </div>
         </div>
@@ -658,10 +662,11 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           ></circle>
         </svg>
       </div>
-    `}}e([de({type:Number})],Be.prototype,"progress",void 0),e([de({type:String})],Be.prototype,"color",void 0),e([de({type:Number})],Be.prototype,"size",void 0),e([de({type:Number})],Be.prototype,"strokeWidth",void 0),e([de({type:String})],Be.prototype,"bgStroke",void 0),e([de({type:Number})],Be.prototype,"bgOpacity",void 0);class Ke extends oe{constructor(){super(...arguments),this.progress=0,this.color="#4CAF50",this.bgStroke="#FFFFFF1A",this.bgOpacity=null,this.rows=5,this.columns=20,this.dotSize=12,this.gap=8}static get styles(){return o`
+    `}}e([de({type:Number})],Be.prototype,"progress",void 0),e([de({type:String})],Be.prototype,"color",void 0),e([de({type:Number})],Be.prototype,"size",void 0),e([de({type:Number})],Be.prototype,"strokeWidth",void 0),e([de({type:String})],Be.prototype,"bgStroke",void 0),e([de({type:Number})],Be.prototype,"bgOpacity",void 0);class Ke extends oe{constructor(){super(...arguments),this.progress=0,this.color="#4CAF50",this.bgStroke="#FFFFFF1A",this.bgOpacity=null,this.fullWidth=!1,this.rows=5,this.columns=20,this.dotSize=12,this.gap=8}static get styles(){return o`
       :host {
         display: inline-block;
         vertical-align: middle;
+        max-width: 100%;
       }
 
       .grid {
@@ -677,27 +682,29 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .dot.active {
         opacity: 1;
       }
-    `}updateProgress(e){this.progress=e}getProgress(){return this.progress}_getSafeGridValue(e,t){const i=Number(e);return Number.isFinite(i)&&i>0?Math.floor(i):t}render(){const e=Math.max(0,Math.min(100,Number(this.progress)||0)),t=this._getSafeGridValue(this.rows,5),i=this._getSafeGridValue(this.columns,20),s=this._getSafeGridValue(this.dotSize,12),r=this._getSafeGridValue(this.gap,8),a=t*i,o=Math.min(a,Math.max(0,Math.round(e/100*a))),n=null===this.bgOpacity?1:Math.max(0,Math.min(100,Number(this.bgOpacity)||0))/100;return G`
+    `}updateProgress(e){this.progress=e}getProgress(){return this.progress}_getSafeGridValue(e,t){const i=Number(e);return Number.isFinite(i)&&i>0?Math.floor(i):t}render(){const e=Math.max(0,Math.min(100,Number(this.progress)||0)),t=this._getSafeGridValue(this.rows,5),i=this._getSafeGridValue(this.columns,20),s=this._getSafeGridValue(this.dotSize,12),r=this._getSafeGridValue(this.gap,8),a=t*i,o=Math.min(a,Math.max(0,Math.round(e/100*a))),n=null===this.bgOpacity?1:Math.max(0,Math.min(100,Number(this.bgOpacity)||0))/100,l=this.fullWidth?`repeat(${i}, minmax(0, 1fr))`:`repeat(${i}, ${s}px)`,c=this.fullWidth?"100%":"max-content";return G`
       <div
         class="grid"
         style="
-          grid-template-columns: repeat(${i}, ${s}px);
+          width: ${c};
+          grid-template-columns: ${l};
           gap: ${r}px;
+          justify-items: center;
         "
       >
         ${Array.from({length:a},(e,t)=>{const i=t<o;return G`
             <span
               class="dot ${i?"active":""}"
               style="
-                width: ${s}px;
-                height: ${s}px;
+                width: min(${s}px, 100%);
+                height: min(${s}px, 100%);
                 background-color: ${i?this.color:this.bgStroke};
                 opacity: ${i?1:n};
               "
             ></span>
           `})}
       </div>
-    `}}e([de({type:Number})],Ke.prototype,"progress",void 0),e([de({type:String})],Ke.prototype,"color",void 0),e([de({type:String})],Ke.prototype,"bgStroke",void 0),e([de({type:Number})],Ke.prototype,"bgOpacity",void 0),e([de({type:Number})],Ke.prototype,"rows",void 0),e([de({type:Number})],Ke.prototype,"columns",void 0),e([de({type:Number})],Ke.prototype,"dotSize",void 0),e([de({type:Number})],Ke.prototype,"gap",void 0);class Je extends oe{constructor(){super(...arguments),this.hass=null,this._config={type:"custom:timeflow-card-beta"},this._targetDateTemplateMode=!1,this._creationDateTemplateMode=!1,this._countUpGoalDateTemplateMode=!1}static get styles(){return o`
+    `}}e([de({type:Number})],Ke.prototype,"progress",void 0),e([de({type:String})],Ke.prototype,"color",void 0),e([de({type:String})],Ke.prototype,"bgStroke",void 0),e([de({type:Number})],Ke.prototype,"bgOpacity",void 0),e([de({type:Boolean})],Ke.prototype,"fullWidth",void 0),e([de({type:Number})],Ke.prototype,"rows",void 0),e([de({type:Number})],Ke.prototype,"columns",void 0),e([de({type:Number})],Ke.prototype,"dotSize",void 0),e([de({type:Number})],Ke.prototype,"gap",void 0);class Je extends oe{constructor(){super(...arguments),this.hass=null,this._config={type:"custom:timeflow-card-beta"},this._targetDateTemplateMode=!1,this._creationDateTemplateMode=!1,this._countUpGoalDateTemplateMode=!1}static get styles(){return o`
             .section-header {
                 font-weight: 500;
                 font-size: 14px;

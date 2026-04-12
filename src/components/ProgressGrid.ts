@@ -6,6 +6,7 @@ export class ProgressGridBeta extends LitElement {
   @property({ type: String }) color: string = '#4CAF50';
   @property({ type: String }) bgStroke: string = '#FFFFFF1A';
   @property({ type: Number }) bgOpacity: number | null = null;
+  @property({ type: Boolean }) fullWidth: boolean = false;
   @property({ type: Number }) rows: number = 5;
   @property({ type: Number }) columns: number = 20;
   @property({ type: Number }) dotSize: number = 12;
@@ -16,6 +17,7 @@ export class ProgressGridBeta extends LitElement {
       :host {
         display: inline-block;
         vertical-align: middle;
+        max-width: 100%;
       }
 
       .grid {
@@ -58,13 +60,19 @@ export class ProgressGridBeta extends LitElement {
     const inactiveOpacity = this.bgOpacity === null
       ? 1
       : Math.max(0, Math.min(100, Number(this.bgOpacity) || 0)) / 100;
+    const gridTemplateColumns = this.fullWidth
+      ? `repeat(${columns}, minmax(0, 1fr))`
+      : `repeat(${columns}, ${dotSize}px)`;
+    const gridWidth = this.fullWidth ? '100%' : 'max-content';
 
     return html`
       <div
         class="grid"
         style="
-          grid-template-columns: repeat(${columns}, ${dotSize}px);
+          width: ${gridWidth};
+          grid-template-columns: ${gridTemplateColumns};
           gap: ${gap}px;
+          justify-items: center;
         "
       >
         ${Array.from({ length: totalDots }, (_, index) => {
@@ -73,8 +81,8 @@ export class ProgressGridBeta extends LitElement {
             <span
               class="dot ${active ? 'active' : ''}"
               style="
-                width: ${dotSize}px;
-                height: ${dotSize}px;
+                width: min(${dotSize}px, 100%);
+                height: min(${dotSize}px, 100%);
                 background-color: ${active ? this.color : this.bgStroke};
                 opacity: ${active ? 1 : inactiveOpacity};
               "

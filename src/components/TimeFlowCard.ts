@@ -383,7 +383,7 @@ export class TimeFlowCardBeta extends LitElement {
 
       .gridy-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
       }
@@ -424,7 +424,7 @@ export class TimeFlowCardBeta extends LitElement {
       .gridy-progress {
         display: flex;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
         width: 100%;
         overflow: hidden;
       }
@@ -1093,7 +1093,7 @@ export class TimeFlowCardBeta extends LitElement {
     const { cardWidth } = this.styleManager.getCardDimensions(width, height, aspect_ratio);
     const columns = 20;
     const rows = 5;
-    const availableWidth = Math.max(220, Math.floor(cardWidth) - 44);
+    const availableWidth = Math.max(220, Math.floor(cardWidth) - 40);
     const gap = Math.max(4, Math.min(8, Math.floor(availableWidth / 60)));
     const dotSize = Math.max(6, Math.min(12, Math.floor((availableWidth - gap * (columns - 1)) / columns)));
 

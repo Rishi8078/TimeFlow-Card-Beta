@@ -372,7 +372,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
 
       .gridy-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
       }
@@ -413,7 +413,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .gridy-progress {
         display: flex;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
         width: 100%;
         overflow: hidden;
       }
@@ -570,7 +570,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:a=!0,expired_text:o="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),{cardWidth:w}=this.styleManager.getCardDimensions(c,d,u),x=Math.max(220,Math.floor(w)-44),T=Math.max(4,Math.min(8,Math.floor(x/60))),S=Math.max(6,Math.min(12,Math.floor((x-19*T)/20))),$=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,...v].join("; "),C=!1!==h;let A;A=t||(this._expired?o||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,C));const D=this._getTitleText(),M=this._getCardClasses(a),{configWithDefaults:k,shouldEnableActions:E}=this._getActionConfig(),N=this._hasHeaderIcon(m),I=n?100-this._progress:this._progress,z=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(I)}%`;return G`
+    `}_renderGridyCard(){var e;const{subtitle:t,text_color:i,background_color:s,progress_color:r,expired_animation:a=!0,expired_text:o="",invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,compact_format:h,header_icon:m,header_icon_color:p,header_icon_background:_}=this._resolvedConfig,{cardBackground:g,textColor:f}=this._getCardColors(),y=r||i||"var(--progress-color, #4caf50)",v=this.styleManager.generateCardDimensionStyles(c,d,u),b=this.styleManager.calculateProportionalSizes(c,d,u),{cardWidth:w}=this.styleManager.getCardDimensions(c,d,u),x=Math.max(220,Math.floor(w)-40),T=Math.max(4,Math.min(8,Math.floor(x/60))),S=Math.max(6,Math.min(12,Math.floor((x-19*T)/20))),$=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,...v].join("; "),C=!1!==h;let A;A=t||(this._expired?o||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,C));const D=this._getTitleText(),M=this._getCardClasses(a),{configWithDefaults:k,shouldEnableActions:E}=this._getActionConfig(),N=this._hasHeaderIcon(m),I=n?100-this._progress:this._progress,z=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(I)}%`;return G`
       <ha-card
         class="${M}"
         style="${$}"

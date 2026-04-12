@@ -56,6 +56,7 @@ export class CountdownService {
     }
 
     const { show_years, show_months, show_weeks, show_days, show_hours, show_minutes, show_seconds } = config;
+    const roundDaysOnceFromHiddenRemainder = roundUpHiddenUnits && !!show_days && !show_hours && !show_minutes && !show_seconds;
 
     let years = 0, months = 0, weeks = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
     let totalMilliseconds = endTimestamp - startTimestamp;
@@ -94,6 +95,13 @@ export class CountdownService {
         weeks += Math.floor(extraDays / 7);
         totalMilliseconds -= Math.floor(extraDays / 7) * 7 * MS_PER_DAY;
       }
+    }
+
+    // When days is the smallest visible unit, round up once if any hidden remainder exists.
+    // This avoids stacking the same partial day again in the hidden hour/minute/second branches.
+    if (roundDaysOnceFromHiddenRemainder && totalMilliseconds > 0) {
+      days += 1;
+      totalMilliseconds = 0;
     }
 
     if (show_hours) {

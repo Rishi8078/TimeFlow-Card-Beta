@@ -1178,9 +1178,11 @@ export class TimeFlowCardBeta extends LitElement {
       return { primaryValue: weeks, primaryUnit: getLocalizedEventyLabel('week', weeks, t) };
     }
     if (show_days !== false && days > 0) {
-      // Calculate total days including months if months are hidden
-      const totalDays = (show_months === false ? months * 30 : 0) + days;
-      return { primaryValue: totalDays, primaryUnit: getLocalizedEventyLabel('day', totalDays, t) };
+      // Eventy shows a single prominent unit. When hours are hidden, use the raw remaining
+      // total-day value instead of the rounded day bucket used by subtitle calculations.
+      const fallbackDays = parseMillisecondsToUnits(total).days;
+      const primaryDays = show_hours === false ? fallbackDays : ((show_months === false ? months * 30 : 0) + days);
+      return { primaryValue: primaryDays, primaryUnit: getLocalizedEventyLabel('day', primaryDays, t) };
     }
     if (show_hours !== false && hours > 0) {
       return { primaryValue: hours, primaryUnit: getLocalizedEventyLabel('hour', hours, t) };

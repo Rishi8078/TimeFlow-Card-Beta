@@ -1243,11 +1243,10 @@ export class TimeFlowCardBeta extends LitElement {
       aspect_ratio,
     } = this._resolvedConfig;
 
-    const defaultSquareSize = 150;
-    const defaultCenteredLayout = !width && !height && !aspect_ratio;
-    const resolvedWidth = width ?? (defaultCenteredLayout ? defaultSquareSize : undefined);
-    const resolvedHeight = height ?? ((!width && !!height && !aspect_ratio) ? height : undefined);
-    const effectiveAspectRatio = aspect_ratio || ((width && !height) || defaultCenteredLayout ? '1/1' : undefined);
+    const shouldAutoSize = !width && !height;
+    const resolvedWidth = width;
+    const resolvedHeight = height;
+    const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
     const { cardBackground, textColor } = this._getCardColors();
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, effectiveAspectRatio);
@@ -1272,12 +1271,14 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
+    const autoMaxWidth = Math.round(resolvedCircleSize + 36);
 
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
+      ...(shouldAutoSize ? [`max-width: min(100%, ${autoMaxWidth}px)`] : []),
       'margin: 0 auto',
       ...dimensionStyles
     ].join('; ');
@@ -1462,6 +1463,27 @@ export class TimeFlowCardBeta extends LitElement {
       return 2;
     }
     return 3;
+  }
+
+  /**
+   * Helper: Returns grid sizing hints for Home Assistant Sections view.
+   * This lets compact styles claim a smaller slot instead of always taking full width.
+   */
+  getGridOptions(): { rows?: number; columns?: number | 'full'; min_rows?: number; max_rows?: number; min_columns?: number; max_columns?: number } | undefined {
+    const { style } = this.config;
+
+    if (style === 'minimal-square') {
+      return {
+        rows: 3,
+        min_rows: 3,
+        max_rows: 4,
+        columns: 6,
+        min_columns: 3,
+        max_columns: 6,
+      };
+    }
+
+    return undefined;
   }
 
   // Static version info

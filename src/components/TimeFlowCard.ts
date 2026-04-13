@@ -1265,19 +1265,23 @@ export class TimeFlowCardBeta extends LitElement {
       width,
       height,
       aspect_ratio,
+      grid_options,
     } = this._resolvedConfig;
 
     const shouldAutoSize = !width && !height;
-    const minimalSquareGridRows = 3;
+    const configuredGridRows = typeof grid_options?.rows === 'number' && Number.isFinite(grid_options.rows)
+      ? Math.max(1, grid_options.rows)
+      : 3;
     const sectionRowHeight = 56;
     const sectionRowGap = 8;
-    const estimatedAutoSquareSize = (minimalSquareGridRows * sectionRowHeight) + ((minimalSquareGridRows - 1) * sectionRowGap);
+    const estimatedAutoSquareSize = (configuredGridRows * sectionRowHeight) + ((configuredGridRows - 1) * sectionRowGap);
     const autoOuterPadding = 18;
     const autoSquareSize = Math.max(144, estimatedAutoSquareSize);
     const resolvedWidth = width;
     const resolvedHeight = height;
     const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
     const { cardBackground, textColor } = this._getCardColors();
+    const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, effectiveAspectRatio);
     const sizingWidth = resolvedWidth ?? autoSquareSize;
@@ -1307,7 +1311,7 @@ export class TimeFlowCardBeta extends LitElement {
     const titleText = this._getTitleText();
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
-      ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
+      ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
       `--timeflow-minimal-title-size: ${Math.max(0.78, Math.min(1.1, proportionalSizes.subtitleSize * 0.82))}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
@@ -1401,6 +1405,38 @@ export class TimeFlowCardBeta extends LitElement {
       cardBackground: background_color || '',
       textColor: text_color || ''
     };
+  }
+
+  /**
+   * Picks a readable fallback text color for simple hex/rgb custom backgrounds.
+   * Returns empty string when the background can't be parsed, so theme defaults still apply.
+   */
+  private _getContrastTextColor(backgroundColor: string): string {
+    if (!backgroundColor) return '';
+
+    const hex = backgroundColor.trim();
+    const rgbMatch = hex.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    let r: number;
+    let g: number;
+    let b: number;
+
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) {
+      const normalized = hex.length === 4
+        ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+        : hex;
+      r = parseInt(normalized.slice(1, 3), 16);
+      g = parseInt(normalized.slice(3, 5), 16);
+      b = parseInt(normalized.slice(5, 7), 16);
+    } else if (rgbMatch) {
+      r = Math.max(0, Math.min(255, Number(rgbMatch[1])));
+      g = Math.max(0, Math.min(255, Number(rgbMatch[2])));
+      b = Math.max(0, Math.min(255, Number(rgbMatch[3])));
+    } else {
+      return '';
+    }
+
+    const luminance = ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) / 255;
+    return luminance < 0.5 ? '#f5f1eb' : '#171513';
   }
 
   /**
@@ -1502,10 +1538,21 @@ export class TimeFlowCardBeta extends LitElement {
    * Helper: Returns grid sizing hints for Home Assistant Sections view.
    * This lets compact styles claim a smaller slot instead of always taking full width.
    */
-  getGridOptions(): { rows?: number; columns?: number | 'full'; min_rows?: number; max_rows?: number; min_columns?: number; max_columns?: number } | undefined {
-    const { style } = this.config;
+  getGridOptions(): { rows?: number | 'auto'; columns?: number | 'full'; min_rows?: number; max_rows?: number; min_columns?: number; max_columns?: number } | undefined {
+    const { style, grid_options } = this.config;
 
     if (style === 'minimal-square') {
+      if (grid_options) {
+        return {
+          rows: grid_options.rows ?? 3,
+          columns: grid_options.columns ?? 6,
+          min_rows: grid_options.min_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
+          max_rows: grid_options.max_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
+          min_columns: grid_options.min_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
+          max_columns: grid_options.max_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
+        };
+      }
+
       return {
         rows: 3,
         min_rows: 3,

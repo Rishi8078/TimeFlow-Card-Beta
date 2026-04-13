@@ -169,6 +169,14 @@ export interface CardConfig {
   width?: string | number;
   height?: string | number;
   aspect_ratio?: string;
+  grid_options?: {
+    rows?: number | 'auto';
+    columns?: number | 'full';
+    min_rows?: number;
+    max_rows?: number;
+    min_columns?: number;
+    max_columns?: number;
+  };
 
   // Completion behavior
   expired_animation?: boolean;

@@ -1249,7 +1249,7 @@ export class TimeFlowCardBeta extends LitElement {
     const sectionRowGap = 8;
     const estimatedAutoSquareSize = (minimalSquareGridRows * sectionRowHeight) + ((minimalSquareGridRows - 1) * sectionRowGap);
     const autoOuterPadding = 18;
-    const autoSquareSize = Math.max(144, estimatedAutoSquareSize - 8);
+    const autoSquareSize = Math.max(144, estimatedAutoSquareSize);
     const resolvedWidth = width;
     const resolvedHeight = height;
     const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);

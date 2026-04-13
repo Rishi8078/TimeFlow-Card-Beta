@@ -434,7 +434,8 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         align-items: center;
         justify-content: center;
         padding: 18px;
-        min-height: 180px;
+        height: 100%;
+        min-height: 0;
         box-sizing: border-box;
         background: inherit;
       }
@@ -501,7 +502,6 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         }
 
         .card-content-minimal-square {
-          min-height: 150px;
           padding: 14px;
         }
       }
@@ -671,30 +671,30 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u}=this._resolvedConfig,h=u||(d?void 0:"1/1"),{cardBackground:m,textColor:p}=this._getCardColors(),_=s||t||"var(--progress-color, #4caf50)",g=this.styleManager.generateCardDimensionStyles(c,d,h),f=this.styleManager.calculateProportionalSizes(c,d,h),v=Math.min(f.cardWidth,f.cardHeight),y=Math.max(72,Math.min("number"==typeof a?a:Math.round(.74*v),340)),b=this.styleManager.calculateDynamicStrokeWidth(y,r),w=Math.max(1.9,Math.min(4.8,2.2*f.titleSize)),x=Math.max(.64,Math.min(1.1,.78*f.subtitleSize)),S=n?100-this._progress:this._progress,$=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(S)}%`,T=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),C=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),A=/^-?\d+$/.test(C.value),M=A?T.value.toString():C.value,D=A?Me(T.unit,T.value,this._localize||void 0):"",k=[...m?[`background: ${m}`,`--timeflow-card-background-color: ${m}`]:[],...p?[`color: ${p}`,`--timeflow-card-text-color: ${p}`]:[],`--timeflow-minimal-value-size: ${w}rem`,`--timeflow-minimal-unit-size: ${x}rem`,...g].join("; "),E=this._getCardClasses(o),{configWithDefaults:I,shouldEnableActions:N}=this._getActionConfig();return W`
+    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u}=this._resolvedConfig,h=!c&&!d&&!u,m=null!=c?c:h?150:void 0,p=null!=d?d:c||!d||u?void 0:d,_=u||(c&&!d||h?"1/1":void 0),{cardBackground:g,textColor:f}=this._getCardColors(),v=s||t||"var(--progress-color, #4caf50)",y=this.styleManager.generateCardDimensionStyles(m,p,_),b=this.styleManager.calculateProportionalSizes(m,p,_),w=Math.min(b.cardWidth,b.cardHeight),x=Math.max(72,Math.min("number"==typeof a?a:Math.round(.74*w),340)),S=this.styleManager.calculateDynamicStrokeWidth(x,r),$=Math.max(1.9,Math.min(4.8,2.2*b.titleSize)),T=Math.max(.64,Math.min(1.1,.78*b.subtitleSize)),C=n?100-this._progress:this._progress,A=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(C)}%`,M=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),D=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),k=/^-?\d+$/.test(D.value),E=k?M.value.toString():D.value,I=k?Me(M.unit,M.value,this._localize||void 0):"",N=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-minimal-value-size: ${$}rem`,`--timeflow-minimal-unit-size: ${T}rem`,"margin: 0 auto",...y].join("; "),z=this._getCardClasses(o),{configWithDefaults:R,shouldEnableActions:O}=this._getActionConfig();return W`
       <ha-card
-        class="${E}"
-        style="${k}"
-        ?actionHandler=${N}
-        .actionHandler=${N?We(I):void 0}
-        @action=${N&&this.hass?Ge(this.hass,I):void 0}
+        class="${z}"
+        style="${N}"
+        ?actionHandler=${O}
+        .actionHandler=${O?We(R):void 0}
+        @action=${O&&this.hass?Ge(this.hass,R):void 0}
       >
         <div class="card-content-minimal-square">
-          <div class="minimal-square-shell" role="group" aria-label="${$}">
+          <div class="minimal-square-shell" role="group" aria-label="${A}">
             <progress-circle-beta
               class="minimal-square-circle"
-              .progress="${S}"
-              .color="${_}"
-              .size="${y}"
-              .strokeWidth="${b}"
+              .progress="${C}"
+              .color="${v}"
+              .size="${x}"
+              .strokeWidth="${S}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
-              aria-label="${$}"
+              aria-label="${A}"
             ></progress-circle-beta>
 
             <div class="minimal-square-center" aria-live="polite">
-              <p class="minimal-square-value">${M}</p>
-              ${D?W`<p class="minimal-square-unit">${D}</p>`:""}
+              <p class="minimal-square-value">${E}</p>
+              ${I?W`<p class="minimal-square-unit">${I}</p>`:""}
             </div>
           </div>
         </div>

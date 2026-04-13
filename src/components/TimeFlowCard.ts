@@ -445,7 +445,8 @@ export class TimeFlowCardBeta extends LitElement {
         align-items: center;
         justify-content: center;
         padding: 18px;
-        min-height: 180px;
+        height: 100%;
+        min-height: 0;
         box-sizing: border-box;
         background: inherit;
       }
@@ -512,7 +513,6 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .card-content-minimal-square {
-          min-height: 150px;
           padding: 14px;
         }
       }
@@ -1243,11 +1243,15 @@ export class TimeFlowCardBeta extends LitElement {
       aspect_ratio,
     } = this._resolvedConfig;
 
-    const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
+    const defaultSquareSize = 150;
+    const defaultCenteredLayout = !width && !height && !aspect_ratio;
+    const resolvedWidth = width ?? (defaultCenteredLayout ? defaultSquareSize : undefined);
+    const resolvedHeight = height ?? ((!width && !!height && !aspect_ratio) ? height : undefined);
+    const effectiveAspectRatio = aspect_ratio || ((width && !height) || defaultCenteredLayout ? '1/1' : undefined);
     const { cardBackground, textColor } = this._getCardColors();
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, effectiveAspectRatio);
-    const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, effectiveAspectRatio);
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, effectiveAspectRatio);
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(resolvedWidth, resolvedHeight, effectiveAspectRatio);
     const minDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
     const resolvedCircleSize = Math.max(
       72,
@@ -1274,6 +1278,7 @@ export class TimeFlowCardBeta extends LitElement {
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
+      'margin: 0 auto',
       ...dimensionStyles
     ].join('; ');
 

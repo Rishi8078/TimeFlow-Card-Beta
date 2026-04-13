@@ -442,13 +442,30 @@ export class TimeFlowCardBeta extends LitElement {
 
       .card-content-minimal-square {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 18px;
+        width: 100%;
+        padding: 14px 18px 18px;
         height: 100%;
         min-height: 0;
         box-sizing: border-box;
         background: inherit;
+      }
+
+      .minimal-square-title {
+        margin: 0 0 10px;
+        width: 100%;
+        text-align: center;
+        font-size: var(--timeflow-minimal-title-size, 0.9rem);
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        color: var(--timeflow-card-text-color, inherit);
+        opacity: 0.82;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .minimal-square-shell {
@@ -456,8 +473,11 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        height: 100%;
+        width: min(100%, var(--timeflow-minimal-shell-size, 184px));
+        aspect-ratio: 1 / 1;
+        flex: 1;
+        max-height: 100%;
+        margin: 0 auto;
       }
 
       .minimal-square-circle {
@@ -514,6 +534,10 @@ export class TimeFlowCardBeta extends LitElement {
 
         .card-content-minimal-square {
           padding: 14px;
+        }
+
+        .minimal-square-title {
+          margin-bottom: 8px;
         }
       }
       
@@ -1280,13 +1304,14 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
+    const titleText = this._getTitleText();
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
+      `--timeflow-minimal-title-size: ${Math.max(0.78, Math.min(1.1, proportionalSizes.subtitleSize * 0.82))}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
-      ...(shouldAutoSize ? [`width: min(100%, ${autoSquareSize}px)`] : []),
-      'margin: 0 auto',
+      `--timeflow-minimal-shell-size: ${shouldAutoSize ? autoSquareSize : Math.round(resolvedCircleSize + (autoOuterPadding * 2))}px`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1302,6 +1327,7 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content-minimal-square">
+          <p class="minimal-square-title" aria-live="polite">${titleText}</p>
           <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
             <progress-circle-beta
               class="minimal-square-circle"

@@ -199,7 +199,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
 
             // Style
-            'style': 'Card style: Classic (vertical with circle), Eventy (compact horizontal), Classic Compact (horizontal with circle), or Gridy (dot-grid progress, no header icon)',
+            'style': 'Card style: Classic, Eventy, Classic Compact, Gridy, or Minimal Square (single centered unit, no header icon)',
         };
         return helpers[schema.name] || '';
     }
@@ -375,7 +375,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                             { value: 'classic', label: 'Classic (Circle Progress)' },
                             { value: 'eventy', label: 'Eventy (Compact Horizontal)' },
                             { value: 'classic-compact', label: 'Classic Compact (Horizontal + Circle)' },
-                            { value: 'gridy', label: 'Gridy (Header + Dot Grid)' }
+                            { value: 'gridy', label: 'Gridy (Header + Dot Grid)' },
+                            { value: 'minimal-square', label: 'Minimal Square (Single Unit + Circle)' }
                         ],
                         mode: 'dropdown'
                     } 
@@ -413,7 +414,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             // ═══════════════════════════════════════════════════════════
             // HEADER ICON - Expandable
             // ═══════════════════════════════════════════════════════════
-            ...(selectedStyle === 'gridy' ? [] : [
+            ...((selectedStyle === 'gridy' || selectedStyle === 'minimal-square') ? [] : [
                 {
                     type: "expandable",
                     title: "Header Icon",

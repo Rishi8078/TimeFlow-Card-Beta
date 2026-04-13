@@ -81,7 +81,7 @@ export class TimeFlowCardBeta extends LitElement {
       }
       
       /* Classic style needs minimum height, but compact styles should auto-size */
-      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)):not(:has(.card-content-gridy)) {
+      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)):not(:has(.card-content-gridy)):not(:has(.card-content-minimal-square)) {
         min-height: 120px;
       }
       
@@ -436,6 +436,66 @@ export class TimeFlowCardBeta extends LitElement {
         width: 100%;
       }
 
+      /* ═══════════════════════════════════════════════════════════════════════
+         MINIMAL SQUARE LAYOUT STYLES - Single centered unit with circle
+         ═══════════════════════════════════════════════════════════════════════ */
+
+      .card-content-minimal-square {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        min-height: 180px;
+        box-sizing: border-box;
+        background: inherit;
+      }
+
+      .minimal-square-shell {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+
+      .minimal-square-circle {
+        opacity: 0.95;
+      }
+
+      .minimal-square-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        pointer-events: none;
+        padding: 18%;
+        box-sizing: border-box;
+      }
+
+      .minimal-square-value {
+        margin: 0;
+        font-size: var(--timeflow-minimal-value-size, 3rem);
+        font-weight: 650;
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        color: var(--timeflow-card-text-color, inherit);
+      }
+
+      .minimal-square-unit {
+        margin: 8px 0 0;
+        font-size: var(--timeflow-minimal-unit-size, 0.8rem);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        color: var(--timeflow-card-text-color, inherit);
+      }
+
       @media (max-width: 480px) {
         .card-content-gridy {
           gap: 12px;
@@ -449,6 +509,11 @@ export class TimeFlowCardBeta extends LitElement {
         .gridy-status {
           max-width: 100%;
           text-align: left;
+        }
+
+        .card-content-minimal-square {
+          min-height: 150px;
+          padding: 14px;
         }
       }
       
@@ -712,6 +777,10 @@ export class TimeFlowCardBeta extends LitElement {
 
     if (style === 'gridy') {
       return this._renderGridyCard();
+    }
+
+    if (style === 'minimal-square') {
+      return this._renderMinimalSquareCard();
     }
     
     // Classic: circle progress style
@@ -1150,6 +1219,92 @@ export class TimeFlowCardBeta extends LitElement {
               .gap="${gap}"
               aria-label="${progressAriaLabel}"
             ></progress-grid-beta>
+          </div>
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * Renders the Minimal Square style - single centered unit inside a progress circle.
+   */
+  private _renderMinimalSquareCard(): TemplateResult {
+    const {
+      text_color,
+      background_color,
+      progress_color,
+      stroke_width,
+      icon_size,
+      expired_animation = true,
+      invert_progress = false,
+      mode = 'count_down',
+      width,
+      height,
+      aspect_ratio,
+    } = this._resolvedConfig;
+
+    const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
+    const { cardBackground, textColor } = this._getCardColors();
+    const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, effectiveAspectRatio);
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(width, height, effectiveAspectRatio);
+    const minDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
+    const resolvedCircleSize = Math.max(
+      72,
+      Math.min(
+        typeof icon_size === 'number' ? icon_size : Math.round(minDimension * 0.74),
+        340
+      )
+    );
+    const resolvedStroke = this.styleManager.calculateDynamicStrokeWidth(resolvedCircleSize, stroke_width);
+    const valueSize = Math.max(1.9, Math.min(4.8, proportionalSizes.titleSize * 2.2));
+    const unitSize = Math.max(0.64, Math.min(1.1, proportionalSizes.subtitleSize * 0.78));
+    const displayProgress = invert_progress ? 100 - this._progress : this._progress;
+    const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
+    const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
+    const mainDisplay = this.countdownService.getMainDisplay(this._resolvedConfig, this.hass);
+    const hasNumericValue = /^-?\d+$/.test(mainDisplay.value);
+    const centerValue = hasNumericValue ? primaryUnit.value.toString() : mainDisplay.value;
+    const centerUnit = hasNumericValue
+      ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
+      : '';
+
+    const cardStyles = [
+      ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
+      ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
+      `--timeflow-minimal-value-size: ${valueSize}rem`,
+      `--timeflow-minimal-unit-size: ${unitSize}rem`,
+      ...dimensionStyles
+    ].join('; ');
+
+    const cardClasses = this._getCardClasses(expired_animation);
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+
+    return html`
+      <ha-card
+        class="${cardClasses}"
+        style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+      >
+        <div class="card-content-minimal-square">
+          <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
+            <progress-circle-beta
+              class="minimal-square-circle"
+              .progress="${displayProgress}"
+              .color="${mainProgressColor}"
+              .size="${resolvedCircleSize}"
+              .strokeWidth="${resolvedStroke}"
+              .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
+              .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
+              aria-label="${progressAriaLabel}"
+            ></progress-circle-beta>
+
+            <div class="minimal-square-center" aria-live="polite">
+              <p class="minimal-square-value">${centerValue}</p>
+              ${centerUnit ? html`<p class="minimal-square-unit">${centerUnit}</p>` : ''}
+            </div>
           </div>
         </div>
       </ha-card>

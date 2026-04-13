@@ -671,30 +671,30 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u}=this._resolvedConfig,h=!c&&!d,m=c,p=d,_=u||(d?void 0:"1/1"),{cardBackground:g,textColor:f}=this._getCardColors(),v=s||t||"var(--progress-color, #4caf50)",y=this.styleManager.generateCardDimensionStyles(m,p,_),b=null!=m?m:184,w=null!=p?p:184,x=this.styleManager.calculateProportionalSizes(b,w,_),S=Math.min(x.cardWidth,x.cardHeight),$=Math.max(72,Math.min("number"==typeof a?a:Math.round(.74*S),340)),T=this.styleManager.calculateDynamicStrokeWidth($,r),C=Math.max(1.9,Math.min(4.8,2.2*x.titleSize)),A=Math.max(.64,Math.min(1.1,.78*x.subtitleSize)),M=n?100-this._progress:this._progress,D=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(M)}%`,k=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),E=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),I=/^-?\d+$/.test(E.value),N=I?k.value.toString():E.value,z=I?Me(k.unit,k.value,this._localize||void 0):"",R=Math.min(184,Math.round($+32)),O=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-minimal-value-size: ${C}rem`,`--timeflow-minimal-unit-size: ${A}rem`,...h?[`width: min(100%, ${R}px)`]:[],"margin: 0 auto",...y].join("; "),U=this._getCardClasses(o),{configWithDefaults:F,shouldEnableActions:P}=this._getActionConfig();return G`
+    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u}=this._resolvedConfig,h=!c&&!d,m=Math.max(144,176),p=c,_=d,g=u||(d?void 0:"1/1"),{cardBackground:f,textColor:v}=this._getCardColors(),y=s||t||"var(--progress-color, #4caf50)",b=this.styleManager.generateCardDimensionStyles(p,_,g),w=null!=p?p:m,x=null!=_?_:m,S=this.styleManager.calculateProportionalSizes(w,x,g),$=Math.min(S.cardWidth,S.cardHeight),T=Math.max(72,Math.round($-36)),C=Math.max(72,Math.min("number"==typeof a?a:T,340)),A=this.styleManager.calculateDynamicStrokeWidth(C,r),M=Math.max(1.9,Math.min(4.8,2.2*S.titleSize)),D=Math.max(.64,Math.min(1.1,.78*S.subtitleSize)),k=n?100-this._progress:this._progress,E=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(k)}%`,I=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),N=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),z=/^-?\d+$/.test(N.value),R=z?I.value.toString():N.value,O=z?Me(I.unit,I.value,this._localize||void 0):"",U=[...f?[`background: ${f}`,`--timeflow-card-background-color: ${f}`]:[],...v?[`color: ${v}`,`--timeflow-card-text-color: ${v}`]:[],`--timeflow-minimal-value-size: ${M}rem`,`--timeflow-minimal-unit-size: ${D}rem`,...h?[`width: min(100%, ${m}px)`]:[],"margin: 0 auto",...b].join("; "),F=this._getCardClasses(o),{configWithDefaults:P,shouldEnableActions:H}=this._getActionConfig();return G`
       <ha-card
-        class="${U}"
-        style="${O}"
-        ?actionHandler=${P}
-        .actionHandler=${P?Ge(F):void 0}
-        @action=${P&&this.hass?We(this.hass,F):void 0}
+        class="${F}"
+        style="${U}"
+        ?actionHandler=${H}
+        .actionHandler=${H?Ge(P):void 0}
+        @action=${H&&this.hass?We(this.hass,P):void 0}
       >
         <div class="card-content-minimal-square">
-          <div class="minimal-square-shell" role="group" aria-label="${D}">
+          <div class="minimal-square-shell" role="group" aria-label="${E}">
             <progress-circle-beta
               class="minimal-square-circle"
-              .progress="${M}"
-              .color="${v}"
-              .size="${$}"
-              .strokeWidth="${T}"
+              .progress="${k}"
+              .color="${y}"
+              .size="${C}"
+              .strokeWidth="${A}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
-              aria-label="${D}"
+              aria-label="${E}"
             ></progress-circle-beta>
 
             <div class="minimal-square-center" aria-live="polite">
-              <p class="minimal-square-value">${N}</p>
-              ${z?G`<p class="minimal-square-unit">${z}</p>`:""}
+              <p class="minimal-square-value">${R}</p>
+              ${O?G`<p class="minimal-square-unit">${O}</p>`:""}
             </div>
           </div>
         </div>

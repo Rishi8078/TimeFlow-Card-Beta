@@ -444,8 +444,9 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
+        gap: 10px;
         padding: 14px 18px 18px;
         height: 100%;
         min-height: 0;
@@ -454,7 +455,7 @@ export class TimeFlowCardBeta extends LitElement {
       }
 
       .minimal-square-title {
-        margin: 0 0 10px;
+        margin: 0;
         width: 100%;
         text-align: center;
         font-size: var(--timeflow-minimal-title-size, 0.9rem);
@@ -463,9 +464,13 @@ export class TimeFlowCardBeta extends LitElement {
         letter-spacing: 0.01em;
         color: var(--timeflow-card-text-color, inherit);
         opacity: 0.82;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
       }
 
       .minimal-square-shell {
@@ -475,8 +480,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         width: min(100%, var(--timeflow-minimal-shell-size, 184px));
         aspect-ratio: 1 / 1;
-        flex: 1;
-        max-height: 100%;
+        flex: 0 0 auto;
         margin: 0 auto;
       }
 
@@ -534,10 +538,6 @@ export class TimeFlowCardBeta extends LitElement {
 
         .card-content-minimal-square {
           padding: 14px;
-        }
-
-        .minimal-square-title {
-          margin-bottom: 8px;
         }
       }
       
@@ -1315,7 +1315,7 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-minimal-title-size: ${Math.max(0.78, Math.min(1.1, proportionalSizes.subtitleSize * 0.82))}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
-      `--timeflow-minimal-shell-size: ${shouldAutoSize ? autoSquareSize : Math.round(resolvedCircleSize + (autoOuterPadding * 2))}px`,
+      `--timeflow-minimal-shell-size: ${Math.round(Math.min(autoSquareSize, resolvedCircleSize + 24))}px`,
       ...dimensionStyles
     ].join('; ');
 

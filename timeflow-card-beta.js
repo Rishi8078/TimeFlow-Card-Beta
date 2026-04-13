@@ -433,8 +433,9 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
+        gap: 10px;
         padding: 14px 18px 18px;
         height: 100%;
         min-height: 0;
@@ -443,7 +444,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       }
 
       .minimal-square-title {
-        margin: 0 0 10px;
+        margin: 0;
         width: 100%;
         text-align: center;
         font-size: var(--timeflow-minimal-title-size, 0.9rem);
@@ -452,9 +453,13 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         letter-spacing: 0.01em;
         color: var(--timeflow-card-text-color, inherit);
         opacity: 0.82;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
       }
 
       .minimal-square-shell {
@@ -464,8 +469,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         justify-content: center;
         width: min(100%, var(--timeflow-minimal-shell-size, 184px));
         aspect-ratio: 1 / 1;
-        flex: 1;
-        max-height: 100%;
+        flex: 0 0 auto;
         margin: 0 auto;
       }
 
@@ -523,10 +527,6 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
 
         .card-content-minimal-square {
           padding: 14px;
-        }
-
-        .minimal-square-title {
-          margin-bottom: 8px;
         }
       }
       
@@ -695,31 +695,31 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,grid_options:m}=this._resolvedConfig,h=!c&&!d,p="number"==typeof(null==m?void 0:m.rows)&&Number.isFinite(m.rows)?Math.max(1,m.rows):3,_=56*p+8*(p-1),g=Math.max(144,_),f=c,v=d,y=u||(d?void 0:"1/1"),{cardBackground:b,textColor:w}=this._getCardColors(),x=w||this._getContrastTextColor(b)||"",S=s||t||"var(--progress-color, #4caf50)",$=this.styleManager.generateCardDimensionStyles(f,v,y),T=null!=f?f:g,C=null!=v?v:g,A=this.styleManager.calculateProportionalSizes(T,C,y),M=Math.min(A.cardWidth,A.cardHeight),D=Math.max(72,Math.round(M-36)),k=Math.max(72,Math.min("number"==typeof a?a:D,340)),E=this.styleManager.calculateDynamicStrokeWidth(k,r),I=Math.max(1.9,Math.min(4.8,2.2*A.titleSize)),N=Math.max(.64,Math.min(1.1,.78*A.subtitleSize)),z=n?100-this._progress:this._progress,R=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(z)}%`,O=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),U=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),F=/^-?\d+$/.test(U.value),P=F?O.value.toString():U.value,H=F?Me(O.unit,O.value,this._localize||void 0):"",L=this._getTitleText(),W=[...b?[`background: ${b}`,`--timeflow-card-background-color: ${b}`]:[],...x?[`color: ${x}`,`--timeflow-card-text-color: ${x}`]:[],`--timeflow-minimal-title-size: ${Math.max(.78,Math.min(1.1,.82*A.subtitleSize))}rem`,`--timeflow-minimal-value-size: ${I}rem`,`--timeflow-minimal-unit-size: ${N}rem`,`--timeflow-minimal-shell-size: ${h?g:Math.round(k+36)}px`,...$].join("; "),j=this._getCardClasses(o),{configWithDefaults:V,shouldEnableActions:q}=this._getActionConfig();return G`
+    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,grid_options:m}=this._resolvedConfig,h="number"==typeof(null==m?void 0:m.rows)&&Number.isFinite(m.rows)?Math.max(1,m.rows):3,p=56*h+8*(h-1),_=Math.max(144,p),g=c,f=d,v=u||(d?void 0:"1/1"),{cardBackground:y,textColor:b}=this._getCardColors(),w=b||this._getContrastTextColor(y)||"",x=s||t||"var(--progress-color, #4caf50)",S=this.styleManager.generateCardDimensionStyles(g,f,v),$=null!=g?g:_,T=null!=f?f:_,C=this.styleManager.calculateProportionalSizes($,T,v),A=Math.min(C.cardWidth,C.cardHeight),M=Math.max(72,Math.round(A-36)),D=Math.max(72,Math.min("number"==typeof a?a:M,340)),k=this.styleManager.calculateDynamicStrokeWidth(D,r),E=Math.max(1.9,Math.min(4.8,2.2*C.titleSize)),I=Math.max(.64,Math.min(1.1,.78*C.subtitleSize)),N=n?100-this._progress:this._progress,z=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(N)}%`,R=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),O=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),U=/^-?\d+$/.test(O.value),F=U?R.value.toString():O.value,P=U?Me(R.unit,R.value,this._localize||void 0):"",H=this._getTitleText(),L=[...y?[`background: ${y}`,`--timeflow-card-background-color: ${y}`]:[],...w?[`color: ${w}`,`--timeflow-card-text-color: ${w}`]:[],`--timeflow-minimal-title-size: ${Math.max(.78,Math.min(1.1,.82*C.subtitleSize))}rem`,`--timeflow-minimal-value-size: ${E}rem`,`--timeflow-minimal-unit-size: ${I}rem`,`--timeflow-minimal-shell-size: ${Math.round(Math.min(_,D+24))}px`,...S].join("; "),W=this._getCardClasses(o),{configWithDefaults:j,shouldEnableActions:V}=this._getActionConfig();return G`
       <ha-card
-        class="${j}"
-        style="${W}"
-        ?actionHandler=${q}
-        .actionHandler=${q?Ge(V):void 0}
-        @action=${q&&this.hass?We(this.hass,V):void 0}
+        class="${W}"
+        style="${L}"
+        ?actionHandler=${V}
+        .actionHandler=${V?Ge(j):void 0}
+        @action=${V&&this.hass?We(this.hass,j):void 0}
       >
         <div class="card-content-minimal-square">
-          <p class="minimal-square-title" aria-live="polite">${L}</p>
-          <div class="minimal-square-shell" role="group" aria-label="${R}">
+          <p class="minimal-square-title" aria-live="polite">${H}</p>
+          <div class="minimal-square-shell" role="group" aria-label="${z}">
             <progress-circle-beta
               class="minimal-square-circle"
-              .progress="${z}"
-              .color="${S}"
-              .size="${k}"
-              .strokeWidth="${E}"
+              .progress="${N}"
+              .color="${x}"
+              .size="${D}"
+              .strokeWidth="${k}"
               .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
               .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
-              aria-label="${R}"
+              aria-label="${z}"
             ></progress-circle-beta>
 
             <div class="minimal-square-center" aria-live="polite">
-              <p class="minimal-square-value">${P}</p>
-              ${H?G`<p class="minimal-square-unit">${H}</p>`:""}
+              <p class="minimal-square-value">${F}</p>
+              ${P?G`<p class="minimal-square-unit">${P}</p>`:""}
             </div>
           </div>
         </div>

@@ -473,7 +473,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: 18%;
+        padding: 22%;
         box-sizing: border-box;
       }
 
@@ -1244,13 +1244,19 @@ export class TimeFlowCardBeta extends LitElement {
     } = this._resolvedConfig;
 
     const shouldAutoSize = !width && !height;
+    const minimalSquareGridRows = 3;
+    const sectionRowHeight = 56;
+    const sectionRowGap = 8;
+    const estimatedAutoSquareSize = (minimalSquareGridRows * sectionRowHeight) + ((minimalSquareGridRows - 1) * sectionRowGap);
     const resolvedWidth = width;
     const resolvedHeight = height;
     const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
     const { cardBackground, textColor } = this._getCardColors();
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, effectiveAspectRatio);
-    const proportionalSizes = this.styleManager.calculateProportionalSizes(resolvedWidth, resolvedHeight, effectiveAspectRatio);
+    const sizingWidth = resolvedWidth ?? estimatedAutoSquareSize;
+    const sizingHeight = resolvedHeight ?? estimatedAutoSquareSize;
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingWidth, sizingHeight, effectiveAspectRatio);
     const minDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
     const resolvedCircleSize = Math.max(
       72,
@@ -1271,14 +1277,14 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
-    const autoMaxWidth = Math.round(resolvedCircleSize + 36);
+    const autoSquareWidth = Math.min(estimatedAutoSquareSize, Math.round(resolvedCircleSize + 32));
 
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
-      ...(shouldAutoSize ? [`max-width: min(100%, ${autoMaxWidth}px)`] : []),
+      ...(shouldAutoSize ? [`width: min(100%, ${autoSquareWidth}px)`] : []),
       'margin: 0 auto',
       ...dimensionStyles
     ].join('; ');

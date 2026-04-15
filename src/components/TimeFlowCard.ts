@@ -446,9 +446,12 @@ export class TimeFlowCardBeta extends LitElement {
         align-items: center;
         justify-content: flex-start;
         width: 100%;
-        gap: 10px;
-        padding: 14px 18px 18px;
-        height: 100%;
+        gap: var(--timeflow-minimal-gap, 10px);
+        padding:
+          var(--timeflow-minimal-padding-top, 14px)
+          var(--timeflow-minimal-padding-x, 16px)
+          var(--timeflow-minimal-padding-bottom, 16px);
+        height: auto;
         min-height: 0;
         box-sizing: border-box;
         background: inherit;
@@ -482,6 +485,7 @@ export class TimeFlowCardBeta extends LitElement {
         aspect-ratio: 1 / 1;
         flex: 0 0 auto;
         margin: 0 auto;
+        max-width: 100%;
       }
 
       .minimal-square-circle {
@@ -497,7 +501,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: 22%;
+        padding: var(--timeflow-minimal-center-padding, 22%);
         box-sizing: border-box;
       }
 
@@ -537,7 +541,10 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .card-content-minimal-square {
-          padding: 14px;
+          padding:
+            var(--timeflow-minimal-padding-top, 14px)
+            12px
+            var(--timeflow-minimal-padding-bottom, 14px);
         }
       }
       
@@ -1268,37 +1275,39 @@ export class TimeFlowCardBeta extends LitElement {
       grid_options,
     } = this._resolvedConfig;
 
-    const shouldAutoSize = !width && !height;
-    const configuredGridRows = typeof grid_options?.rows === 'number' && Number.isFinite(grid_options.rows)
-      ? Math.max(1, grid_options.rows)
-      : 3;
-    const sectionRowHeight = 56;
-    const sectionRowGap = 8;
-    const estimatedAutoSquareSize = (configuredGridRows * sectionRowHeight) + ((configuredGridRows - 1) * sectionRowGap);
-    const autoOuterPadding = 18;
-    const autoSquareSize = Math.max(144, estimatedAutoSquareSize);
     const resolvedWidth = width;
     const resolvedHeight = height;
-    const effectiveAspectRatio = aspect_ratio || (!height ? '1/1' : undefined);
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, effectiveAspectRatio);
-    const sizingWidth = resolvedWidth ?? autoSquareSize;
-    const sizingHeight = resolvedHeight ?? autoSquareSize;
-    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingWidth, sizingHeight, effectiveAspectRatio);
-    const minDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
-    const availableCircleSpace = Math.max(72, Math.round(minDimension - (autoOuterPadding * 2)));
+    const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
+      ? Math.max(1, grid_options.columns)
+      : 4;
+    const sectionColumnWidth = 56;
+    const sectionColumnGap = 8;
+    const estimatedSlotWidth = (configuredGridColumns * sectionColumnWidth) + ((configuredGridColumns - 1) * sectionColumnGap);
+    const horizontalPadding = Math.max(12, Math.min(18, Math.round(estimatedSlotWidth * 0.055)));
+    const defaultCircleSize = Math.max(92, Math.min(132, Math.round((estimatedSlotWidth - (horizontalPadding * 2)) * 0.62)));
     const resolvedCircleSize = Math.max(
       72,
       Math.min(
-        typeof icon_size === 'number' ? icon_size : availableCircleSpace,
+        typeof icon_size === 'number' ? icon_size : defaultCircleSize,
         340
       )
     );
     const resolvedStroke = this.styleManager.calculateDynamicStrokeWidth(resolvedCircleSize, stroke_width);
-    const valueSize = Math.max(1.9, Math.min(4.8, proportionalSizes.titleSize * 2.2));
-    const unitSize = Math.max(0.64, Math.min(1.1, proportionalSizes.subtitleSize * 0.78));
+    const shellSize = resolvedCircleSize + Math.max(18, Math.round(resolvedStroke * 2.5));
+    const estimatedCardHeight = shellSize + 72;
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
+    const sizingWidth = resolvedWidth ?? estimatedSlotWidth;
+    const sizingHeight = resolvedHeight ?? estimatedCardHeight;
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingWidth, sizingHeight, aspect_ratio);
+    const titleSize = Math.max(0.78, Math.min(0.98, proportionalSizes.subtitleSize * 0.72));
+    const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
+    const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
+    const titleText = this._getTitleText();
+    const contentGap = titleText ? Math.max(8, Math.min(12, Math.round(resolvedCircleSize * 0.08))) : 0;
+    const centerPadding = `${Math.max(21, Math.min(26, Math.round(18 + (resolvedStroke * 0.55))))}%`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1308,14 +1317,18 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
-    const titleText = this._getTitleText();
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
-      `--timeflow-minimal-title-size: ${Math.max(0.78, Math.min(1.1, proportionalSizes.subtitleSize * 0.82))}rem`,
+      `--timeflow-minimal-title-size: ${titleSize}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
-      `--timeflow-minimal-shell-size: ${Math.round(Math.min(autoSquareSize, resolvedCircleSize + 24))}px`,
+      `--timeflow-minimal-shell-size: ${shellSize}px`,
+      `--timeflow-minimal-padding-top: ${titleText ? 14 : 12}px`,
+      `--timeflow-minimal-padding-bottom: 16px`,
+      `--timeflow-minimal-padding-x: ${horizontalPadding}px`,
+      `--timeflow-minimal-gap: ${contentGap}px`,
+      `--timeflow-minimal-center-padding: ${centerPadding}`,
       ...dimensionStyles
     ].join('; ');
 

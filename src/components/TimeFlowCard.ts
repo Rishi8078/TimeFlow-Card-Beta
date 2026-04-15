@@ -443,13 +443,11 @@ export class TimeFlowCardBeta extends LitElement {
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
+        justify-content: space-between;
         width: 100%;
-        gap: 12px;
-        padding: 20px;
-        height: 100%;
-        min-height: 0;
+        gap: 16px;
+        padding: 18px 20px;
+        min-height: 120px;
         box-sizing: border-box;
         background: inherit;
       }
@@ -458,19 +456,23 @@ export class TimeFlowCardBeta extends LitElement {
         margin: 0;
         width: 100%;
         text-align: left;
-        font-size: var(--timeflow-minimal-title-size, 0.9rem);
-        font-weight: 500;
-        line-height: 1.3;
-        letter-spacing: -0.01em;
+        font-size: var(--timeflow-minimal-title-size, 1.35rem);
+        font-weight: 600;
+        line-height: 1.2;
         color: var(--timeflow-card-text-color, inherit);
-        opacity: 0.9;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
+        display: block;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: normal;
+        white-space: nowrap;
+      }
+
+      .minimal-square-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        flex: 1;
+        min-height: 0;
       }
 
       .minimal-square-shell {
@@ -478,10 +480,12 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
+        width: var(--timeflow-minimal-shell-size, 184px);
         height: var(--timeflow-minimal-shell-size, 184px);
         flex: 0 0 auto;
-        margin: 0;
+        margin: 0 auto;
+        max-width: 100%;
+        max-height: 100%;
       }
 
       .minimal-square-circle {
@@ -497,7 +501,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: 24%;
+        padding: 22%;
         box-sizing: border-box;
       }
 
@@ -538,6 +542,7 @@ export class TimeFlowCardBeta extends LitElement {
 
         .card-content-minimal-square {
           padding: 16px;
+          gap: 14px;
         }
       }
       
@@ -1324,21 +1329,23 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content-minimal-square">
           ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
-          <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
-            <progress-circle-beta
-              class="minimal-square-circle"
-              .progress="${displayProgress}"
-              .color="${mainProgressColor}"
-              .size="${resolvedCircleSize}"
-              .strokeWidth="${resolvedStroke}"
-              .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
-              .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
-              aria-label="${progressAriaLabel}"
-            ></progress-circle-beta>
+          <div class="minimal-square-progress">
+            <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
+              <progress-circle-beta
+                class="minimal-square-circle"
+                .progress="${displayProgress}"
+                .color="${mainProgressColor}"
+                .size="${resolvedCircleSize}"
+                .strokeWidth="${resolvedStroke}"
+                .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
+                .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
+                aria-label="${progressAriaLabel}"
+              ></progress-circle-beta>
 
-            <div class="minimal-square-center" aria-live="polite">
-              <p class="minimal-square-value">${centerValue}</p>
-              ${centerUnit ? html`<p class="minimal-square-unit">${centerUnit}</p>` : ''}
+              <div class="minimal-square-center" aria-live="polite">
+                <p class="minimal-square-value">${centerValue}</p>
+                ${centerUnit ? html`<p class="minimal-square-unit">${centerUnit}</p>` : ''}
+              </div>
             </div>
           </div>
         </div>

@@ -455,19 +455,13 @@ export class TimeFlowCardBeta extends LitElement {
       .minimal-square-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .minimal-square-title-group {
-        min-width: 0;
-        flex: 1;
+        justify-content: center;
       }
 
       .minimal-square-title {
         margin: 0;
         width: 100%;
-        text-align: left;
+        text-align: center;
         font-size: var(--timeflow-title-size, 1.45rem);
         font-weight: 600;
         line-height: 1.2;
@@ -476,21 +470,6 @@ export class TimeFlowCardBeta extends LitElement {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-
-      .minimal-square-status {
-        margin: 0;
-        max-width: 45%;
-        flex-shrink: 0;
-        font-size: var(--timeflow-subtitle-size, 1rem);
-        font-weight: 500;
-        line-height: 1.2;
-        color: var(--timeflow-card-text-color, inherit);
-        opacity: 0.8;
-        text-align: right;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .minimal-square-progress {
@@ -564,16 +543,6 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .gridy-status {
-          max-width: 100%;
-          text-align: left;
-        }
-
-        .minimal-square-header {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .minimal-square-status {
           max-width: 100%;
           text-align: left;
         }
@@ -1298,52 +1267,21 @@ export class TimeFlowCardBeta extends LitElement {
   private _renderMinimalSquareCard(): TemplateResult {
     const {
       progress_color,
-      subtitle,
       stroke_width,
       icon_size,
       expired_animation = true,
-      expired_text = '',
       invert_progress = false,
       mode = 'count_down',
       width,
       height,
       aspect_ratio,
       grid_options,
-      compact_format,
-      show_months,
-      show_days,
-      show_hours,
-      show_minutes,
-      show_seconds,
     } = this._resolvedConfig;
 
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || textColor || 'var(--progress-color, #4caf50)';
     const titleText = this._getTitleText();
-    const enabledUnits = [this._resolvedConfig.show_years, show_months, this._resolvedConfig.show_weeks, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
-    const useCompact = compact_format === true || (compact_format !== false && enabledUnits >= 3);
-    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
-    const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
-    let statusText: string;
-    if (this._resolvedConfig.timer_entity && this.hass) {
-      const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
-      if (timerData) {
-        if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
-          statusText = TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false, this._localize || undefined, timeFormatCompact);
-        } else if (!this._expired) {
-          statusText = subtitle || TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false, this._localize || undefined, timeFormatCompact);
-        } else {
-          statusText = expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
-        }
-      } else {
-        statusText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
-      }
-    } else if (this._resolvedConfig.auto_discover_alexa) {
-      statusText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
-    } else {
-      statusText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
-    }
     const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
       ? Math.max(1, grid_options.columns)
       : null;
@@ -1377,7 +1315,7 @@ export class TimeFlowCardBeta extends LitElement {
     const availableProgressWidth = Math.max(112, proportionalSizes.cardWidth - 40);
     const availableProgressHeight = Math.max(
       112,
-      proportionalSizes.cardHeight - 36 - ((titleText || statusText) ? 38 : 0) - 16
+      proportionalSizes.cardHeight - 36 - (titleText ? 38 : 0) - 16
     );
     const shellInset = Math.max(20, Math.round(provisionalStroke * 2.75));
     const maxShellSize = Math.max(112, Math.min(availableProgressWidth, availableProgressHeight));
@@ -1425,12 +1363,9 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content-minimal-square">
-          ${(titleText || statusText) ? html`
+          ${titleText ? html`
             <div class="minimal-square-header">
-              <div class="minimal-square-title-group">
-                ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
-              </div>
-              ${statusText ? html`<p class="minimal-square-status" aria-live="polite">${statusText}</p>` : ''}
+              <p class="minimal-square-title" aria-live="polite">${titleText}</p>
             </div>
           ` : ''}
           <div class="minimal-square-progress">

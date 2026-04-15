@@ -441,10 +441,22 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         background: inherit;
       }
 
+      .minimal-square-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .minimal-square-title-group {
+        min-width: 0;
+        flex: 1;
+      }
+
       .minimal-square-title {
         margin: 0;
         width: 100%;
-        text-align: center;
+        text-align: left;
         font-size: var(--timeflow-title-size, 1.45rem);
         font-weight: 600;
         line-height: 1.2;
@@ -453,6 +465,21 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .minimal-square-status {
+        margin: 0;
+        max-width: 45%;
+        flex-shrink: 0;
+        font-size: var(--timeflow-subtitle-size, 1rem);
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, inherit);
+        opacity: 0.8;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .minimal-square-progress {
@@ -526,6 +553,16 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         }
 
         .gridy-status {
+          max-width: 100%;
+          text-align: left;
+        }
+
+        .minimal-square-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .minimal-square-status {
           max-width: 100%;
           text-align: left;
         }
@@ -701,32 +738,39 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,stroke_width:r,icon_size:a,expired_animation:o=!0,invert_progress:n=!1,mode:l="count_down",width:c,height:d,aspect_ratio:u,grid_options:m}=this._resolvedConfig,h=c,p=d,{cardBackground:g,textColor:_}=this._getCardColors(),f=_||this._getContrastTextColor(g)||"",v=s||t||"var(--progress-color, #4caf50)",y=this._getTitleText(),b="number"==typeof(null==m?void 0:m.columns)&&Number.isFinite(m.columns)?Math.max(1,m.columns):null,w="number"==typeof(null==m?void 0:m.rows)&&Number.isFinite(m.rows)?Math.max(1,m.rows):null,x=null!=h?h:b?56*b+8*(b-1):300,$=null!=p?p:w?56*w+8*(w-1):150,S=u||"1/1",T=this.styleManager.calculateProportionalSizes(x,$,S),C=Math.min(T.cardWidth,T.cardHeight),A=Math.max(92,Math.min(132,Math.round(.54*C))),M=Math.max(72,Math.min("number"==typeof a?a:A,340)),D=this.styleManager.calculateDynamicStrokeWidth(M,r),k=Math.max(112,T.cardWidth-40),E=Math.max(112,T.cardHeight-36-(y?32:0)-16),I=Math.max(20,Math.round(2.75*D)),N=Math.max(112,Math.min(k,E)),z=Math.max(72,Math.min(M,N-I)),R=this.styleManager.calculateDynamicStrokeWidth(z,r),O=Math.min(N,z+Math.max(20,Math.round(2.75*R))),U=this.styleManager.generateCardDimensionStyles(h,p,u),F=Math.max(2.1,Math.min(3.4,z/42)),H=Math.max(.62,Math.min(.84,z/165)),P=`${Math.max(16,Math.min(18,Math.round(20-.25*R)))}%`,L=n?100-this._progress:this._progress,G=`${"count_up"===l?"Elapsed":"Countdown"} progress: ${Math.round(L)}%`,j=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),V=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),q=/^-?\d+$/.test(V.value),Y=q?j.value.toString():V.value,B=q?Me(j.unit,j.value,this._localize||void 0):"",K=[...g?[`background: ${g}`,`--timeflow-card-background-color: ${g}`]:[],...f?[`color: ${f}`,`--timeflow-card-text-color: ${f}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*T.titleSize)}rem`,`--timeflow-minimal-value-size: ${F}rem`,`--timeflow-minimal-unit-size: ${H}rem`,`--timeflow-minimal-shell-size: ${O}px`,`--timeflow-minimal-center-padding: ${P}`,...U].join("; "),J=this._getCardClasses(o),{configWithDefaults:Z,shouldEnableActions:X}=this._getActionConfig();return W`
+    `}_renderMinimalSquareCard(){var e;const{text_color:t,background_color:i,progress_color:s,subtitle:r,stroke_width:a,icon_size:o,expired_animation:n=!0,expired_text:l="",invert_progress:c=!1,mode:d="count_down",width:u,height:m,aspect_ratio:h,grid_options:p,compact_format:g}=this._resolvedConfig,_=u,f=m,{cardBackground:v,textColor:y}=this._getCardColors(),b=y||this._getContrastTextColor(v)||"",w=s||t||"var(--progress-color, #4caf50)",x=this._getTitleText(),$=!1!==g;let S;S=r||(this._expired?l||"Completed":this.countdownService.getSubtitle(this._resolvedConfig,this.hass,this._localize||void 0,$));const T="number"==typeof(null==p?void 0:p.columns)&&Number.isFinite(p.columns)?Math.max(1,p.columns):null,C="number"==typeof(null==p?void 0:p.rows)&&Number.isFinite(p.rows)?Math.max(1,p.rows):null,A=null!=_?_:T?56*T+8*(T-1):300,M=null!=f?f:C?56*C+8*(C-1):150,D=h||"1/1",k=this.styleManager.calculateProportionalSizes(A,M,D),E=Math.min(k.cardWidth,k.cardHeight),I=Math.max(92,Math.min(132,Math.round(.54*E))),N=Math.max(72,Math.min("number"==typeof o?o:I,340)),z=this.styleManager.calculateDynamicStrokeWidth(N,a),R=Math.max(112,k.cardWidth-40),O=Math.max(112,k.cardHeight-36-(x||S?38:0)-16),U=Math.max(20,Math.round(2.75*z)),F=Math.max(112,Math.min(R,O)),H=Math.max(72,Math.min(N,F-U)),P=this.styleManager.calculateDynamicStrokeWidth(H,a),L=Math.min(F,H+Math.max(20,Math.round(2.75*P))),G=this.styleManager.generateCardDimensionStyles(_,f,h),j=Math.max(2.1,Math.min(3.4,H/42)),V=Math.max(.62,Math.min(.84,H/165)),q=`${Math.max(16,Math.min(18,Math.round(20-.25*P)))}%`,Y=c?100-this._progress:this._progress,B=`${"count_up"===d?"Elapsed":"Countdown"} progress: ${Math.round(Y)}%`,K=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),J=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),Z=/^-?\d+$/.test(J.value),X=Z?K.value.toString():J.value,Q=Z?Me(K.unit,K.value,this._localize||void 0):"",ee=[...v?[`background: ${v}`,`--timeflow-card-background-color: ${v}`]:[],...b?[`color: ${b}`,`--timeflow-card-text-color: ${b}`]:[],`--timeflow-title-size: ${Math.max(1.25,.95*k.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*k.subtitleSize)}rem`,`--timeflow-minimal-value-size: ${j}rem`,`--timeflow-minimal-unit-size: ${V}rem`,`--timeflow-minimal-shell-size: ${L}px`,`--timeflow-minimal-center-padding: ${q}`,...G].join("; "),te=this._getCardClasses(n),{configWithDefaults:ie,shouldEnableActions:se}=this._getActionConfig();return W`
       <ha-card
-        class="${J}"
-        style="${K}"
-        ?actionHandler=${X}
-        .actionHandler=${X?We(Z):void 0}
-        @action=${X&&this.hass?Ge(this.hass,Z):void 0}
+        class="${te}"
+        style="${ee}"
+        ?actionHandler=${se}
+        .actionHandler=${se?We(ie):void 0}
+        @action=${se&&this.hass?Ge(this.hass,ie):void 0}
       >
         <div class="card-content-minimal-square">
-          ${y?W`<p class="minimal-square-title" aria-live="polite">${y}</p>`:""}
+          ${x||S?W`
+            <div class="minimal-square-header">
+              <div class="minimal-square-title-group">
+                ${x?W`<p class="minimal-square-title" aria-live="polite">${x}</p>`:""}
+              </div>
+              ${S?W`<p class="minimal-square-status" aria-live="polite">${S}</p>`:""}
+            </div>
+          `:""}
           <div class="minimal-square-progress">
-            <div class="minimal-square-shell" role="group" aria-label="${G}">
+            <div class="minimal-square-shell" role="group" aria-label="${B}">
               <progress-circle-beta
                 class="minimal-square-circle"
-                .progress="${L}"
-                .color="${v}"
-                .size="${z}"
-                .strokeWidth="${R}"
+                .progress="${Y}"
+                .color="${w}"
+                .size="${H}"
+                .strokeWidth="${P}"
                 .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
                 .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
-                aria-label="${G}"
+                aria-label="${B}"
               ></progress-circle-beta>
 
               <div class="minimal-square-center" aria-live="polite">
-                <p class="minimal-square-value">${Y}</p>
-                ${B?W`<p class="minimal-square-unit">${B}</p>`:""}
+                <p class="minimal-square-value">${X}</p>
+                ${Q?W`<p class="minimal-square-unit">${Q}</p>`:""}
               </div>
             </div>
           </div>

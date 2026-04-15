@@ -452,10 +452,22 @@ export class TimeFlowCardBeta extends LitElement {
         background: inherit;
       }
 
+      .minimal-square-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .minimal-square-title-group {
+        min-width: 0;
+        flex: 1;
+      }
+
       .minimal-square-title {
         margin: 0;
         width: 100%;
-        text-align: center;
+        text-align: left;
         font-size: var(--timeflow-title-size, 1.45rem);
         font-weight: 600;
         line-height: 1.2;
@@ -464,6 +476,21 @@ export class TimeFlowCardBeta extends LitElement {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .minimal-square-status {
+        margin: 0;
+        max-width: 45%;
+        flex-shrink: 0;
+        font-size: var(--timeflow-subtitle-size, 1rem);
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, inherit);
+        opacity: 0.8;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .minimal-square-progress {
@@ -537,6 +564,16 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .gridy-status {
+          max-width: 100%;
+          text-align: left;
+        }
+
+        .minimal-square-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .minimal-square-status {
           max-width: 100%;
           text-align: left;
         }
@@ -1263,15 +1300,18 @@ export class TimeFlowCardBeta extends LitElement {
       text_color,
       background_color,
       progress_color,
+      subtitle,
       stroke_width,
       icon_size,
       expired_animation = true,
+      expired_text = '',
       invert_progress = false,
       mode = 'count_down',
       width,
       height,
       aspect_ratio,
       grid_options,
+      compact_format,
     } = this._resolvedConfig;
 
     const resolvedWidth = width;
@@ -1280,6 +1320,15 @@ export class TimeFlowCardBeta extends LitElement {
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const titleText = this._getTitleText();
+    const timeFormatCompact = compact_format !== false;
+    let statusText: string;
+    if (subtitle) {
+      statusText = subtitle;
+    } else if (this._expired) {
+      statusText = expired_text || 'Completed';
+    } else {
+      statusText = this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+    }
     const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
       ? Math.max(1, grid_options.columns)
       : null;
@@ -1313,7 +1362,7 @@ export class TimeFlowCardBeta extends LitElement {
     const availableProgressWidth = Math.max(112, proportionalSizes.cardWidth - 40);
     const availableProgressHeight = Math.max(
       112,
-      proportionalSizes.cardHeight - 36 - (titleText ? 32 : 0) - 16
+      proportionalSizes.cardHeight - 36 - ((titleText || statusText) ? 38 : 0) - 16
     );
     const shellInset = Math.max(20, Math.round(provisionalStroke * 2.75));
     const maxShellSize = Math.max(112, Math.min(availableProgressWidth, availableProgressHeight));
@@ -1340,6 +1389,7 @@ export class TimeFlowCardBeta extends LitElement {
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
       `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
+      `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,
@@ -1359,7 +1409,14 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content-minimal-square">
-          ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
+          ${(titleText || statusText) ? html`
+            <div class="minimal-square-header">
+              <div class="minimal-square-title-group">
+                ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
+              </div>
+              ${statusText ? html`<p class="minimal-square-status" aria-live="polite">${statusText}</p>` : ''}
+            </div>
+          ` : ''}
           <div class="minimal-square-progress">
             <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
               <progress-circle-beta

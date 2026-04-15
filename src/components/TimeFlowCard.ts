@@ -466,15 +466,6 @@ export class TimeFlowCardBeta extends LitElement {
         white-space: nowrap;
       }
 
-      .minimal-square-subtitle {
-        font-size: var(--timeflow-minimal-title-size, 1rem);
-        opacity: 0.65;
-        margin: 0;
-        font-weight: 400;
-        line-height: 1.2;
-        color: var(--timeflow-card-text-color, inherit);
-      }
-
       .minimal-square-progress {
         display: flex;
         align-items: center;
@@ -482,6 +473,57 @@ export class TimeFlowCardBeta extends LitElement {
         width: 100%;
         flex: 1;
         min-height: 0;
+        overflow: hidden;
+      }
+
+      .minimal-square-shell {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--timeflow-minimal-shell-size, 184px);
+        height: var(--timeflow-minimal-shell-size, 184px);
+        flex: 0 0 auto;
+        margin: 0 auto;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .minimal-square-circle {
+        opacity: 0.95;
+      }
+
+      .minimal-square-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        pointer-events: none;
+        padding: 22%;
+        box-sizing: border-box;
+      }
+
+      .minimal-square-value {
+        margin: 0;
+        font-size: var(--timeflow-minimal-value-size, 3rem);
+        font-weight: 650;
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        color: var(--timeflow-card-text-color, inherit);
+      }
+
+      .minimal-square-unit {
+        margin: 8px 0 0;
+        font-size: var(--timeflow-minimal-unit-size, 0.8rem);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        color: var(--timeflow-card-text-color, inherit);
       }
 
       @media (max-width: 480px) {
@@ -1229,6 +1271,7 @@ export class TimeFlowCardBeta extends LitElement {
       width,
       height,
       aspect_ratio,
+      grid_options,
     } = this._resolvedConfig;
 
     const resolvedWidth = width;
@@ -1236,23 +1279,54 @@ export class TimeFlowCardBeta extends LitElement {
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
-    const sizingReferenceWidth = resolvedWidth ?? 220;
-    const sizingReferenceHeight = resolvedHeight ?? 220;
+    const titleText = this._getTitleText();
+    const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
+      ? Math.max(1, grid_options.columns)
+      : null;
+    const configuredGridRows = typeof grid_options?.rows === 'number' && Number.isFinite(grid_options.rows)
+      ? Math.max(1, grid_options.rows)
+      : null;
+    const sectionColumnWidth = 56;
+    const sectionColumnGap = 8;
+    const sectionRowHeight = 56;
+    const sectionRowGap = 8;
+    const estimatedSlotWidth = configuredGridColumns
+      ? (configuredGridColumns * sectionColumnWidth) + ((configuredGridColumns - 1) * sectionColumnGap)
+      : 300;
+    const estimatedSlotHeight = configuredGridRows
+      ? (configuredGridRows * sectionRowHeight) + ((configuredGridRows - 1) * sectionRowGap)
+      : 150;
+    const sizingReferenceWidth = resolvedWidth ?? estimatedSlotWidth;
+    const sizingReferenceHeight = resolvedHeight ?? estimatedSlotHeight;
     const sizingAspectRatio = aspect_ratio || '1/1';
     const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingReferenceWidth, sizingReferenceHeight, sizingAspectRatio);
     const baseDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
-    const defaultCircleSize = Math.max(92, Math.min(132, Math.round(baseDimension * 0.5)));
-    const resolvedCircleSize = Math.max(
+    const defaultCircleSize = Math.max(84, Math.min(120, Math.round(baseDimension * 0.48)));
+    const desiredCircleSize = Math.max(
       72,
       Math.min(
         typeof icon_size === 'number' ? icon_size : defaultCircleSize,
         340
       )
     );
+    const provisionalStroke = this.styleManager.calculateDynamicStrokeWidth(desiredCircleSize, stroke_width);
+    const availableProgressWidth = Math.max(112, proportionalSizes.cardWidth - 40);
+    const availableProgressHeight = Math.max(
+      112,
+      proportionalSizes.cardHeight - 36 - (titleText ? 32 : 0) - 16
+    );
+    const shellInset = Math.max(20, Math.round(provisionalStroke * 2.75));
+    const maxShellSize = Math.max(112, Math.min(availableProgressWidth, availableProgressHeight));
+    const resolvedCircleSize = Math.max(72, Math.min(desiredCircleSize, maxShellSize - shellInset));
     const resolvedStroke = this.styleManager.calculateDynamicStrokeWidth(resolvedCircleSize, stroke_width);
+    const shellSize = Math.min(
+      maxShellSize,
+      resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
+    );
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
     const titleSize = Math.max(0.92, Math.min(1.1, proportionalSizes.subtitleSize * 0.82));
-    const titleText = this._getTitleText();
+    const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
+    const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1262,11 +1336,13 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
-    const subtitleText = centerUnit ? `${centerValue} ${centerUnit}` : centerValue;
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
       `--timeflow-minimal-title-size: ${titleSize}rem`,
+      `--timeflow-minimal-value-size: ${valueSize}rem`,
+      `--timeflow-minimal-unit-size: ${unitSize}rem`,
+      `--timeflow-minimal-shell-size: ${shellSize}px`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1283,17 +1359,24 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content-minimal-square">
           ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
-          ${subtitleText ? html`<p class="minimal-square-subtitle" aria-live="polite">${subtitleText}</p>` : ''}
-          <div class="minimal-square-progress" role="group" aria-label="${progressAriaLabel}">
-            <progress-circle-beta
-              .progress="${displayProgress}"
-              .color="${mainProgressColor}"
-              .size="${resolvedCircleSize}"
-              .strokeWidth="${resolvedStroke}"
-              .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
-              .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
-              aria-label="${progressAriaLabel}"
-            ></progress-circle-beta>
+          <div class="minimal-square-progress">
+            <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
+              <progress-circle-beta
+                class="minimal-square-circle"
+                .progress="${displayProgress}"
+                .color="${mainProgressColor}"
+                .size="${resolvedCircleSize}"
+                .strokeWidth="${resolvedStroke}"
+                .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
+                .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
+                aria-label="${progressAriaLabel}"
+              ></progress-circle-beta>
+
+              <div class="minimal-square-center" aria-live="polite">
+                <p class="minimal-square-value">${centerValue}</p>
+                ${centerUnit ? html`<p class="minimal-square-unit">${centerUnit}</p>` : ''}
+              </div>
+            </div>
           </div>
         </div>
       </ha-card>
@@ -1487,25 +1570,14 @@ export class TimeFlowCardBeta extends LitElement {
   getGridOptions(): { rows?: number | 'auto'; columns?: number | 'full'; min_rows?: number; max_rows?: number; min_columns?: number; max_columns?: number } | undefined {
     const { style, grid_options } = this.config;
 
-    if (style === 'minimal-square') {
-      if (grid_options) {
-        return {
-          rows: grid_options.rows ?? 3,
-          columns: grid_options.columns ?? 6,
-          min_rows: grid_options.min_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
-          max_rows: grid_options.max_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
-          min_columns: grid_options.min_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
-          max_columns: grid_options.max_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
-        };
-      }
-
+    if (style === 'minimal-square' && grid_options) {
       return {
-        rows: 3,
-        min_rows: 3,
-        max_rows: 4,
-        columns: 6,
-        min_columns: 3,
-        max_columns: 6,
+        rows: grid_options.rows ?? 3,
+        columns: grid_options.columns ?? 6,
+        min_rows: grid_options.min_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
+        max_rows: grid_options.max_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
+        min_columns: grid_options.min_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
+        max_columns: grid_options.max_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
       };
     }
 

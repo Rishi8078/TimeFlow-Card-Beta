@@ -1297,8 +1297,6 @@ export class TimeFlowCardBeta extends LitElement {
    */
   private _renderMinimalSquareCard(): TemplateResult {
     const {
-      text_color,
-      background_color,
       progress_color,
       subtitle,
       stroke_width,
@@ -1312,22 +1310,39 @@ export class TimeFlowCardBeta extends LitElement {
       aspect_ratio,
       grid_options,
       compact_format,
+      show_months,
+      show_days,
+      show_hours,
+      show_minutes,
+      show_seconds,
     } = this._resolvedConfig;
 
-    const resolvedWidth = width;
-    const resolvedHeight = height;
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
-    const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
+    const mainProgressColor = progress_color || textColor || 'var(--progress-color, #4caf50)';
     const titleText = this._getTitleText();
-    const timeFormatCompact = compact_format !== false;
+    const enabledUnits = [this._resolvedConfig.show_years, show_months, this._resolvedConfig.show_weeks, show_days, show_hours, show_minutes, show_seconds].filter(v => v === true).length;
+    const useCompact = compact_format === true || (compact_format !== false && enabledUnits >= 3);
+    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
+    const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
     let statusText: string;
-    if (subtitle) {
-      statusText = subtitle;
-    } else if (this._expired) {
-      statusText = expired_text || 'Completed';
+    if (this._resolvedConfig.timer_entity && this.hass) {
+      const timerData = TimerEntityService.getTimerData(this._resolvedConfig.timer_entity, this.hass);
+      if (timerData) {
+        if (this._expired && (timerData.isAlexaTimer || timerData.isGoogleTimer)) {
+          statusText = TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false, this._localize || undefined, timeFormatCompact);
+        } else if (!this._expired) {
+          statusText = subtitle || TimerEntityService.getTimerSubtitle(timerData, this._resolvedConfig.show_seconds !== false, this._localize || undefined, timeFormatCompact);
+        } else {
+          statusText = expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+        }
+      } else {
+        statusText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
+      }
+    } else if (this._resolvedConfig.auto_discover_alexa) {
+      statusText = subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
     } else {
-      statusText = this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact);
+      statusText = this._expired ? (expired_text || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact)) : (subtitle || this.countdownService.getSubtitle(this._resolvedConfig, this.hass, this._localize || undefined, timeFormatCompact));
     }
     const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
       ? Math.max(1, grid_options.columns)
@@ -1345,8 +1360,8 @@ export class TimeFlowCardBeta extends LitElement {
     const estimatedSlotHeight = configuredGridRows
       ? (configuredGridRows * sectionRowHeight) + ((configuredGridRows - 1) * sectionRowGap)
       : 150;
-    const sizingReferenceWidth = resolvedWidth ?? estimatedSlotWidth;
-    const sizingReferenceHeight = resolvedHeight ?? estimatedSlotHeight;
+    const sizingReferenceWidth = width ?? estimatedSlotWidth;
+    const sizingReferenceHeight = height ?? estimatedSlotHeight;
     const sizingAspectRatio = aspect_ratio || '1/1';
     const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingReferenceWidth, sizingReferenceHeight, sizingAspectRatio);
     const baseDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
@@ -1372,7 +1387,7 @@ export class TimeFlowCardBeta extends LitElement {
       maxShellSize,
       resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
     );
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const centerPadding = `${Math.max(16, Math.min(18, Math.round(20 - (resolvedStroke * 0.25))))}%`;
@@ -1387,7 +1402,8 @@ export class TimeFlowCardBeta extends LitElement {
       : '';
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
-      ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
+      ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`, `--progress-text-color: ${displayTextColor}`] : []),
+      `--timeflow-card-progress-color: ${mainProgressColor}`,
       `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
       `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,

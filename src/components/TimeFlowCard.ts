@@ -455,8 +455,8 @@ export class TimeFlowCardBeta extends LitElement {
       .minimal-square-title {
         margin: 0;
         width: 100%;
-        text-align: left;
-        font-size: var(--timeflow-minimal-title-size, 1.35rem);
+        text-align: center;
+        font-size: var(--timeflow-title-size, 1.45rem);
         font-weight: 600;
         line-height: 1.2;
         color: var(--timeflow-card-text-color, inherit);
@@ -1324,7 +1324,6 @@ export class TimeFlowCardBeta extends LitElement {
       resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
     );
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
-    const titleSize = Math.max(0.92, Math.min(1.1, proportionalSizes.subtitleSize * 0.82));
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
@@ -1339,7 +1338,7 @@ export class TimeFlowCardBeta extends LitElement {
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`] : []),
-      `--timeflow-minimal-title-size: ${titleSize}rem`,
+      `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,

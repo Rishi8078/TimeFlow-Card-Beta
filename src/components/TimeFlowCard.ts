@@ -502,7 +502,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: 22%;
+        padding: var(--timeflow-minimal-center-padding, 18%);
         box-sizing: border-box;
       }
 
@@ -516,7 +516,7 @@ export class TimeFlowCardBeta extends LitElement {
       }
 
       .minimal-square-unit {
-        margin: 8px 0 0;
+        margin: 4px 0 0;
         font-size: var(--timeflow-minimal-unit-size, 0.8rem);
         font-weight: 700;
         line-height: 1;
@@ -1301,7 +1301,7 @@ export class TimeFlowCardBeta extends LitElement {
     const sizingAspectRatio = aspect_ratio || '1/1';
     const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingReferenceWidth, sizingReferenceHeight, sizingAspectRatio);
     const baseDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
-    const defaultCircleSize = Math.max(84, Math.min(120, Math.round(baseDimension * 0.48)));
+    const defaultCircleSize = Math.max(92, Math.min(132, Math.round(baseDimension * 0.54)));
     const desiredCircleSize = Math.max(
       72,
       Math.min(
@@ -1326,6 +1326,7 @@ export class TimeFlowCardBeta extends LitElement {
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
+    const centerPadding = `${Math.max(16, Math.min(18, Math.round(20 - (resolvedStroke * 0.25))))}%`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1342,6 +1343,7 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,
+      `--timeflow-minimal-center-padding: ${centerPadding}`,
       ...dimensionStyles
     ].join('; ');
 

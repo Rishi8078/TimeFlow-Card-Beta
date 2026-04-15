@@ -443,15 +443,12 @@ export class TimeFlowCardBeta extends LitElement {
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         justify-content: flex-start;
         width: 100%;
-        gap: var(--timeflow-minimal-gap, 10px);
-        padding:
-          var(--timeflow-minimal-padding-top, 14px)
-          var(--timeflow-minimal-padding-x, 16px)
-          var(--timeflow-minimal-padding-bottom, 16px);
-        height: auto;
+        gap: 12px;
+        padding: 20px;
+        height: 100%;
         min-height: 0;
         box-sizing: border-box;
         background: inherit;
@@ -460,13 +457,13 @@ export class TimeFlowCardBeta extends LitElement {
       .minimal-square-title {
         margin: 0;
         width: 100%;
-        text-align: center;
+        text-align: left;
         font-size: var(--timeflow-minimal-title-size, 0.9rem);
-        font-weight: 600;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
+        font-weight: 500;
+        line-height: 1.3;
+        letter-spacing: -0.01em;
         color: var(--timeflow-card-text-color, inherit);
-        opacity: 0.82;
+        opacity: 0.9;
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
@@ -481,11 +478,10 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: min(100%, var(--timeflow-minimal-shell-size, 184px));
-        aspect-ratio: 1 / 1;
+        width: 100%;
+        height: var(--timeflow-minimal-shell-size, 184px);
         flex: 0 0 auto;
-        margin: 0 auto;
-        max-width: 100%;
+        margin: 0;
       }
 
       .minimal-square-circle {
@@ -501,7 +497,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: var(--timeflow-minimal-center-padding, 22%);
+        padding: 24%;
         box-sizing: border-box;
       }
 
@@ -541,10 +537,7 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .card-content-minimal-square {
-          padding:
-            var(--timeflow-minimal-padding-top, 14px)
-            12px
-            var(--timeflow-minimal-padding-bottom, 14px);
+          padding: 16px;
         }
       }
       
@@ -1272,7 +1265,6 @@ export class TimeFlowCardBeta extends LitElement {
       width,
       height,
       aspect_ratio,
-      grid_options,
     } = this._resolvedConfig;
 
     const resolvedWidth = width;
@@ -1280,14 +1272,12 @@ export class TimeFlowCardBeta extends LitElement {
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
-    const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
-      ? Math.max(1, grid_options.columns)
-      : 4;
-    const sectionColumnWidth = 56;
-    const sectionColumnGap = 8;
-    const estimatedSlotWidth = (configuredGridColumns * sectionColumnWidth) + ((configuredGridColumns - 1) * sectionColumnGap);
-    const horizontalPadding = Math.max(12, Math.min(18, Math.round(estimatedSlotWidth * 0.055)));
-    const defaultCircleSize = Math.max(92, Math.min(132, Math.round((estimatedSlotWidth - (horizontalPadding * 2)) * 0.62)));
+    const sizingReferenceWidth = resolvedWidth ?? 220;
+    const sizingReferenceHeight = resolvedHeight ?? 220;
+    const sizingAspectRatio = aspect_ratio || '1/1';
+    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingReferenceWidth, sizingReferenceHeight, sizingAspectRatio);
+    const baseDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
+    const defaultCircleSize = Math.max(92, Math.min(132, Math.round(baseDimension * 0.5)));
     const resolvedCircleSize = Math.max(
       72,
       Math.min(
@@ -1296,18 +1286,12 @@ export class TimeFlowCardBeta extends LitElement {
       )
     );
     const resolvedStroke = this.styleManager.calculateDynamicStrokeWidth(resolvedCircleSize, stroke_width);
-    const shellSize = resolvedCircleSize + Math.max(18, Math.round(resolvedStroke * 2.5));
-    const estimatedCardHeight = shellSize + 72;
+    const shellSize = resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75));
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(resolvedWidth, resolvedHeight, aspect_ratio);
-    const sizingWidth = resolvedWidth ?? estimatedSlotWidth;
-    const sizingHeight = resolvedHeight ?? estimatedCardHeight;
-    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingWidth, sizingHeight, aspect_ratio);
-    const titleSize = Math.max(0.78, Math.min(0.98, proportionalSizes.subtitleSize * 0.72));
+    const titleSize = Math.max(0.92, Math.min(1.1, proportionalSizes.subtitleSize * 0.82));
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const titleText = this._getTitleText();
-    const contentGap = titleText ? Math.max(8, Math.min(12, Math.round(resolvedCircleSize * 0.08))) : 0;
-    const centerPadding = `${Math.max(21, Math.min(26, Math.round(18 + (resolvedStroke * 0.55))))}%`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1324,11 +1308,6 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,
-      `--timeflow-minimal-padding-top: ${titleText ? 14 : 12}px`,
-      `--timeflow-minimal-padding-bottom: 16px`,
-      `--timeflow-minimal-padding-x: ${horizontalPadding}px`,
-      `--timeflow-minimal-gap: ${contentGap}px`,
-      `--timeflow-minimal-center-padding: ${centerPadding}`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1344,7 +1323,7 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content-minimal-square">
-          <p class="minimal-square-title" aria-live="polite">${titleText}</p>
+          ${titleText ? html`<p class="minimal-square-title" aria-live="polite">${titleText}</p>` : ''}
           <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
             <progress-circle-beta
               class="minimal-square-circle"

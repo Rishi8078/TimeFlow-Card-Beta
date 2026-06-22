@@ -444,12 +444,13 @@ export class TimeFlowCardBeta extends LitElement {
          The content fills whatever slot Home Assistant gives the card. */
       /* Fill the full grid slot height in Sections view. A percentage height
          resolves to auto when the parent has no definite height (masonry),
-         so this is a no-op there and only takes effect inside a sized slot. */
-      :host(:has(.card-content-minimal-square)) {
+         so this is a no-op there and only takes effect inside a sized slot.
+         Scoped via the reflected host attribute (see updated()). */
+      :host([data-card-style="minimal-square"]) {
         height: 100%;
       }
 
-      ha-card:has(.card-content-minimal-square) {
+      :host([data-card-style="minimal-square"]) ha-card {
         height: 100%;
       }
 
@@ -707,6 +708,12 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>): void {
+    if (changedProperties.has('config')) {
+      // Reflect the active style onto the host so layout CSS (e.g. filling the
+      // full grid-slot height for minimal-square) can target it reliably without
+      // depending on :host(:has()) support.
+      this.setAttribute('data-card-style', this.config?.style || 'classic');
+    }
     if (changedProperties.has('hass') || changedProperties.has('config')) {
       // Initialize/update localization based on Home Assistant language setting
       if (this.hass) {
@@ -1345,7 +1352,13 @@ export class TimeFlowCardBeta extends LitElement {
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
-    const centerPadding = `${Math.max(28, Math.min(36, Math.round(38 - (resolvedStroke * 0.25))))}%`;
+    // Keep the centre text inside the ring regardless of stroke width.
+    // The largest square that fits inside the inner circle has half-side = innerRadius / √2.
+    // Padding from the shell edge = (shellSize / 2) - that half-side, so thicker strokes
+    // (smaller inner radius) automatically get MORE padding.
+    const innerRadius = Math.max(0, (resolvedCircleSize / 2) - resolvedStroke);
+    const inscribedHalfSide = innerRadius / Math.SQRT2;
+    const centerPadding = `${Math.max(8, Math.round((shellSize / 2) - inscribedHalfSide))}px`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);

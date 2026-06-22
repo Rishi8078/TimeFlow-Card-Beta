@@ -442,6 +442,10 @@ export class TimeFlowCardBeta extends LitElement {
 
       /* Minimal-square sizing is driven by getGridOptions() in Sections view.
          The content fills whatever slot Home Assistant gives the card. */
+      ha-card:has(.card-content-minimal-square) {
+        height: 100%;
+      }
+
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;

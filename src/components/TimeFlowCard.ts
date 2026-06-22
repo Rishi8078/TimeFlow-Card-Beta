@@ -461,8 +461,17 @@ export class TimeFlowCardBeta extends LitElement {
         width: 100%;
         height: 100%;
         gap: 28px;
-        padding: 22px 20px;
+        padding: 0;
         min-height: 120px;
+        box-sizing: border-box;
+        background: inherit;
+      }
+
+      /* Padded content box for the minimal-square title, matching the padding
+         used by the other styles' content boxes. */
+      .minimal-header {
+        width: 100%;
+        padding: 20px 20px 0;
         box-sizing: border-box;
         background: inherit;
       }
@@ -494,7 +503,15 @@ export class TimeFlowCardBeta extends LitElement {
         width: 100%;
         flex: 1;
         min-height: 0;
+        padding: 0 20px 20px;
+        box-sizing: border-box;
         overflow: hidden;
+      }
+
+      /* When there is no title, the progress area is the first child and needs
+         its own top padding to match the padded content box. */
+      .card-content-minimal-square > .minimal-square-progress:first-child {
+        padding-top: 20px;
       }
 
       .minimal-square-shell {
@@ -525,14 +542,17 @@ export class TimeFlowCardBeta extends LitElement {
         pointer-events: none;
         padding: var(--timeflow-minimal-center-padding, 18%);
         box-sizing: border-box;
+        overflow: hidden;
       }
 
       .minimal-square-value {
         margin: 0;
+        max-width: 100%;
         font-size: var(--timeflow-minimal-value-size, 3rem);
         font-weight: 650;
         line-height: 0.95;
         letter-spacing: -0.04em;
+        white-space: nowrap;
         color: var(--timeflow-card-text-color, inherit);
       }
 
@@ -1350,15 +1370,18 @@ export class TimeFlowCardBeta extends LitElement {
       resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
     );
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
-    const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
-    const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     // Keep the centre text inside the ring regardless of stroke width.
-    // The largest square that fits inside the inner circle has half-side = innerRadius / √2.
-    // Padding from the shell edge = (shellSize / 2) - that half-side, so thicker strokes
-    // (smaller inner radius) automatically get MORE padding.
+    // The largest square that fits inside the inner circle has half-side = innerRadius / √2,
+    // where innerRadius accounts for the stroke thickness. Both the padding box AND the font
+    // size are derived from this, so a thicker ring gets more padding AND smaller text.
     const innerRadius = Math.max(0, (resolvedCircleSize / 2) - resolvedStroke);
     const inscribedHalfSide = innerRadius / Math.SQRT2;
+    const inscribedSide = inscribedHalfSide * 2;
     const centerPadding = `${Math.max(8, Math.round((shellSize / 2) - inscribedHalfSide))}px`;
+    // Scale the value/unit text to the available inscribed square so it never collides
+    // with the ring. px -> rem (assume 16px root) then clamp to sensible bounds.
+    const valueSize = Math.max(1.5, Math.min(3.4, (inscribedSide / 16) * 0.62));
+    const unitSize = Math.max(0.58, Math.min(0.84, (inscribedSide / 16) * 0.16));
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1394,8 +1417,10 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content-minimal-square">
           ${titleText ? html`
-            <div class="minimal-square-header">
-              <p class="minimal-square-title" aria-live="polite">${titleText}</p>
+            <div class="minimal-header">
+              <div class="minimal-square-header">
+                <p class="minimal-square-title" aria-live="polite">${titleText}</p>
+              </div>
             </div>
           ` : ''}
           <div class="minimal-square-progress">

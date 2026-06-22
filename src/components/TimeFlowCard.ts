@@ -440,11 +440,20 @@ export class TimeFlowCardBeta extends LitElement {
          MINIMAL SQUARE LAYOUT STYLES - Single centered unit with circle
          ═══════════════════════════════════════════════════════════════════════ */
 
+      /* Keep the minimal-square card actually square and prevent it from
+         stretching full-width in masonry/standard view. Centered within its slot. */
+      ha-card:has(.card-content-minimal-square) {
+        max-width: var(--timeflow-minimal-card-max-width, 320px);
+        margin-left: auto;
+        margin-right: auto;
+      }
+
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         width: 100%;
+        height: 100%;
         gap: 16px;
         padding: 18px 20px;
         min-height: 120px;
@@ -679,6 +688,9 @@ export class TimeFlowCardBeta extends LitElement {
     super.connectedCallback();
     // Connect template service for WebSocket subscriptions
     this.templateService.connect();
+    if (this._initialized) {
+      this._startCountdownUpdates();
+    }
   }
 
   // Cleanup on disconnect - unsubscribe from all WebSocket connections
@@ -1325,7 +1337,13 @@ export class TimeFlowCardBeta extends LitElement {
       maxShellSize,
       resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
     );
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
+    // Apply a square aspect ratio by default so the card renders as a square
+    // instead of stretching to the full column width. An explicit height or
+    // aspect_ratio in the config still takes precedence.
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, height ? aspect_ratio : sizingAspectRatio);
+    // Cap the width so masonry/standard view doesn't render a full-width square.
+    // Respect an explicit width if the user set one.
+    const minimalCardMaxWidth = width ? 'none' : 'var(--timeflow-minimal-square-cap, 320px)';
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const centerPadding = `${Math.max(16, Math.min(18, Math.round(20 - (resolvedStroke * 0.25))))}%`;
@@ -1348,6 +1366,7 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,
       `--timeflow-minimal-center-padding: ${centerPadding}`,
+      `--timeflow-minimal-card-max-width: ${minimalCardMaxWidth}`,
       ...dimensionStyles
     ].join('; ');
 

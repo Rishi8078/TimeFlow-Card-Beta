@@ -55,13 +55,15 @@ if (!customElements.get('timeflow-card-beta-editor')) {
 
 // Register the card with Home Assistant
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'timeflow-card-beta',
-  name: 'TimeFlow Card beta',
-  description: 'A beautiful countdown timer card with progress circle for Home Assistant, using Lit',
-  preview: true,
-  documentationURL: 'https://github.com/Rishi8078/TimeFlow-Card' // Update if needed
-});
+if (!window.customCards.some((card) => card.type === 'timeflow-card-beta')) {
+  window.customCards.push({
+    type: 'timeflow-card-beta',
+    name: 'TimeFlow Card beta',
+    description: 'A beautiful countdown timer card with progress circle for Home Assistant, using Lit',
+    preview: true,
+    documentationURL: 'https://github.com/Rishi8078/TimeFlow-Card' // Update if needed
+  });
+}
 
 // Export main classes for external use or testing
 export { TimeFlowCardBeta, ProgressCircleBeta, ProgressGridBeta, ErrorDisplayBeta, TimeFlowCardEditorBeta };

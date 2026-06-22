@@ -440,14 +440,8 @@ export class TimeFlowCardBeta extends LitElement {
          MINIMAL SQUARE LAYOUT STYLES - Single centered unit with circle
          ═══════════════════════════════════════════════════════════════════════ */
 
-      /* Keep the minimal-square card actually square and prevent it from
-         stretching full-width in masonry/standard view. Centered within its slot. */
-      ha-card:has(.card-content-minimal-square) {
-        max-width: var(--timeflow-minimal-card-max-width, 50%);
-        margin-left: auto;
-        margin-right: auto;
-      }
-
+      /* Minimal-square sizing is driven by getGridOptions() in Sections view.
+         The content fills whatever slot Home Assistant gives the card. */
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
@@ -1337,13 +1331,7 @@ export class TimeFlowCardBeta extends LitElement {
       maxShellSize,
       resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
     );
-    // Apply a square aspect ratio by default so the card renders as a square
-    // instead of stretching to the full column width. An explicit height or
-    // aspect_ratio in the config still takes precedence.
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, height ? aspect_ratio : sizingAspectRatio);
-    // Cap the width so masonry/standard view doesn't render a full-width square.
-    // Respect an explicit width if the user set one.
-    const minimalCardMaxWidth = width ? 'none' : 'var(--timeflow-minimal-square-cap, 50%)';
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
     const centerPadding = `${Math.max(24, Math.min(30, Math.round(32 - (resolvedStroke * 0.25))))}%`;
@@ -1366,7 +1354,6 @@ export class TimeFlowCardBeta extends LitElement {
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
       `--timeflow-minimal-shell-size: ${shellSize}px`,
       `--timeflow-minimal-center-padding: ${centerPadding}`,
-      `--timeflow-minimal-card-max-width: ${minimalCardMaxWidth}`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1598,14 +1585,19 @@ export class TimeFlowCardBeta extends LitElement {
   getGridOptions(): { rows?: number | 'auto'; columns?: number | 'full'; min_rows?: number; max_rows?: number; min_columns?: number; max_columns?: number } | undefined {
     const { style, grid_options } = this.config;
 
-    if (style === 'minimal-square' && grid_options) {
+    if (style === 'minimal-square') {
+      // Sections view: a section is 12 columns (~30px each) and rows are 56px + 8px gap.
+      // columns: 6 => half the section width. rows: 4 => ~248px tall, giving a near-square
+      // half-width tile. These apply by default (no YAML needed) and stay square unless the
+      // user overrides via grid_options. HA's grid size picker can still resize within min/max.
+      const go = grid_options || {};
       return {
-        rows: grid_options.rows ?? 3,
-        columns: grid_options.columns ?? 6,
-        min_rows: grid_options.min_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
-        max_rows: grid_options.max_rows ?? (typeof grid_options.rows === 'number' ? grid_options.rows : undefined),
-        min_columns: grid_options.min_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
-        max_columns: grid_options.max_columns ?? (typeof grid_options.columns === 'number' ? grid_options.columns : undefined),
+        rows: go.rows ?? 4,
+        columns: go.columns ?? 6,
+        min_rows: go.min_rows ?? 3,
+        max_rows: go.max_rows,
+        min_columns: go.min_columns ?? 3,
+        max_columns: go.max_columns,
       };
     }
 

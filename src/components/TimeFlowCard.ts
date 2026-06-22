@@ -442,6 +442,13 @@ export class TimeFlowCardBeta extends LitElement {
 
       /* Minimal-square sizing is driven by getGridOptions() in Sections view.
          The content fills whatever slot Home Assistant gives the card. */
+      /* Fill the full grid slot height in Sections view. A percentage height
+         resolves to auto when the parent has no definite height (masonry),
+         so this is a no-op there and only takes effect inside a sized slot. */
+      :host(:has(.card-content-minimal-square)) {
+        height: 100%;
+      }
+
       ha-card:has(.card-content-minimal-square) {
         height: 100%;
       }
@@ -452,8 +459,8 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: space-between;
         width: 100%;
         height: 100%;
-        gap: 16px;
-        padding: 18px 20px;
+        gap: 28px;
+        padding: 22px 20px;
         min-height: 120px;
         box-sizing: border-box;
         background: inherit;
@@ -1338,7 +1345,7 @@ export class TimeFlowCardBeta extends LitElement {
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
-    const centerPadding = `${Math.max(24, Math.min(30, Math.round(32 - (resolvedStroke * 0.25))))}%`;
+    const centerPadding = `${Math.max(28, Math.min(36, Math.round(38 - (resolvedStroke * 0.25))))}%`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);

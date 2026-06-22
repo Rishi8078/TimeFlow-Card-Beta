@@ -443,7 +443,7 @@ export class TimeFlowCardBeta extends LitElement {
       /* Keep the minimal-square card actually square and prevent it from
          stretching full-width in masonry/standard view. Centered within its slot. */
       ha-card:has(.card-content-minimal-square) {
-        max-width: var(--timeflow-minimal-card-max-width, 320px);
+        max-width: var(--timeflow-minimal-card-max-width, 50%);
         margin-left: auto;
         margin-right: auto;
       }
@@ -1343,10 +1343,10 @@ export class TimeFlowCardBeta extends LitElement {
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, height ? aspect_ratio : sizingAspectRatio);
     // Cap the width so masonry/standard view doesn't render a full-width square.
     // Respect an explicit width if the user set one.
-    const minimalCardMaxWidth = width ? 'none' : 'var(--timeflow-minimal-square-cap, 320px)';
+    const minimalCardMaxWidth = width ? 'none' : 'var(--timeflow-minimal-square-cap, 50%)';
     const valueSize = Math.max(2.1, Math.min(3.4, resolvedCircleSize / 42));
     const unitSize = Math.max(0.62, Math.min(0.84, resolvedCircleSize / 165));
-    const centerPadding = `${Math.max(16, Math.min(18, Math.round(20 - (resolvedStroke * 0.25))))}%`;
+    const centerPadding = `${Math.max(24, Math.min(30, Math.round(32 - (resolvedStroke * 0.25))))}%`;
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);

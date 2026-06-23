@@ -450,25 +450,27 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         width: 100%;
         height: 100%;
         gap: 28px;
-        padding: 0;
+        padding: 18px 20px;
         min-height: 120px;
         box-sizing: border-box;
         background: inherit;
       }
 
-      /* Padded content box for the minimal-square title, matching the padding
-         used by the other styles' content boxes. */
+      /* Header row, mirroring the other styles' header inside the padded
+         content box (.card-content-minimal-square handles the padding). */
       .minimal-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
-        padding: 20px 20px 0;
-        box-sizing: border-box;
-        background: inherit;
+        min-width: 0;
       }
 
       .minimal-square-header {
         display: flex;
         align-items: center;
         justify-content: center;
+        min-width: 0;
       }
 
       .minimal-square-title {
@@ -492,15 +494,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         width: 100%;
         flex: 1;
         min-height: 0;
-        padding: 0 20px 20px;
-        box-sizing: border-box;
         overflow: hidden;
-      }
-
-      /* When there is no title, the progress area is the first child and needs
-         its own top padding to match the padded content box. */
-      .card-content-minimal-square > .minimal-square-progress:first-child {
-        padding-top: 20px;
       }
 
       .minimal-square-shell {

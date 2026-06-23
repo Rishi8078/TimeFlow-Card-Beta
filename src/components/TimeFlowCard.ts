@@ -457,45 +457,14 @@ export class TimeFlowCardBeta extends LitElement {
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
+        align-items: center;
         width: 100%;
         height: 100%;
-        gap: 28px;
-        padding: 18px 20px;
+        padding: 16px;
         min-height: 120px;
         box-sizing: border-box;
         background: inherit;
-      }
-
-      /* Header row, mirroring the other styles' header inside the padded
-         content box (.card-content-minimal-square handles the padding). */
-      .minimal-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        min-width: 0;
-      }
-
-      .minimal-square-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 0;
-      }
-
-      .minimal-square-title {
-        margin: 0;
-        width: 100%;
-        text-align: center;
-        font-size: var(--timeflow-title-size, 1.45rem);
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--timeflow-card-text-color, inherit);
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       .minimal-square-progress {
@@ -577,8 +546,7 @@ export class TimeFlowCardBeta extends LitElement {
         }
 
         .card-content-minimal-square {
-          padding: 16px;
-          gap: 14px;
+          padding: 12px;
         }
       }
       
@@ -1319,7 +1287,6 @@ export class TimeFlowCardBeta extends LitElement {
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || textColor || 'var(--progress-color, #4caf50)';
-    const titleText = this._getTitleText();
     const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
       ? Math.max(1, grid_options.columns)
       : null;
@@ -1353,7 +1320,7 @@ export class TimeFlowCardBeta extends LitElement {
     const availableProgressWidth = Math.max(112, proportionalSizes.cardWidth - 40);
     const availableProgressHeight = Math.max(
       112,
-      proportionalSizes.cardHeight - 36 - (titleText ? 38 : 0) - 16
+      proportionalSizes.cardHeight - 36 - 16
     );
     const shellInset = Math.max(20, Math.round(provisionalStroke * 2.75));
     const maxShellSize = Math.max(112, Math.min(availableProgressWidth, availableProgressHeight));
@@ -1410,13 +1377,6 @@ export class TimeFlowCardBeta extends LitElement {
         @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
       >
         <div class="card-content-minimal-square">
-          ${titleText ? html`
-            <div class="minimal-header">
-              <div class="minimal-square-header">
-                <p class="minimal-square-title" aria-live="polite">${titleText}</p>
-              </div>
-            </div>
-          ` : ''}
           <div class="minimal-square-progress">
             <div class="minimal-square-shell" role="group" aria-label="${progressAriaLabel}">
               <progress-circle-beta

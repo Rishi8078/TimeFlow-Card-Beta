@@ -446,45 +446,14 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
       .card-content-minimal-square {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
+        align-items: center;
         width: 100%;
         height: 100%;
-        gap: 28px;
-        padding: 18px 20px;
+        padding: 16px;
         min-height: 120px;
         box-sizing: border-box;
         background: inherit;
-      }
-
-      /* Header row, mirroring the other styles' header inside the padded
-         content box (.card-content-minimal-square handles the padding). */
-      .minimal-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        min-width: 0;
-      }
-
-      .minimal-square-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 0;
-      }
-
-      .minimal-square-title {
-        margin: 0;
-        width: 100%;
-        text-align: center;
-        font-size: var(--timeflow-title-size, 1.45rem);
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--timeflow-card-text-color, inherit);
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       .minimal-square-progress {
@@ -566,8 +535,7 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
         }
 
         .card-content-minimal-square {
-          padding: 16px;
-          gap: 14px;
+          padding: 12px;
         }
       }
       
@@ -736,38 +704,31 @@ function e(e,t,i,s){var r,a=arguments.length,o=a<3?t:null===s?s=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderMinimalSquareCard(){var e;const{progress_color:t,stroke_width:i,icon_size:s,expired_animation:r=!0,invert_progress:a=!1,mode:o="count_down",width:n,height:l,aspect_ratio:c,grid_options:d}=this._resolvedConfig,{cardBackground:u,textColor:h}=this._getCardColors(),m=h||this._getContrastTextColor(u)||"",p=t||h||"var(--progress-color, #4caf50)",g=this._getTitleText(),_="number"==typeof(null==d?void 0:d.columns)&&Number.isFinite(d.columns)?Math.max(1,d.columns):null,f="number"==typeof(null==d?void 0:d.rows)&&Number.isFinite(d.rows)?Math.max(1,d.rows):null,v=null!=n?n:_?56*_+8*(_-1):300,y=null!=l?l:f?56*f+8*(f-1):150,b=c||"1/1",w=this.styleManager.calculateProportionalSizes(v,y,b),x=Math.min(w.cardWidth,w.cardHeight),S=Math.max(92,Math.min(132,Math.round(.54*x))),$=Math.max(72,Math.min("number"==typeof s?s:S,340)),T=this.styleManager.calculateDynamicStrokeWidth($,i),C=Math.max(112,w.cardWidth-40),A=Math.max(112,w.cardHeight-36-(g?38:0)-16),M=Math.max(20,Math.round(2.75*T)),D=Math.max(112,Math.min(C,A)),k=Math.max(72,Math.min($,D-M)),E=this.styleManager.calculateDynamicStrokeWidth(k,i),I=Math.min(D,k+Math.max(20,Math.round(2.75*E))),N=this.styleManager.generateCardDimensionStyles(n,l,c),z=Math.max(0,k/2-E)/Math.SQRT2,R=2*z,O=`${Math.max(8,Math.round(I/2-z))}px`,U=Math.max(1.5,Math.min(3.4,R/16*.62)),F=Math.max(.58,Math.min(.84,R/16*.16)),P=a?100-this._progress:this._progress,H=`${"count_up"===o?"Elapsed":"Countdown"} progress: ${Math.round(P)}%`,L=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),G=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),j=/^-?\d+$/.test(G.value),V=j?L.value.toString():G.value,q=j?Me(L.unit,L.value,this._localize||void 0):"",Y=[...u?[`background: ${u}`,`--timeflow-card-background-color: ${u}`]:[],...m?[`color: ${m}`,`--timeflow-card-text-color: ${m}`,`--progress-text-color: ${m}`]:[],`--timeflow-card-progress-color: ${p}`,`--timeflow-title-size: ${Math.max(1.25,.95*w.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*w.subtitleSize)}rem`,`--timeflow-minimal-value-size: ${U}rem`,`--timeflow-minimal-unit-size: ${F}rem`,`--timeflow-minimal-shell-size: ${I}px`,`--timeflow-minimal-center-padding: ${O}`,...N].join("; "),B=this._getCardClasses(r),{configWithDefaults:K,shouldEnableActions:J}=this._getActionConfig();return W`
+    `}_renderMinimalSquareCard(){var e;const{progress_color:t,stroke_width:i,icon_size:s,expired_animation:r=!0,invert_progress:a=!1,mode:o="count_down",width:n,height:l,aspect_ratio:c,grid_options:d}=this._resolvedConfig,{cardBackground:u,textColor:h}=this._getCardColors(),m=h||this._getContrastTextColor(u)||"",p=t||h||"var(--progress-color, #4caf50)",g="number"==typeof(null==d?void 0:d.columns)&&Number.isFinite(d.columns)?Math.max(1,d.columns):null,_="number"==typeof(null==d?void 0:d.rows)&&Number.isFinite(d.rows)?Math.max(1,d.rows):null,f=null!=n?n:g?56*g+8*(g-1):300,v=null!=l?l:_?56*_+8*(_-1):150,y=c||"1/1",b=this.styleManager.calculateProportionalSizes(f,v,y),w=Math.min(b.cardWidth,b.cardHeight),x=Math.max(92,Math.min(132,Math.round(.54*w))),S=Math.max(72,Math.min("number"==typeof s?s:x,340)),$=this.styleManager.calculateDynamicStrokeWidth(S,i),T=Math.max(112,b.cardWidth-40),C=Math.max(112,b.cardHeight-36-16),A=Math.max(20,Math.round(2.75*$)),M=Math.max(112,Math.min(T,C)),D=Math.max(72,Math.min(S,M-A)),k=this.styleManager.calculateDynamicStrokeWidth(D,i),E=Math.min(M,D+Math.max(20,Math.round(2.75*k))),I=this.styleManager.generateCardDimensionStyles(n,l,c),N=Math.max(0,D/2-k)/Math.SQRT2,z=2*N,R=`${Math.max(8,Math.round(E/2-N))}px`,O=Math.max(1.5,Math.min(3.4,z/16*.62)),U=Math.max(.58,Math.min(.84,z/16*.16)),F=a?100-this._progress:this._progress,P=`${"count_up"===o?"Elapsed":"Countdown"} progress: ${Math.round(F)}%`,H=this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig),L=this.countdownService.getMainDisplay(this._resolvedConfig,this.hass),G=/^-?\d+$/.test(L.value),j=G?H.value.toString():L.value,V=G?Me(H.unit,H.value,this._localize||void 0):"",q=[...u?[`background: ${u}`,`--timeflow-card-background-color: ${u}`]:[],...m?[`color: ${m}`,`--timeflow-card-text-color: ${m}`,`--progress-text-color: ${m}`]:[],`--timeflow-card-progress-color: ${p}`,`--timeflow-title-size: ${Math.max(1.25,.95*b.titleSize)}rem`,`--timeflow-subtitle-size: ${Math.max(.95,.95*b.subtitleSize)}rem`,`--timeflow-minimal-value-size: ${O}rem`,`--timeflow-minimal-unit-size: ${U}rem`,`--timeflow-minimal-shell-size: ${E}px`,`--timeflow-minimal-center-padding: ${R}`,...I].join("; "),Y=this._getCardClasses(r),{configWithDefaults:B,shouldEnableActions:K}=this._getActionConfig();return W`
       <ha-card
-        class="${B}"
-        style="${Y}"
-        ?actionHandler=${J}
-        .actionHandler=${J?We(K):void 0}
-        @action=${J&&this.hass?Ge(this.hass,K):void 0}
+        class="${Y}"
+        style="${q}"
+        ?actionHandler=${K}
+        .actionHandler=${K?We(B):void 0}
+        @action=${K&&this.hass?Ge(this.hass,B):void 0}
       >
         <div class="card-content-minimal-square">
-          ${g?W`
-            <div class="minimal-header">
-              <div class="minimal-square-header">
-                <p class="minimal-square-title" aria-live="polite">${g}</p>
-              </div>
-            </div>
-          `:""}
           <div class="minimal-square-progress">
-            <div class="minimal-square-shell" role="group" aria-label="${H}">
+            <div class="minimal-square-shell" role="group" aria-label="${P}">
               <progress-circle-beta
                 class="minimal-square-circle"
-                .progress="${P}"
+                .progress="${F}"
                 .color="${p}"
-                .size="${k}"
-                .strokeWidth="${E}"
+                .size="${D}"
+                .strokeWidth="${k}"
                 .bgStroke="${this._resolvedConfig.progress_bg_stroke||"#FFFFFF1A"}"
                 .bgOpacity="${null!==(e=this._resolvedConfig.progress_bg_opacity)&&void 0!==e?e:null}"
-                aria-label="${H}"
+                aria-label="${P}"
               ></progress-circle-beta>
 
               <div class="minimal-square-center" aria-live="polite">
-                <p class="minimal-square-value">${V}</p>
-                ${q?W`<p class="minimal-square-unit">${q}</p>`:""}
+                <p class="minimal-square-value">${j}</p>
+                ${V?W`<p class="minimal-square-unit">${V}</p>`:""}
               </div>
             </div>
           </div>

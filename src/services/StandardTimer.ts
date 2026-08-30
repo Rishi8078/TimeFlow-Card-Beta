@@ -19,8 +19,8 @@ export class StandardTimerService {
    * @returns TimerData for standard timer
    */
   static getStandardTimerData(
-    entityId: string, 
-    entity: any, 
+    entityId: string,
+    entity: any,
     parseDuration: (duration: any) => number
   ): TimerData | null {
     const state = entity.state;

@@ -13,6 +13,15 @@ import { createActionHandler, createHandleAction } from '../utils/action-handler
 import { getLocalizedEventyLabel } from '../utils/TimeUtils';
 import '../utils/ErrorDisplay';
 
+// Minimal-square defaults. The style is designed around a thick ring with a
+// single value inside it; the type scale in _renderMinimalSquareCard() is
+// anchored to MINIMAL_SQUARE_DEFAULT_SIZE.
+const MINIMAL_SQUARE_DEFAULT_SIZE = 100;
+const MINIMAL_SQUARE_DEFAULT_STROKE = 14;
+const MINIMAL_SQUARE_MIN_SIZE = 48;
+const MINIMAL_SQUARE_MAX_SIZE = 400;
+const MINIMAL_SQUARE_TRACK_COLOR = 'rgba(255, 255, 255, 0.08)';
+
 export class TimeFlowCardBeta extends LitElement {
   public static async getConfigElement(): Promise<HTMLElement> {
     return document.createElement('timeflow-card-beta-editor');
@@ -440,18 +449,12 @@ export class TimeFlowCardBeta extends LitElement {
          MINIMAL SQUARE LAYOUT STYLES - Single centered unit with circle
          ═══════════════════════════════════════════════════════════════════════ */
 
-      /* Minimal-square sizing is driven by getGridOptions() in Sections view.
-         The content fills whatever slot Home Assistant gives the card. */
-      /* Fill the full grid slot height in Sections view. A percentage height
-         resolves to auto when the parent has no definite height (masonry),
-         so this is a no-op there and only takes effect inside a sized slot.
-         Scoped via the reflected host attribute (see updated()). */
-      :host([data-card-style="minimal-square"]) {
-        height: 100%;
-      }
-
+      /* The card is content-sized: getGridOptions() asks for rows: 'auto', so the
+         ring dictates the card height instead of being squeezed into a slot.
+         The host attribute is reflected in updated() so this can be scoped
+         without relying on :host(:has()) support. */
       :host([data-card-style="minimal-square"]) ha-card {
-        height: 100%;
+        border-radius: var(--timeflow-minimal-radius, 20px);
       }
 
       .card-content-minimal-square {
@@ -461,8 +464,7 @@ export class TimeFlowCardBeta extends LitElement {
         align-items: center;
         width: 100%;
         height: 100%;
-        padding: 16px;
-        min-height: 120px;
+        padding: var(--timeflow-minimal-padding, 12px);
         box-sizing: border-box;
         background: inherit;
       }
@@ -472,9 +474,7 @@ export class TimeFlowCardBeta extends LitElement {
         align-items: center;
         justify-content: center;
         width: 100%;
-        flex: 1;
         min-height: 0;
-        overflow: hidden;
       }
 
       .minimal-square-shell {
@@ -482,16 +482,11 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: var(--timeflow-minimal-shell-size, 184px);
-        height: var(--timeflow-minimal-shell-size, 184px);
+        width: var(--timeflow-minimal-shell-size, 100px);
+        height: var(--timeflow-minimal-shell-size, 100px);
         flex: 0 0 auto;
         margin: 0 auto;
         max-width: 100%;
-        max-height: 100%;
-      }
-
-      .minimal-square-circle {
-        opacity: 0.95;
       }
 
       .minimal-square-center {
@@ -503,7 +498,7 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         text-align: center;
         pointer-events: none;
-        padding: var(--timeflow-minimal-center-padding, 18%);
+        padding: var(--timeflow-minimal-center-padding, 8px);
         box-sizing: border-box;
         overflow: hidden;
       }
@@ -511,22 +506,21 @@ export class TimeFlowCardBeta extends LitElement {
       .minimal-square-value {
         margin: 0;
         max-width: 100%;
-        font-size: var(--timeflow-minimal-value-size, 3rem);
-        font-weight: 650;
+        font-size: var(--timeflow-minimal-value-size, 1.8rem);
+        font-weight: 700;
         line-height: 0.95;
-        letter-spacing: -0.04em;
         white-space: nowrap;
         color: var(--timeflow-card-text-color, inherit);
       }
 
       .minimal-square-unit {
         margin: 4px 0 0;
-        font-size: var(--timeflow-minimal-unit-size, 0.8rem);
+        font-size: var(--timeflow-minimal-unit-size, 0.52rem);
         font-weight: 700;
         line-height: 1;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        opacity: 0.72;
+        opacity: 0.8;
         color: var(--timeflow-card-text-color, inherit);
       }
 
@@ -543,10 +537,6 @@ export class TimeFlowCardBeta extends LitElement {
         .gridy-status {
           max-width: 100%;
           text-align: left;
-        }
-
-        .card-content-minimal-square {
-          padding: 12px;
         }
       }
       
@@ -1273,6 +1263,7 @@ export class TimeFlowCardBeta extends LitElement {
   private _renderMinimalSquareCard(): TemplateResult {
     const {
       progress_color,
+      progress_bg_stroke,
       stroke_width,
       icon_size,
       expired_animation = true,
@@ -1281,68 +1272,31 @@ export class TimeFlowCardBeta extends LitElement {
       width,
       height,
       aspect_ratio,
-      grid_options,
     } = this._resolvedConfig;
 
     const { cardBackground, textColor } = this._getCardColors();
     const displayTextColor = textColor || this._getContrastTextColor(cardBackground) || '';
     const mainProgressColor = progress_color || textColor || 'var(--progress-color, #4caf50)';
-    const configuredGridColumns = typeof grid_options?.columns === 'number' && Number.isFinite(grid_options.columns)
-      ? Math.max(1, grid_options.columns)
-      : null;
-    const configuredGridRows = typeof grid_options?.rows === 'number' && Number.isFinite(grid_options.rows)
-      ? Math.max(1, grid_options.rows)
-      : null;
-    const sectionColumnWidth = 56;
-    const sectionColumnGap = 8;
-    const sectionRowHeight = 56;
-    const sectionRowGap = 8;
-    const estimatedSlotWidth = configuredGridColumns
-      ? (configuredGridColumns * sectionColumnWidth) + ((configuredGridColumns - 1) * sectionColumnGap)
-      : 300;
-    const estimatedSlotHeight = configuredGridRows
-      ? (configuredGridRows * sectionRowHeight) + ((configuredGridRows - 1) * sectionRowGap)
-      : 150;
-    const sizingReferenceWidth = width ?? estimatedSlotWidth;
-    const sizingReferenceHeight = height ?? estimatedSlotHeight;
-    const sizingAspectRatio = aspect_ratio || '1/1';
-    const proportionalSizes = this.styleManager.calculateProportionalSizes(sizingReferenceWidth, sizingReferenceHeight, sizingAspectRatio);
-    const baseDimension = Math.min(proportionalSizes.cardWidth, proportionalSizes.cardHeight);
-    const defaultCircleSize = Math.max(92, Math.min(132, Math.round(baseDimension * 0.54)));
-    const desiredCircleSize = Math.max(
-      72,
-      Math.min(
-        typeof icon_size === 'number' ? icon_size : defaultCircleSize,
-        340
-      )
+
+    // Ring geometry is taken straight from the config. The card is content-sized
+    // (getGridOptions asks for rows: 'auto'), so there is no slot to fit into and
+    // no need to estimate one - icon_size and stroke_width mean what they say.
+    const circleSize = Math.max(
+      MINIMAL_SQUARE_MIN_SIZE,
+      Math.min(typeof icon_size === 'number' ? icon_size : MINIMAL_SQUARE_DEFAULT_SIZE, MINIMAL_SQUARE_MAX_SIZE)
     );
-    const provisionalStroke = this.styleManager.calculateDynamicStrokeWidth(desiredCircleSize, stroke_width);
-    const availableProgressWidth = Math.max(112, proportionalSizes.cardWidth - 40);
-    const availableProgressHeight = Math.max(
-      112,
-      proportionalSizes.cardHeight - 36 - 16
-    );
-    const shellInset = Math.max(20, Math.round(provisionalStroke * 2.75));
-    const maxShellSize = Math.max(112, Math.min(availableProgressWidth, availableProgressHeight));
-    const resolvedCircleSize = Math.max(72, Math.min(desiredCircleSize, maxShellSize - shellInset));
-    const resolvedStroke = this.styleManager.calculateDynamicStrokeWidth(resolvedCircleSize, stroke_width);
-    const shellSize = Math.min(
-      maxShellSize,
-      resolvedCircleSize + Math.max(20, Math.round(resolvedStroke * 2.75))
-    );
-    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
-    // Keep the centre text inside the ring regardless of stroke width.
-    // The largest square that fits inside the inner circle has half-side = innerRadius / √2,
-    // where innerRadius accounts for the stroke thickness. Both the padding box AND the font
-    // size are derived from this, so a thicker ring gets more padding AND smaller text.
-    const innerRadius = Math.max(0, (resolvedCircleSize / 2) - resolvedStroke);
-    const inscribedHalfSide = innerRadius / Math.SQRT2;
-    const inscribedSide = inscribedHalfSide * 2;
-    const centerPadding = `${Math.max(8, Math.round((shellSize / 2) - inscribedHalfSide))}px`;
-    // Scale the value/unit text to the available inscribed square so it never collides
-    // with the ring. px -> rem (assume 16px root) then clamp to sensible bounds.
-    const valueSize = Math.max(1.5, Math.min(3.4, (inscribedSide / 16) * 0.62));
-    const unitSize = Math.max(0.58, Math.min(0.84, (inscribedSide / 16) * 0.16));
+    // Deliberately bypasses StyleManager's MIN_STROKE floor: this style is built
+    // around a thick ring, and a hairline ring is a valid look here.
+    const resolvedStroke = typeof stroke_width === 'number'
+      ? Math.max(1, Math.min(stroke_width, Math.floor(circleSize / 2)))
+      : MINIMAL_SQUARE_DEFAULT_STROKE;
+
+    // Type scale is anchored to the ring so the proportions hold at any icon_size:
+    // a 100px ring gives 1.8rem / 0.52rem, matching the reference design.
+    const valueSize = Math.max(0.9, Math.min(5, circleSize * 0.018));
+    const unitSize = Math.max(0.42, Math.min(1.2, circleSize * 0.0052));
+    const centerPadding = Math.max(6, Math.round(circleSize * 0.08));
+
     const displayProgress = invert_progress ? 100 - this._progress : this._progress;
     const progressAriaLabel = `${mode === 'count_up' ? 'Elapsed' : 'Countdown'} progress: ${Math.round(displayProgress)}%`;
     const primaryUnit = this.countdownService.getPrimaryDisplayUnit(this._resolvedConfig);
@@ -1352,16 +1306,16 @@ export class TimeFlowCardBeta extends LitElement {
     const centerUnit = hasNumericValue
       ? getLocalizedEventyLabel(primaryUnit.unit, primaryUnit.value, this._localize || undefined)
       : '';
+
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(displayTextColor ? [`color: ${displayTextColor}`, `--timeflow-card-text-color: ${displayTextColor}`, `--progress-text-color: ${displayTextColor}`] : []),
       `--timeflow-card-progress-color: ${mainProgressColor}`,
-      `--timeflow-title-size: ${Math.max(1.25, proportionalSizes.titleSize * 0.95)}rem`,
-      `--timeflow-subtitle-size: ${Math.max(0.95, proportionalSizes.subtitleSize * 0.95)}rem`,
       `--timeflow-minimal-value-size: ${valueSize}rem`,
       `--timeflow-minimal-unit-size: ${unitSize}rem`,
-      `--timeflow-minimal-shell-size: ${shellSize}px`,
-      `--timeflow-minimal-center-padding: ${centerPadding}`,
+      `--timeflow-minimal-shell-size: ${circleSize}px`,
+      `--timeflow-minimal-center-padding: ${centerPadding}px`,
       ...dimensionStyles
     ].join('; ');
 
@@ -1383,9 +1337,9 @@ export class TimeFlowCardBeta extends LitElement {
                 class="minimal-square-circle"
                 .progress="${displayProgress}"
                 .color="${mainProgressColor}"
-                .size="${resolvedCircleSize}"
+                .size="${circleSize}"
                 .strokeWidth="${resolvedStroke}"
-                .bgStroke="${this._resolvedConfig.progress_bg_stroke || '#FFFFFF1A'}"
+                .bgStroke="${progress_bg_stroke || MINIMAL_SQUARE_TRACK_COLOR}"
                 .bgOpacity="${this._resolvedConfig.progress_bg_opacity ?? null}"
                 aria-label="${progressAriaLabel}"
               ></progress-circle-beta>
@@ -1589,17 +1543,18 @@ export class TimeFlowCardBeta extends LitElement {
     const { style, grid_options } = this.config;
 
     if (style === 'minimal-square') {
-      // Sections view: a section is 12 columns (~30px each) and rows are 56px + 8px gap.
-      // columns: 6 => half the section width. rows: 4 => ~248px tall, giving a near-square
-      // half-width tile. These apply by default (no YAML needed) and stay square unless the
-      // user overrides via grid_options. HA's grid size picker can still resize within min/max.
+      // Sections view: a section is 12 columns (~30px each). columns: 4 => a third of
+      // the section width, which is about as wide as the ring needs. rows: 'auto' lets
+      // the card take its height from the ring itself rather than snapping to a row
+      // count - fixing rows here is what previously left the card short or letterboxed.
+      // All of it stays overridable via grid_options in YAML or the HA size picker.
       const go = grid_options || {};
       return {
-        rows: go.rows ?? 4,
-        columns: go.columns ?? 6,
-        min_rows: go.min_rows ?? 3,
+        rows: go.rows ?? 'auto',
+        columns: go.columns ?? 4,
+        min_rows: go.min_rows,
         max_rows: go.max_rows,
-        min_columns: go.min_columns ?? 3,
+        min_columns: go.min_columns ?? 2,
         max_columns: go.max_columns,
       };
     }

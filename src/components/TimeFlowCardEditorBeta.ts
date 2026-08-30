@@ -207,6 +207,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
             // Style
             'style': 'Card style: Classic, Eventy, Classic Compact, Gridy, or Minimal Square',
+
+            // Dot grid (gridy)
+            'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',
+            'grid_dot_unit': 'What one dot represents when dots is "auto". Auto picks the unit that keeps the grid readable',
         };
         return helpers[schema.name] || '';
     }
@@ -244,6 +248,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'text_color': 'Text Color',
             'stroke_width': 'Stroke Width',
             'icon_size': 'Circle Size',
+            'grid_dots': 'Dots',
+            'grid_dot_unit': 'Dot Unit',
             'progress_bg_stroke': 'Background Stroke Color',
             'progress_bg_opacity': 'Background Opacity',
             'invert_progress': 'Invert Progress',
@@ -511,6 +517,47 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'invert_progress', selector: { boolean: {} } },
                 ]
             },
+
+            // ═══════════════════════════════════════════════════════════
+            // DOT GRID - Expandable, gridy style only
+            // ═══════════════════════════════════════════════════════════
+            ...(selectedStyle === 'gridy' ? [
+                {
+                    type: "expandable",
+                    title: "Dot Grid",
+                    icon: "mdi:dots-grid",
+                    schema: [
+                        {
+                            name: 'grid_dots',
+                            selector: {
+                                select: {
+                                    custom_value: true,
+                                    options: [
+                                        { value: 'auto', label: 'Auto (match the timeframe)' }
+                                    ],
+                                    mode: 'dropdown'
+                                }
+                            }
+                        },
+                        {
+                            name: 'grid_dot_unit',
+                            selector: {
+                                select: {
+                                    options: [
+                                        { value: 'auto', label: 'Auto' },
+                                        { value: 'minute', label: 'Minute' },
+                                        { value: 'hour', label: 'Hour' },
+                                        { value: 'day', label: 'Day' },
+                                        { value: 'week', label: 'Week' },
+                                        { value: 'month', label: 'Month' }
+                                    ],
+                                    mode: 'dropdown'
+                                }
+                            }
+                        },
+                    ]
+                }
+            ] : []),
 
             // ═══════════════════════════════════════════════════════════
             // ALEXA/GOOGLE OPTIONS - Expandable

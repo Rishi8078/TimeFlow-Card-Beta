@@ -10,6 +10,7 @@ export class ProgressGridBeta extends LitElement {
   @property({ type: Number }) minColumns: number = 10;
   @property({ type: Number }) rows: number = 5;
   @property({ type: Number }) columns: number = 20;
+  @property({ type: Number }) totalDots: number = 0;  // >0 overrides rows x columns
   @property({ type: Number }) dotSize: number = 12;
   @property({ type: Number }) gap: number = 8;
 
@@ -129,12 +130,18 @@ export class ProgressGridBeta extends LitElement {
   render(): TemplateResult {
     const safeProgress = Math.max(0, Math.min(100, Number(this.progress) || 0));
     const rows = this._getSafeGridValue(this.rows, 5);
-    const maxColumns = this._getSafeGridValue(this.columns, 20);
-    const minColumns = this._getSafeGridValue(this.minColumns, 10);
+    const requestedTotal = Number(this.totalDots);
+    // An explicit dot count wins over rows x columns: the columns still flex with
+    // the available width, and the grid simply wraps into as many rows as it needs.
+    const hasExplicitTotal = Number.isFinite(requestedTotal) && requestedTotal > 0;
+    const explicitTotal = hasExplicitTotal ? Math.floor(requestedTotal) : 0;
+    const baseMaxColumns = this._getSafeGridValue(this.columns, 20);
+    const maxColumns = hasExplicitTotal ? Math.min(baseMaxColumns, explicitTotal) : baseMaxColumns;
+    const minColumns = Math.min(this._getSafeGridValue(this.minColumns, 10), maxColumns);
     const preferredDotSize = this._getSafeGridValue(this.dotSize, 12);
     const gap = this._getSafeGridValue(this.gap, 8);
     const { columns, dotSize } = this._resolveResponsiveLayout(maxColumns, minColumns, preferredDotSize, gap);
-    const totalDots = rows * columns;
+    const totalDots = hasExplicitTotal ? explicitTotal : rows * columns;
     const filledDots = Math.min(totalDots, Math.max(0, Math.round((safeProgress / 100) * totalDots)));
     const inactiveOpacity = this.bgOpacity === null
       ? 1

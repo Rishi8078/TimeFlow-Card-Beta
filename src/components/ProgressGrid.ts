@@ -11,6 +11,7 @@ export class ProgressGridBeta extends LitElement {
   @property({ type: Number }) rows: number = 5;
   @property({ type: Number }) columns: number = 20;
   @property({ type: Number }) totalDots: number = 0;  // >0 overrides rows x columns
+  @property({ type: Number }) fixedRows: number = 0;  // >0 pins the row count when totalDots is set
   @property({ type: Number }) dotSize: number = 12;
   @property({ type: Number }) gap: number = 8;
 
@@ -77,11 +78,28 @@ export class ProgressGridBeta extends LitElement {
     return Number.isFinite(numericValue) && numericValue > 0 ? Math.floor(numericValue) : fallback;
   }
 
+  /**
+   * How much a candidate column count is penalised for leaving a half-empty last
+   * row. Expressed in the same px units as the dot-size score, and kept small
+   * enough that it only decides between layouts of near-identical dot size.
+   */
+  private _raggedPenalty(candidateColumns: number, balanceTotal: number): number {
+    if (balanceTotal <= 0) {
+      return 0;
+    }
+    const remainder = balanceTotal % candidateColumns;
+    if (remainder === 0) {
+      return 0;
+    }
+    return 0.35 * ((candidateColumns - remainder) / candidateColumns);
+  }
+
   private _resolveResponsiveLayout(
     maxColumns: number,
     minColumns: number,
     preferredDotSize: number,
-    gap: number
+    gap: number,
+    balanceTotal: number = 0
   ): { columns: number; dotSize: number } {
     if (!this.fullWidth || this._containerWidth <= 0) {
       return { columns: maxColumns, dotSize: preferredDotSize };
@@ -102,9 +120,10 @@ export class ProgressGridBeta extends LitElement {
       }
 
       const candidateDotSize = Math.min(cellSize, maxDotSize);
-      const score = Math.abs(candidateDotSize - preferredDotSize);
+      const score = Math.abs(candidateDotSize - preferredDotSize)
+        + this._raggedPenalty(candidateColumns, balanceTotal);
 
-      if (score < bestScore || (score === bestScore && candidateColumns > bestColumns)) {
+      if (score < bestScore - 1e-6 || (Math.abs(score - bestScore) <= 1e-6 && candidateColumns > bestColumns)) {
         bestScore = score;
         bestColumns = candidateColumns;
         bestDotSize = candidateDotSize;
@@ -136,11 +155,38 @@ export class ProgressGridBeta extends LitElement {
     const hasExplicitTotal = Number.isFinite(requestedTotal) && requestedTotal > 0;
     const explicitTotal = hasExplicitTotal ? Math.floor(requestedTotal) : 0;
     const baseMaxColumns = this._getSafeGridValue(this.columns, 20);
-    const maxColumns = hasExplicitTotal ? Math.min(baseMaxColumns, explicitTotal) : baseMaxColumns;
-    const minColumns = Math.min(this._getSafeGridValue(this.minColumns, 10), maxColumns);
+    let maxColumns = hasExplicitTotal ? Math.min(baseMaxColumns, explicitTotal) : baseMaxColumns;
+    let minColumns = Math.min(this._getSafeGridValue(this.minColumns, 10), maxColumns);
+
+    // A requested row count is really a statement about columns: this is a plain
+    // wrapping grid, so pinning the columns to ceil(total / rows) is what makes
+    // that many rows appear. Both bounds are pinned so the responsive search has
+    // a single candidate - it can still fall back to fewer columns (and so more
+    // rows) if that many dots simply will not fit across the card.
+    const requestedRows = this._getSafeGridValue(this.fixedRows, 0);
+    if (hasExplicitTotal && requestedRows > 0) {
+      const pinnedColumns = Math.ceil(explicitTotal / Math.min(requestedRows, explicitTotal));
+      maxColumns = Math.max(1, pinnedColumns);
+      minColumns = maxColumns;
+    }
+
+    // Only an explicit total gets balanced wrapping; the default rows x columns
+    // grid is already exact, and scoring it would change how it has always laid out.
+    const balanceTotal = hasExplicitTotal && requestedRows <= 0 ? explicitTotal : 0;
     const preferredDotSize = this._getSafeGridValue(this.dotSize, 12);
-    const gap = this._getSafeGridValue(this.gap, 8);
-    const { columns, dotSize } = this._resolveResponsiveLayout(maxColumns, minColumns, preferredDotSize, gap);
+    const configuredGap = this._getSafeGridValue(this.gap, 8);
+
+    let layout = this._resolveResponsiveLayout(maxColumns, minColumns, preferredDotSize, configuredGap, balanceTotal);
+    let gap = configuredGap;
+    if (layout.dotSize < preferredDotSize) {
+      // Dots had to shrink, so shrink the spacing with them and lay out again -
+      // the reclaimed width goes back into the dots, and the grid keeps reading
+      // as one block instead of dots adrift in whitespace.
+      gap = Math.max(2, Math.round(configuredGap * (layout.dotSize / preferredDotSize)));
+      layout = this._resolveResponsiveLayout(maxColumns, minColumns, preferredDotSize, gap, balanceTotal);
+    }
+
+    const { columns, dotSize } = layout;
     const totalDots = hasExplicitTotal ? explicitTotal : rows * columns;
     const filledDots = Math.min(totalDots, Math.max(0, Math.round((safeProgress / 100) * totalDots)));
     const inactiveOpacity = this.bgOpacity === null

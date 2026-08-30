@@ -38,6 +38,7 @@ const GRID_DOT_UNIT_ORDER = ['minute', 'hour', 'day', 'week', 'month'] as const;
 const GRID_DOT_MIN = 4;
 const GRID_DOT_PREFERRED = 100;
 const GRID_DOT_MAX = 200;
+const GRID_ROW_MAX = 50;
 
 export class TimeFlowCardBeta extends LitElement {
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -1209,6 +1210,23 @@ export class TimeFlowCardBeta extends LitElement {
    * grid, which is what happens when grid_dots is unset or the window is
    * unbounded (an open-ended count_up has no timeframe to divide up).
    */
+  /**
+   * Rows to wrap the dot grid into. 0 means auto, which lets the grid pick the
+   * shape that fits the card width. Only meaningful alongside a dot count -
+   * without one the grid keeps its fixed rows x columns shape.
+   */
+  private _resolveGridRows(): number {
+    const { grid_rows } = this._resolvedConfig;
+    if (grid_rows === undefined || grid_rows === null || grid_rows === '' || grid_rows === 'auto') {
+      return 0;
+    }
+    const rows = Number(grid_rows);
+    if (!Number.isFinite(rows) || rows <= 0) {
+      return 0;
+    }
+    return Math.min(Math.floor(rows), GRID_ROW_MAX);
+  }
+
   private _resolveGridDotCount(): number {
     const { grid_dots, grid_dot_unit } = this._resolvedConfig;
 
@@ -1257,6 +1275,7 @@ export class TimeFlowCardBeta extends LitElement {
     const gap = 6;
     const dotSize = 10;
     const totalDots = this._resolveGridDotCount();
+    const gridRows = this._resolveGridRows();
 
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
@@ -1309,6 +1328,7 @@ export class TimeFlowCardBeta extends LitElement {
               .rows="${rows}"
               .columns="${columns}"
               .totalDots="${totalDots}"
+              .fixedRows="${gridRows}"
               .dotSize="${dotSize}"
               .gap="${gap}"
               aria-label="${progressAriaLabel}"

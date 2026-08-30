@@ -9,6 +9,7 @@ const TARGET_DIR = path.resolve(__dirname, '../../timeflow-card'); // timeflow-c
 // EXCLUDING rollup.config.js and package.json to preserve Main's build identity
 const INCLUDED_PATHS = [
   'src',
+  'test-suite',
   'tsconfig.json'
 ];
 
@@ -20,6 +21,10 @@ const FILE_RENAMES = {
 // String replacements to convert Beta code to Main code
 // ORDER MATTERS: Specific replacements first, generic ones last
 const REPLACEMENTS = [
+  // 0. Built bundle filename. Must come before the quoted-name rules below,
+  // which only match 'timeflow-card-beta' with no extension after it.
+  { from: /timeflow-card-beta\.js/g, to: 'timeflow-card.js' },
+
   // 1. Custom Element Tags (HTML templates)
   { from: /<progress-circle-beta/g, to: '<progress-circle' },
   { from: /<\/progress-circle-beta>/g, to: '</progress-circle>' },
@@ -53,6 +58,10 @@ const REPLACEMENTS = [
   // 3. Configuration Types (with custom: prefix)
   { from: /type: 'custom:timeflow-card-beta'/g, to: "type: 'custom:timeflow-card'" },
   { from: /type: "custom:timeflow-card-beta"/g, to: 'type: "custom:timeflow-card"' },
+
+  // 3a. Any remaining quoted config type, e.g. a bare comparison against it.
+  { from: /'custom:timeflow-card-beta'/g, to: "'custom:timeflow-card'" },
+  { from: /"custom:timeflow-card-beta"/g, to: '"custom:timeflow-card"' },
 
   // 3b. Type registration (without custom: prefix, used in window.customCards)
   { from: /type: 'timeflow-card-beta'/g, to: "type: 'timeflow-card'" },

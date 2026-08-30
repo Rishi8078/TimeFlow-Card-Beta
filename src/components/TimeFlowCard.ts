@@ -39,6 +39,9 @@ const GRID_DOT_MIN = 4;
 const GRID_DOT_PREFERRED = 100;
 const GRID_DOT_MAX = 200;
 const GRID_ROW_MAX = 50;
+const GRID_DOT_SIZE_DEFAULT = 10;
+const GRID_DOT_SIZE_MIN = 4;
+const GRID_DOT_SIZE_MAX = 40;
 
 export class TimeFlowCardBeta extends LitElement {
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -1215,6 +1218,15 @@ export class TimeFlowCardBeta extends LitElement {
    * shape that fits the card width. Only meaningful alongside a dot count -
    * without one the grid keeps its fixed rows x columns shape.
    */
+  /** Preferred dot diameter in px. Dots may still grow past this to fill the card. */
+  private _resolveGridDotSize(): number {
+    const size = Number(this._resolvedConfig.grid_dot_size);
+    if (!Number.isFinite(size) || size <= 0) {
+      return GRID_DOT_SIZE_DEFAULT;
+    }
+    return Math.max(GRID_DOT_SIZE_MIN, Math.min(Math.round(size), GRID_DOT_SIZE_MAX));
+  }
+
   private _resolveGridRows(): number {
     const { grid_rows } = this._resolvedConfig;
     if (grid_rows === undefined || grid_rows === null || grid_rows === '' || grid_rows === 'auto') {
@@ -1273,7 +1285,7 @@ export class TimeFlowCardBeta extends LitElement {
     const minColumns = 10;
     const rows = 5;
     const gap = 6;
-    const dotSize = 10;
+    const dotSize = this._resolveGridDotSize();
     const totalDots = this._resolveGridDotCount();
     const gridRows = this._resolveGridRows();
 

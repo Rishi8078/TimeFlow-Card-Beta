@@ -1,6 +1,23 @@
 import { LitElement, html, css, CSSResult, TemplateResult } from 'lit';
 import { property } from 'lit/decorators.js';
 
+/**
+ * How far a dot may grow past its preferred size to soak up leftover width.
+ * Without this a short grid - six dots across a full-width card - renders as a
+ * few specks marooned in whitespace.
+ */
+const DOT_GROWTH_LIMIT = 2.5;
+
+/** Hard ceiling on a grown dot, so a two-dot grid does not become two saucers. */
+const DOT_GROWTH_MAX_PX = 32;
+
+/**
+ * Growth allowance in rows: a dot may grow by preferred * (ALLOWANCE / rows).
+ * Widening a one-row grid costs nothing, but every extra row multiplies the
+ * height, so tall grids are held close to their preferred size.
+ */
+const DOT_GROWTH_ROW_ALLOWANCE = 6;
+
 export class ProgressGridBeta extends LitElement {
   @property({ type: Number }) progress: number = 0;
   @property({ type: String }) color: string = '#4CAF50';
@@ -186,16 +203,48 @@ export class ProgressGridBeta extends LitElement {
       layout = this._resolveResponsiveLayout(maxColumns, minColumns, preferredDotSize, gap, balanceTotal);
     }
 
-    const { columns, dotSize } = layout;
+    const { columns } = layout;
+
+    // Grow the dots into whatever width the chosen column count left over, so a
+    // sparse grid reads as a progress track rather than as scattered specks.
+    // Only explicit-total grids opt in; the legacy rows x columns grid keeps the
+    // exact dot size it has always had.
+    let dotSize = layout.dotSize;
+    let rowGap = gap;
+    if (hasExplicitTotal && this.fullWidth && this._containerWidth > 0) {
+      const cellSize = (this._containerWidth - gap * (columns - 1)) / columns;
+      // Spreading n dots of size d across width W leaves gaps of (W - n*d)/(n - 1).
+      // Solving that for gap <= d gives d >= W / (2n - 1) - the size at which a
+      // sparse row stops looking like scattered specks. Take that as a floor on
+      // the growth allowance, so the fewer the dots the bigger they get.
+      const evenSpacingSize = columns > 1 ? this._containerWidth / (2 * columns - 1) : cellSize;
+      const gridRows = Math.max(1, Math.ceil(explicitTotal / columns));
+      const growthCeiling = Math.min(
+        DOT_GROWTH_MAX_PX,
+        Math.max(preferredDotSize * DOT_GROWTH_LIMIT, evenSpacingSize),
+        preferredDotSize * (1 + DOT_GROWTH_ROW_ALLOWANCE / gridRows)
+      );
+      dotSize = Math.max(dotSize, Math.min(cellSize, growthCeiling));
+      // Grown dots need proportionally more air between rows or the grid reads as
+      // stripes rather than as a matrix.
+      rowGap = Math.max(gap, Math.round(dotSize * 0.35));
+    }
+
     const totalDots = hasExplicitTotal ? explicitTotal : rows * columns;
     const filledDots = Math.min(totalDots, Math.max(0, Math.round((safeProgress / 100) * totalDots)));
     const inactiveOpacity = this.bgOpacity === null
       ? 1
       : Math.max(0, Math.min(100, Number(this.bgOpacity) || 0)) / 100;
-    const gridTemplateColumns = this.fullWidth
-      ? `repeat(${columns}, minmax(0, 1fr))`
-      : `repeat(${columns}, ${dotSize}px)`;
+    // Tracks are sized to the dot and pushed apart with space-between rather than
+    // being 1fr cells with a centred dot. Grid distributes free space across the
+    // tracks themselves, so every row still lines up, but the first dot now sits
+    // flush against the left edge and the last against the right - identical
+    // framing on every card instead of an inset that varied with column count.
+    const gridTemplateColumns = `repeat(${columns}, minmax(0, ${dotSize}px))`;
     const gridWidth = this.fullWidth ? '100%' : 'max-content';
+    const spreadColumns = this.fullWidth && columns > 1;
+    const justifyContent = spreadColumns ? 'space-between' : 'start';
+    const columnGap = spreadColumns ? 0 : gap;
 
     return html`
       <div
@@ -203,7 +252,9 @@ export class ProgressGridBeta extends LitElement {
         style="
           width: ${gridWidth};
           grid-template-columns: ${gridTemplateColumns};
-          gap: ${gap}px;
+          column-gap: ${columnGap}px;
+          row-gap: ${rowGap}px;
+          justify-content: ${justifyContent};
           justify-items: center;
         "
       >

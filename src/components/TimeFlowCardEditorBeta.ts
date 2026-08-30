@@ -212,6 +212,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',
             'grid_dot_unit': 'What one dot represents when dots is "auto". Auto picks the unit that keeps the grid readable',
             'grid_rows': 'Rows to wrap the dots into. Auto fits as many per row as the card width allows',
+            'grid_dot_size': 'Preferred dot diameter in pixels. Dots still grow past this to fill the card width',
         };
         return helpers[schema.name] || '';
     }
@@ -252,6 +253,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'grid_dots': 'Dots',
             'grid_dot_unit': 'Dot Unit',
             'grid_rows': 'Rows',
+            'grid_dot_size': 'Dot Size',
             'progress_bg_stroke': 'Background Stroke Color',
             'progress_bg_opacity': 'Background Opacity',
             'invert_progress': 'Invert Progress',
@@ -575,6 +577,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                                 }
                             }
                         },
+                        { name: 'grid_dot_size', selector: { number: { min: 4, max: 40, step: 1, mode: 'box' } } },
                     ]
                 }
             ] : []),

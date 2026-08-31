@@ -74,6 +74,12 @@ export class TimeFlowCardBeta extends LitElement {
   // Guards requestRecompute() so a burst of template results collapses into one pass.
   private _recomputePending: boolean = false;
 
+  // Entities whose state this card's output depends on, rebuilt each pass, plus
+  // an escape hatch for when that set cannot be known (a domain-wide or
+  // unrestricted template listener).
+  private _watchedEntities: string[] = [];
+  private _watchAllEntities: boolean = false;
+
   // Timer ID
   private _timerId: ReturnType<typeof setInterval> | null = null;
 
@@ -744,6 +750,87 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
+   * Recomputes the set of entities this card reacts to, from what the last pass
+   * actually read: the timer entities the countdown consulted, any entity id
+   * used directly as a config value, and the dependency list Home Assistant
+   * returns alongside each rendered template.
+   */
+  private _refreshWatchedEntities(): void {
+    const fromTemplates = this.templateService.getEntityDependencies();
+    const watched = new Set<string>(fromTemplates.entities);
+    this.countdownService.getWatchedEntities().forEach((id) => watched.add(id));
+
+    this._watchedEntities = Array.from(watched);
+    this._watchAllEntities = fromTemplates.watchAll;
+  }
+
+  /**
+   * True when something outside the entity states changed in a way that affects
+   * rendering. Mirrors the non-entity half of Home Assistant's own
+   * hasConfigChanged: locale in particular matters, because updated() rebuilds
+   * the localiser from hass and a card would otherwise never notice a language
+   * change.
+   */
+  private _hassContextChanged(oldHass: any, newHass: any): boolean {
+    return (
+      oldHass.connected !== newHass.connected ||
+      oldHass.themes !== newHass.themes ||
+      oldHass.locale !== newHass.locale ||
+      oldHass.localize !== newHass.localize ||
+      oldHass.formatEntityState !== newHass.formatEntityState ||
+      oldHass.config?.state !== newHass.config?.state
+    );
+  }
+
+  /**
+   * Home Assistant assigns hass to every card on every state change anywhere in
+   * the system. Without this guard each of those triggered a full recompute and
+   * repaint, regardless of whether the card had any interest in the entity that
+   * moved.
+   *
+   * The watch set comes from what the previous pass read rather than from the
+   * config, which is what lets it cover auto-discovery and templates - neither
+   * of which names its entities in YAML. A timer starting on a device the card
+   * has never seen is picked up by the next tick of the countdown interval.
+   */
+  protected shouldUpdate(changedProperties: Map<string | number | symbol, unknown>): boolean {
+    // Any internal state change is ours and always renders.
+    for (const key of changedProperties.keys()) {
+      if (key !== 'hass') {
+        return true;
+      }
+    }
+
+    if (!changedProperties.has('hass') || !this._initialized) {
+      return true;
+    }
+
+    const oldHass = changedProperties.get('hass') as any;
+    const newHass = this.hass as any;
+    if (!oldHass || !newHass) {
+      return true;
+    }
+
+    if (this._hassContextChanged(oldHass, newHass)) {
+      return true;
+    }
+
+    // A template that listens to a whole domain, or to everything, cannot be
+    // narrowed down; react to any change rather than risk going stale.
+    if (this._watchAllEntities) {
+      return true;
+    }
+
+    for (const entityId of this._watchedEntities) {
+      if (oldHass.states?.[entityId] !== newHass.states?.[entityId]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Asks for a full recompute, not just a repaint.
    *
    * Lit's requestUpdate() only re-renders from whatever _resolvedConfig already
@@ -840,6 +927,8 @@ export class TimeFlowCardBeta extends LitElement {
     // Calculate progress (0-100)
     this._progress = await this.countdownService.calculateProgress(resolvedConfig, this.hass);
     this._totalDurationMs = this.countdownService.getTotalDurationMs();
+
+    this._refreshWatchedEntities();
 
     this.requestUpdate();
   }

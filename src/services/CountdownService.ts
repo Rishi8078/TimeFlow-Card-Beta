@@ -30,6 +30,9 @@ export class CountdownService {
   // count-up). Used by the gridy style to size its dot grid to the timeframe.
   private _totalDurationMs: number = 0;
 
+  // Entity ids the last pass consulted, for the card's shouldUpdate guard.
+  private _watchedEntities: Set<string> = new Set();
+
   // Timer lookup memoised for one update pass; cleared by beginPass().
   private _passTimerSource: {
     timerData: TimerData | null;
@@ -258,6 +261,7 @@ export class CountdownService {
     let smartTimer: { entityId: string; timerData: TimerData } | null = null;
 
     if (config.timer_entity && hass) {
+      this._watchedEntities.add(config.timer_entity);
       timerData = TimerEntityService.getTimerData(config.timer_entity, hass);
     }
     if (!timerData && hass) {
@@ -274,6 +278,17 @@ export class CountdownService {
    */
   beginPass(): void {
     this._passTimerSource = null;
+    this._watchedEntities.clear();
+  }
+
+  /**
+   * Entity ids the last pass actually consulted. Used to decide whether a hass
+   * change is worth reacting to. For auto-discovery this is the set of timer
+   * entities that currently hold a timer, not every candidate on the system: a
+   * timer starting on a device that had none is picked up by the next tick.
+   */
+  getWatchedEntities(): string[] {
+    return Array.from(this._watchedEntities);
   }
 
   private _findBestSmartTimer(
@@ -294,6 +309,8 @@ export class CountdownService {
     if (config.auto_discover_google) {
       smartTimers.push(...TimerEntityService.discoverGoogleTimers(hass));
     }
+
+    smartTimers.forEach((id) => this._watchedEntities.add(id));
 
     if (smartTimers.length === 0) return null;
 

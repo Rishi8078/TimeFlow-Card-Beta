@@ -56,7 +56,9 @@ export class TimeFlowCardBeta extends LitElement {
   @state() private _resolvedConfig: CardConfig = TimeFlowCardBeta.getStubConfig();
   @state() private _progress: number = 0;
   @state() private _totalDurationMs: number = 0;
-  @state() private _countdown: CountdownState = {
+  // Not @state: nothing renders from it, so making it reactive only forced a
+  // repaint every tick. Kept because it is useful when debugging a card.
+  private _countdown: CountdownState = {
     years: 0,
     months: 0,
     weeks: 0,
@@ -66,6 +68,12 @@ export class TimeFlowCardBeta extends LitElement {
     seconds: 0,
     total: 0
   };
+  // The one value that decides whether anything visible changed. Assigning an
+  // identical string is a no-op for Lit, so an unchanged countdown costs no
+  // repaint at all. Mirrors how ha-clock-card-digital stores formatted parts
+  // rather than a composite object.
+  @state() private _displaySignature: string = '';
+
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
   @state() private _initialized: boolean = false; // Track initialization
@@ -910,8 +918,13 @@ export class TimeFlowCardBeta extends LitElement {
       await Promise.all(pendingTemplates);
     }
 
-    // Store resolved config in reactive state
-    this._resolvedConfig = resolvedConfig;
+    // Publish the config only when something in it actually moved. It is a fresh
+    // object literal every pass and Lit compares by identity, so assigning it
+    // unconditionally guaranteed a repaint per tick. Done here rather than at
+    // the end of the pass so everything downstream reads the current values.
+    if (this._configValuesDiffer(this._resolvedConfig, resolvedConfig)) {
+      this._resolvedConfig = resolvedConfig;
+    }
 
     // One timer lookup serves both calls below; without this each of them
     // re-parses the timer attributes and re-walks hass.states.
@@ -924,13 +937,48 @@ export class TimeFlowCardBeta extends LitElement {
     this._countdown = { ...this.countdownService.getTimeRemaining() };
     this._expired = this.countdownService.isExpired();
 
-    // Calculate progress (0-100)
-    this._progress = await this.countdownService.calculateProgress(resolvedConfig, this.hass);
+    // Calculate progress (0-100). Rounded to what the eye can resolve: a ring is
+    // a few hundred pixels around, so anything finer redraws for nothing. On a
+    // year-long countdown the raw float changes every tick and this does not.
+    const progress = await this.countdownService.calculateProgress(resolvedConfig, this.hass);
+    this._progress = Math.round(progress * 100) / 100;
     this._totalDurationMs = this.countdownService.getTotalDurationMs();
 
+    this._displaySignature = this._computeDisplaySignature();
     this._refreshWatchedEntities();
+  }
 
-    this.requestUpdate();
+  /**
+   * Shallow value comparison over the union of both key sets. Nested values
+   * (grid_options, tap_action) are copied by reference from this.config, which
+   * only changes in setConfig, so reference equality is the right test for them.
+   */
+  private _configValuesDiffer(a: CardConfig, b: CardConfig): boolean {
+    const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+    for (const key of keys) {
+      if ((a as any)?.[key] !== (b as any)?.[key]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Everything the card puts on screen that is derived from the clock, flattened
+   * into one string. The timer lookup behind these calls is memoised for the
+   * pass, so asking for them here costs almost nothing and saves a repaint
+   * whenever the answer has not changed.
+   */
+  private _computeDisplaySignature(): string {
+    const compact = this._resolvedConfig.compact_format !== false;
+    const main = this.countdownService.getMainDisplay(this._resolvedConfig, this.hass);
+    const subtitle = this.countdownService.getSubtitle(
+      this._resolvedConfig,
+      this.hass,
+      this._localize || undefined,
+      compact
+    );
+    return `${this._getTitleText()}\u0000${main.value}\u0000${main.label}\u0000${subtitle}`;
   }
 
   render(): TemplateResult {

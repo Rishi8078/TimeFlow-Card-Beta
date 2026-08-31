@@ -71,6 +71,9 @@ export class TimeFlowCardBeta extends LitElement {
   @state() private _initialized: boolean = false; // Track initialization
   @state() private _localize: LocalizeFunction | null = null; // Localization function
 
+  // Guards requestRecompute() so a burst of template results collapses into one pass.
+  private _recomputePending: boolean = false;
+
   // Timer ID
   private _timerId: ReturnType<typeof setInterval> | null = null;
 
@@ -738,6 +741,29 @@ export class TimeFlowCardBeta extends LitElement {
       clearInterval(this._timerId);
       this._timerId = null;
     }
+  }
+
+  /**
+   * Asks for a full recompute, not just a repaint.
+   *
+   * Lit's requestUpdate() only re-renders from whatever _resolvedConfig already
+   * holds. Template results arrive outside the hass/config change path, so a
+   * bare repaint would draw the previous values; the resolution step lives in
+   * _updateCountdownAndRender() and has to be re-run. Coalesced onto a microtask
+   * so a burst of subscription callbacks costs one pass rather than one each.
+   */
+  requestRecompute(): void {
+    if (this._recomputePending) {
+      return;
+    }
+    this._recomputePending = true;
+    Promise.resolve().then(() => {
+      this._recomputePending = false;
+      if (this._validationResult?.hasCriticalErrors) {
+        return;
+      }
+      this._updateCountdownAndRender();
+    });
   }
 
   /**

@@ -132,9 +132,15 @@ export class TemplateService {
           this._templateResults.set(template, result);
           // Also update the cache for persistence
           templateCache.set(template, result);
-          // Request card update to reflect new value
-          if (this.card && (this.card as any).requestUpdate) {
-            (this.card as any).requestUpdate();
+          // Ask the card to re-resolve, not merely to repaint. A bare
+          // requestUpdate() renders from the previous _resolvedConfig, so the
+          // new template result would not reach the screen until something
+          // else happened to trigger a recompute.
+          const card = this.card as any;
+          if (card?.requestRecompute) {
+            card.requestRecompute();
+          } else if (card?.requestUpdate) {
+            card.requestUpdate();
           }
         },
         {

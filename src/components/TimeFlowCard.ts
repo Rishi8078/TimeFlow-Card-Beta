@@ -796,28 +796,39 @@ export class TimeFlowCardBeta extends LitElement {
       'header_icon_background'
     ] as const;
 
-    // Resolve templates AND entity IDs where applicable
-    // The resolveValue method handles both templates ({{ }}) and entity IDs (sensor.xxx)
-    // EXCEPTION: timer_entity should NOT be resolved - it must remain as an entity ID
-    // for TimerEntityService to look up directly via hass.states[entityId]
+    // Resolve templates AND entity IDs where applicable.
+    // Plain strings and entity ids resolve synchronously; only real templates
+    // need to be awaited, and those are awaited together rather than one at a
+    // time, so a pass costs one hop instead of one per config key.
+    // EXCEPTION: timer_entity should NOT be resolved unless it is a template -
+    // it must remain an entity ID for TimerEntityService to look up directly.
+    const pendingTemplates: Array<Promise<void>> = [];
     for (const key of templateKeys) {
-      if (typeof resolvedConfig[key] === 'string') {
-        // timer_entity should only be resolved if it's a template, not if it's a plain entity ID
-        if (key === 'timer_entity') {
-          if (this.templateService.isTemplate(resolvedConfig[key] as string)) {
-            const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
-            resolvedConfig[key] = resolvedValue || undefined;
-          }
-          // Otherwise keep the entity ID as-is
-        } else {
-          const resolvedValue = await this.templateService.resolveValue(resolvedConfig[key] as string);
-          resolvedConfig[key] = resolvedValue || undefined;
-        }
+      const value = resolvedConfig[key];
+      if (typeof value !== 'string') {
+        continue;
       }
+
+      if (this.templateService.isTemplate(value)) {
+        pendingTemplates.push(
+          this.templateService.resolveValue(value).then((resolved) => {
+            resolvedConfig[key] = resolved || undefined;
+          })
+        );
+      } else if (key !== 'timer_entity') {
+        resolvedConfig[key] = this.templateService.resolveStaticValue(value) || undefined;
+      }
+    }
+    if (pendingTemplates.length > 0) {
+      await Promise.all(pendingTemplates);
     }
 
     // Store resolved config in reactive state
     this._resolvedConfig = resolvedConfig;
+
+    // One timer lookup serves both calls below; without this each of them
+    // re-parses the timer attributes and re-walks hass.states.
+    this.countdownService.beginPass();
 
     // Calculate countdown data
     await this.countdownService.updateCountdown(resolvedConfig, this.hass);

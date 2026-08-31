@@ -328,6 +328,32 @@ export class TemplateService {
   }
 
   /**
+   * Resolves everything that does not need the template engine: an entity id
+   * becomes its state, anything else passes through.
+   *
+   * Split out so callers can avoid an await per config key. Most keys on most
+   * cards are plain strings, and awaiting each one turned a single pass into
+   * a dozen microtask hops for no reason.
+   *
+   * @param {string} value - Value to resolve
+   * @returns {string | undefined} - Resolved value
+   */
+  resolveStaticValue(value: string): string | undefined {
+    if (!value) return undefined;
+
+    const hass = this.card?.hass;
+    if (typeof value === 'string' && value.includes('.') && hass && hass.states[value]) {
+      const entity = hass.states[value];
+      if (!entity) {
+        return undefined;
+      }
+      return entity.state;
+    }
+
+    return value;
+  }
+
+  /**
    * Enhanced value resolver that handles entities, templates, and plain strings
    * @param {*} value - Value to resolve
    * @returns {Promise<*>} - Resolved value
@@ -341,17 +367,7 @@ export class TemplateService {
       return result || undefined;
     }
 
-    // Handle entity state
-    const hass = this.card?.hass;
-    if (typeof value === 'string' && value.includes('.') && hass && hass.states[value]) {
-      const entity = hass.states[value];
-      if (!entity) {
-        return undefined;
-      }
-      return entity.state;
-    }
-
-    return value;
+    return this.resolveStaticValue(value);
   }
 
   /**

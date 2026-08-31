@@ -43,6 +43,29 @@ const GRID_DOT_SIZE_DEFAULT = 10;
 const GRID_DOT_SIZE_MIN = 4;
 const GRID_DOT_SIZE_MAX = 40;
 
+/**
+ * setTimeout stores its delay in a signed 32-bit int. Anything larger overflows
+ * and fires immediately, which would spin the CPU on a long countdown - a
+ * five-year target is 73x over this. Long waits are chopped into capped hops
+ * that recheck rather than act.
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout#maximum_delay_value
+ */
+const MAX_TIMEOUT_DELAY = 2147483647;
+
+/** Fastest the card will ever wake: one second, as before. */
+const MIN_WAKE_MS = 1000;
+
+/** Slowest it will idle down to when nothing on screen is changing. */
+const IDLE_WAKE_CAP_MS = 60000;
+
+/**
+ * Auto-discovery cards cannot idle that far. A timer starting on a device the
+ * card has never read is invisible to the hass guard, so polling is the only
+ * thing that finds it; two seconds keeps that responsive while still cutting
+ * the old fixed rate by 30x.
+ */
+const DISCOVERY_WAKE_CAP_MS = 2000;
+
 export class TimeFlowCardBeta extends LitElement {
   public static async getConfigElement(): Promise<HTMLElement> {
     return document.createElement('timeflow-card-beta-editor');
@@ -89,7 +112,11 @@ export class TimeFlowCardBeta extends LitElement {
   private _watchAllEntities: boolean = false;
 
   // Timer ID
-  private _timerId: ReturnType<typeof setInterval> | null = null;
+  private _timerId: ReturnType<typeof setTimeout> | null = null;
+
+  // Current backoff between wakes. Grows while the display is unchanged and
+  // snaps back to MIN_WAKE_MS the moment something moves.
+  private _wakeIntervalMs: number = MIN_WAKE_MS;
 
   // Services instances (could be injected if needed)
   private templateService = new TemplateService();
@@ -741,10 +768,80 @@ export class TimeFlowCardBeta extends LitElement {
    * Starts ticking the countdown every second
    */
   _startCountdownUpdates(): void {
-    this._stopCountdownUpdates(); // clear previous interval
-    this._timerId = setInterval(() => {
+    this._wakeIntervalMs = MIN_WAKE_MS;
+    this._scheduleNextWake();
+  }
+
+  /**
+   * Schedules the next wake instead of ticking blindly once a second.
+   *
+   * The delay is the soonest of: the current backoff (aligned to its own
+   * boundary, so a one-second card lands on the second rather than wherever it
+   * happened to mount), and the instant the countdown reaches zero. That second
+   * term is what keeps an Alexa timer flipping to complete on time even when
+   * the card only displays minutes.
+   */
+  private _scheduleNextWake(): void {
+    this._stopCountdownUpdates();
+    if (!this.isConnected) {
+      return;
+    }
+
+    const delay = this._computeNextWakeDelay();
+    if (delay === null) {
+      return;
+    }
+
+    const capped = Math.min(delay, MAX_TIMEOUT_DELAY);
+    this._timerId = setTimeout(() => {
+      this._timerId = null;
+      if (delay > MAX_TIMEOUT_DELAY) {
+        // The real wait was longer than a timer can express; nothing to do yet.
+        this._scheduleNextWake();
+        return;
+      }
       this._updateCountdownAndRender();
-    }, 1000);
+    }, capped);
+  }
+
+  /**
+   * Milliseconds until the card next has something to do, or null when it has
+   * nothing left to wait for.
+   *
+   * Stopping is deliberately narrow: only a finished count_down with no
+   * repeating cycle. count_up never finishes and a cycle restarts, so neither
+   * may be stopped on _expired. Anything that would revive a stopped card - a
+   * config change, a watched entity moving, a template result - runs a pass,
+   * and every pass reschedules.
+   */
+  private _computeNextWakeDelay(): number | null {
+    const config = this._resolvedConfig || {};
+    const mode = config.mode || 'count_down';
+    const repeats = !!config.count_up_cycle;
+    const discovering = !!(config.auto_discover_alexa || config.auto_discover_google);
+
+    if (this._expired && mode === 'count_down' && !repeats) {
+      return null;
+    }
+
+    const cap = discovering && !config.timer_entity ? DISCOVERY_WAKE_CAP_MS : IDLE_WAKE_CAP_MS;
+    const interval = Math.min(this._wakeIntervalMs, cap);
+
+    // Align to the boundary of the current cadence so a one-second card updates
+    // on the second, not up to 999 ms late.
+    const now = Date.now();
+    let delay = interval - (now % interval);
+    if (delay < 50) {
+      delay += interval;
+    }
+
+    // Never sleep past the moment the countdown hits zero.
+    const remaining = this._countdown?.total ?? 0;
+    if (mode !== 'count_up' && remaining > 0) {
+      delay = Math.min(delay, remaining);
+    }
+
+    return Math.max(50, delay);
   }
 
   /**
@@ -752,7 +849,7 @@ export class TimeFlowCardBeta extends LitElement {
    */
   _stopCountdownUpdates(): void {
     if (this._timerId) {
-      clearInterval(this._timerId);
+      clearTimeout(this._timerId);
       this._timerId = null;
     }
   }
@@ -944,8 +1041,17 @@ export class TimeFlowCardBeta extends LitElement {
     this._progress = Math.round(progress * 100) / 100;
     this._totalDurationMs = this.countdownService.getTotalDurationMs();
 
-    this._displaySignature = this._computeDisplaySignature();
+    const signature = this._computeDisplaySignature();
+    if (signature === this._displaySignature) {
+      // Nothing moved on screen, so wait longer before looking again.
+      this._wakeIntervalMs = Math.min(this._wakeIntervalMs * 2, IDLE_WAKE_CAP_MS);
+    } else {
+      this._wakeIntervalMs = MIN_WAKE_MS;
+      this._displaySignature = signature;
+    }
+
     this._refreshWatchedEntities();
+    this._scheduleNextWake();
   }
 
   /**

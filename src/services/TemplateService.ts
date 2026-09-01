@@ -87,14 +87,22 @@ export class TemplateService {
    */
   async disconnect(): Promise<void> {
     this._connected = false;
+    await this._unsubscribeAll();
+  }
 
-    // Save current results to cache before disconnecting
+  /**
+   * Drops every live subscription, keeping the results in the shared cache so a
+   * resubscribe can paint immediately. Leaves the connected flag alone: whether
+   * the service should keep subscribing is the caller's decision, not a
+   * consequence of tearing down the current set.
+   */
+  private async _unsubscribeAll(): Promise<void> {
+    // Save current results to cache before dropping the subscriptions
     this._templateResults.forEach((result, template) => {
       templateCache.set(template, result);
     });
 
-    // Unsubscribe from all templates
-    for (const [template, unsubPromise] of this._unsubRenderTemplates.entries()) {
+    for (const [, unsubPromise] of this._unsubRenderTemplates.entries()) {
       try {
         const unsub = await unsubPromise;
         unsub();
@@ -413,10 +421,13 @@ export class TemplateService {
    * as the subscriptions auto-update when dependencies change
    */
   clearTemplateCache(): void {
-    // Disconnect from all subscriptions
-    this.disconnect();
-    // Clear local results
+    // Drop the subscriptions without disconnecting. setConfig() calls this on
+    // every config change, and a card that is already on screen must keep
+    // subscribing afterwards - going through disconnect() cleared the connected
+    // flag and left the card with no live templates until it was re-attached.
+    this._unsubscribeAll();
     this._templateResults.clear();
+    this._staticEntityReads.clear();
   }
 
   /**

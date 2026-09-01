@@ -303,14 +303,18 @@ export class CountdownService {
 
     const smartTimers: string[] = [];
 
+    // Every candidate goes into the watch set, including devices with no timer
+    // running. Those are precisely the entities that change when someone starts
+    // a timer, so watching them makes discovery event-driven rather than
+    // something the card has to poll for.
+    const watch = (entityId: string) => this._watchedEntities.add(entityId);
+
     if (config.auto_discover_alexa) {
-      smartTimers.push(...TimerEntityService.discoverAlexaTimers(hass));
+      smartTimers.push(...TimerEntityService.discoverAlexaTimers(hass, watch));
     }
     if (config.auto_discover_google) {
-      smartTimers.push(...TimerEntityService.discoverGoogleTimers(hass));
+      smartTimers.push(...TimerEntityService.discoverGoogleTimers(hass, watch));
     }
-
-    smartTimers.forEach((id) => this._watchedEntities.add(id));
 
     if (smartTimers.length === 0) return null;
 

@@ -232,6 +232,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'auto_discover_google': 'Auto-discover Google Timers',
             'alexa_device_filter': 'Alexa Device Filter',
             'prefer_labeled_timers': 'Prefer Labeled Timers',
+            'max_timers': 'Maximum Timers Shown',
+            'show_timer_progress': 'Row Progress Bars',
+            'show_timer_device': 'Show Device Name',
             'show_alexa_device': 'Show Alexa Device Name',
             'show_days': 'Days',
             'show_hours': 'Hours',
@@ -393,7 +396,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                             { value: 'eventy', label: 'Eventy' },
                             { value: 'classic-compact', label: 'Classic Compact' },
                             { value: 'gridy', label: 'Gridy' },
-                            { value: 'minimal-square', label: 'Minimal Square' }
+                            { value: 'minimal-square', label: 'Minimal Square' },
+                            { value: 'listy', label: 'Listy (multiple timers)' }
                         ],
                         mode: 'dropdown'
                     } 
@@ -521,6 +525,30 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     { name: 'invert_progress', selector: { boolean: {} } },
                 ]
             },
+
+            // ═══════════════════════════════════════════════════════════
+            // TIMER LIST - Expandable, listy style only
+            // ═══════════════════════════════════════════════════════════
+            ...(selectedStyle === 'listy' ? [
+                {
+                    type: "expandable",
+                    title: "Timer List",
+                    icon: "mdi:format-list-bulleted",
+                    schema: [
+                        {
+                            name: 'max_timers',
+                            selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } }
+                        },
+                        {
+                            type: 'grid',
+                            schema: [
+                                { name: 'show_timer_progress', selector: { boolean: {} } },
+                                { name: 'show_timer_device', selector: { boolean: {} } },
+                            ]
+                        }
+                    ]
+                }
+            ] : []),
 
             // ═══════════════════════════════════════════════════════════
             // DOT GRID - Expandable, gridy style only

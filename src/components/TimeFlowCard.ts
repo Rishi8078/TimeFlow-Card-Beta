@@ -1,7 +1,8 @@
 //TimeFlowCardBeta.ts
 import { LitElement, html, css, TemplateResult, CSSResult } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { TimerEntityService } from '../services/Timer';
+import { repeat } from 'lit/directives/repeat.js';
+import { TimerEntityService, TimerData } from '../services/Timer';
 import { DateParser } from '../utils/DateParser';
 import { ConfigValidator, ValidationResult, ValidationError } from '../utils/ConfigValidator';
 import { TemplateService } from '../services/TemplateService';
@@ -76,6 +77,11 @@ export class TimeFlowCardBeta extends LitElement {
   // rather than a composite object.
   @state() private _displaySignature: string = '';
 
+  // Rows for the 'listy' style: every live timer the card can see, already
+  // sorted and capped. Left empty for every other style, which never asks for
+  // more than one timer and should not pay to enumerate the rest.
+  @state() private _timers: TimerData[] = [];
+
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
   @state() private _initialized: boolean = false; // Track initialization
@@ -136,7 +142,7 @@ export class TimeFlowCardBeta extends LitElement {
       }
       
       /* Classic style needs minimum height, but compact styles should auto-size */
-      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)):not(:has(.card-content-gridy)):not(:has(.card-content-minimal-square)) {
+      ha-card:not(:has(.card-content-list)):not(:has(.card-content-compact)):not(:has(.card-content-gridy)):not(:has(.card-content-minimal-square)):not(:has(.card-content-listy)) {
         min-height: 120px;
       }
       
@@ -592,6 +598,154 @@ export class TimeFlowCardBeta extends LitElement {
         100% { transform: scale(1); }
       }
       
+      /* ── Listy: one row per running timer ─────────────────────────── */
+      .card-content-listy {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      .listy-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .listy-header-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .listy-header-icon ha-icon {
+        --mdc-icon-size: 18px;
+      }
+
+      .listy-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        /* A long card title must not push the count off the edge. */
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .listy-count {
+        flex-shrink: 0;
+        min-width: 22px;
+        padding: 1px 7px;
+        border-radius: 11px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        background: rgba(127, 127, 127, 0.18);
+      }
+
+      .listy-empty {
+        padding: 6px 0 2px;
+        font-size: 0.875rem;
+        opacity: 0.6;
+        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+      }
+
+      .listy-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .listy-row {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .listy-row-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        /* min-width:0 is what lets the ellipsis below actually engage. */
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .listy-row-label {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        line-height: 1.25;
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .listy-row-device {
+        font-size: 0.75rem;
+        line-height: 1.2;
+        opacity: 0.6;
+        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .listy-row-time {
+        flex-shrink: 0;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        /* Without tabular figures the row twitches sideways every second as
+           digit widths change. */
+        color: var(--timeflow-card-text-color, var(--primary-text-color));
+      }
+
+      .listy-row.is-paused .listy-row-label,
+      .listy-row.is-paused .listy-row-time {
+        opacity: 0.55;
+      }
+
+      .listy-row.is-finished .listy-row-time {
+        color: var(--timeflow-card-progress-color, var(--progress-color, #4caf50));
+      }
+
+      .listy-row-track {
+        height: 3px;
+        margin-top: -4px;
+        border-radius: 2px;
+        overflow: hidden;
+        background: rgba(127, 127, 127, 0.2);
+      }
+
+      .listy-row-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--timeflow-card-progress-color, var(--progress-color, #4caf50));
+        transition: width 0.3s linear;
+      }
+
+      .listy-row-fill.is-paused {
+        opacity: 0.45;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .listy-row-fill {
+          transition: none;
+        }
+      }
+
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         ha-card {
@@ -768,6 +922,28 @@ export class TimeFlowCardBeta extends LitElement {
     const config = this._resolvedConfig || {};
     const mode = config.mode || 'count_down';
     const repeats = !!config.count_up_cycle;
+
+    // A list is driven by whichever row expires first, not by the countdown the
+    // rest of the card is built around. Waking on the leading timer alone would
+    // let a ten-second row tick at a five-minute row's cadence when the sort put
+    // a finished timer on top.
+    if (config.style === 'listy') {
+      let soonest = Number.POSITIVE_INFINITY;
+      for (const timer of this._timers) {
+        if (timer.isActive && timer.remaining > 0 && timer.remaining < soonest) {
+          soonest = timer.remaining;
+        }
+      }
+      const hasRunning = soonest !== Number.POSITIVE_INFINITY;
+      return {
+        // Rows that are all finished or paused have nothing left to count, but
+        // the card must stay awake to notice a new timer starting on a device it
+        // is already watching.
+        idle: false,
+        maxIntervalMs: IDLE_WAKE_CAP_MS,
+        deadlineMs: hasRunning ? soonest * 1000 : null,
+      };
+    }
 
     const idle = this._expired && mode === 'count_down' && !repeats;
 
@@ -967,6 +1143,15 @@ export class TimeFlowCardBeta extends LitElement {
     this._progress = Math.round(progress * 100) / 100;
     this._totalDurationMs = this.countdownService.getTotalDurationMs();
 
+    // The list style needs every timer, not just the one the countdown picked.
+    // Done inside the same pass so it shares the discovery walk's watch set and
+    // lands before the signature is taken.
+    if (resolvedConfig.style === 'listy') {
+      this._timers = this.countdownService.listAllTimers(resolvedConfig, this.hass);
+    } else if (this._timers.length > 0) {
+      this._timers = [];
+    }
+
     const signature = this._computeDisplaySignature();
     const displayChanged = signature !== this._displaySignature;
     if (displayChanged) {
@@ -1008,7 +1193,31 @@ export class TimeFlowCardBeta extends LitElement {
       this._localize || undefined,
       compact
     );
+    if (this._resolvedConfig.style === 'listy') {
+      // The single-timer main/subtitle say nothing about the other rows, so the
+      // list has to describe itself or the card would stop repainting as soon
+      // as the leading timer's display held still.
+      return `listy\u0000${this._getTitleText()}\u0000${this._computeListSignature(compact)}`;
+    }
+
     return `${this._getTitleText()}\u0000${main.value}\u0000${main.label}\u0000${subtitle}`;
+  }
+
+  /**
+   * One line per row, carrying exactly what the row draws: identity, formatted
+   * time, label and the rounded progress width. Progress is rounded to whole
+   * percent because a bar a few hundred pixels wide cannot show finer than that.
+   */
+  private _computeListSignature(compact: boolean): string {
+    return this._timers
+      .map((timer) => [
+        timer.timerId ?? timer.entityId ?? '',
+        this._formatTimerRowTime(timer, compact),
+        this._getTimerRowLabel(timer),
+        Math.round(timer.progress),
+        timer.finished ? 'done' : (timer.isPaused ? 'paused' : 'run'),
+      ].join('\u0001'))
+      .join('\u0002');
   }
 
   render(): TemplateResult {
@@ -1041,9 +1250,180 @@ export class TimeFlowCardBeta extends LitElement {
     if (style === 'minimal-square') {
       return this._renderMinimalSquareCard();
     }
+
+    if (style === 'listy') {
+      return this._renderListyCard();
+    }
     
     // Classic: circle progress style
     return this._renderCard();
+  }
+
+  /**
+   * Renders the Listy style - one row per running timer.
+   *
+   * Every other style answers "what is the one timer on this device doing".
+   * This one answers "what is running right now", across as many Alexa and
+   * Google devices as auto-discovery turns up, which is what a kitchen with
+   * three timers going actually needs to see.
+   */
+  private _renderListyCard(): TemplateResult {
+    const {
+      expired_animation = true,
+      header_icon,
+      header_icon_color,
+      header_icon_background,
+      compact_format,
+      progress_color,
+      text_color,
+      width,
+      height,
+      aspect_ratio,
+      show_timer_progress
+    } = this._resolvedConfig;
+
+    const { cardBackground, textColor } = this._getCardColors();
+    const rowProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
+    const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
+
+    const cardStyles = [
+      ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
+      ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
+      `--timeflow-card-progress-color: ${rowProgressColor}`,
+      ...dimensionStyles
+    ].join('; ');
+
+    const cardClasses = this._getCardClasses(expired_animation);
+    const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
+    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
+    const compact = compact_format !== false;
+    const showProgress = show_timer_progress !== false;
+    const titleText = this._getTitleText();
+    const t = this._localize;
+
+    return html`
+      <ha-card
+        class="${cardClasses}"
+        style="${cardStyles}"
+        ?actionHandler=${shouldEnableActions}
+        .actionHandler=${shouldEnableActions ? createActionHandler(configWithDefaults) : undefined}
+        @action=${shouldEnableActions && this.hass ? createHandleAction(this.hass, configWithDefaults) : undefined}
+      >
+        <div class="card-content-listy">
+          <div class="listy-header">
+            ${hasHeaderIcon ? html`
+              <div
+                class="listy-header-icon"
+                style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
+              >
+                <ha-icon
+                  icon="${header_icon}"
+                  style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
+                ></ha-icon>
+              </div>
+            ` : ''}
+            <h2 class="listy-title">${titleText}</h2>
+            ${this._timers.length > 0 ? html`
+              <span class="listy-count">${this._timers.length}</span>
+            ` : ''}
+          </div>
+
+          ${this._timers.length === 0 ? html`
+            <div class="listy-empty">${t ? t('timer.no_timers') : 'No timers'}</div>
+          ` : html`
+            <div class="listy-rows">
+              ${repeat(
+                this._timers,
+                (timer) => timer.timerId ?? timer.entityId ?? '',
+                (timer) => this._renderTimerRow(timer, compact, showProgress)
+              )}
+            </div>
+          `}
+        </div>
+      </ha-card>
+    `;
+  }
+
+  /**
+   * One timer row. Keyed by timer id at the call site, so a timer finishing in
+   * the middle of the list does not make every row below it jump to a new
+   * element and replay its transitions.
+   */
+  private _renderTimerRow(timer: TimerData, compact: boolean, showProgress: boolean): TemplateResult {
+    const stateClass = timer.finished ? 'is-finished' : (timer.isPaused ? 'is-paused' : 'is-running');
+    const showDevice = this._shouldShowRowDevice(timer);
+
+    return html`
+      <div class="listy-row ${stateClass}">
+        <div class="listy-row-text">
+          <span class="listy-row-label">${this._getTimerRowLabel(timer)}</span>
+          ${showDevice ? html`
+            <span class="listy-row-device">${timer.deviceName}</span>
+          ` : ''}
+        </div>
+        <span class="listy-row-time">${this._formatTimerRowTime(timer, compact)}</span>
+      </div>
+      ${showProgress ? html`
+        <div class="listy-row-track">
+          <div
+            class="listy-row-fill ${stateClass}"
+            style="width: ${Math.min(100, Math.max(0, timer.progress))}%"
+          ></div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  /**
+   * The device name is repeated on every row only when it tells the rows apart.
+   * A card watching a single Echo would otherwise print the same word five
+   * times; one watching a kitchen and a bedroom speaker needs it on both.
+   */
+  private _shouldShowRowDevice(timer: TimerData): boolean {
+    if (this._resolvedConfig.show_timer_device === false) return false;
+    if (!timer.deviceName) return false;
+    if (this._resolvedConfig.show_timer_device === true) return true;
+
+    return this._timers.some((other) => other.deviceName && other.deviceName !== timer.deviceName);
+  }
+
+  /**
+   * Row label: the name the user gave the timer, falling back to the device it
+   * is running on. An unnamed timer on a named speaker reads better as
+   * "Kitchen" than as a blank.
+   */
+  private _getTimerRowLabel(timer: TimerData): string {
+    const label = timer.userDefinedLabel || timer.timerLabel;
+    if (label && label.trim()) return label;
+    if (timer.deviceName) return timer.deviceName;
+    return this._localize ? this._localize('timer.timer_ready') : 'Timer';
+  }
+
+  /**
+   * Right-hand column of a row. Finished and paused timers say so in words,
+   * because a bare "0:00" or a frozen clock reads as a broken row rather than a
+   * deliberate state.
+   */
+  private _formatTimerRowTime(timer: TimerData, compact: boolean): string {
+    const t = this._localize;
+
+    if (timer.finished) {
+      return t ? t('timer.complete') : 'Timer complete';
+    }
+
+    const showSeconds = this._resolvedConfig.show_seconds !== false;
+    const formatted = TimerEntityService.formatRemainingTime(
+      timer.remaining,
+      showSeconds,
+      this._localize || undefined,
+      compact
+    );
+
+    if (timer.isPaused) {
+      return `${formatted} · ${t ? t('timer.paused') : 'Paused'}`;
+    }
+
+    return formatted;
   }
 
   private _renderCard(): TemplateResult {
@@ -1812,6 +2192,16 @@ export class TimeFlowCardBeta extends LitElement {
     // Eventy style is always compact (1 row)
     if (style === 'eventy') {
       return 1;
+    }
+
+    // The list grows with the number of timers, so its height cannot be read off
+    // the config the way every other style's can: one row for the header plus
+    // one per timer on screen, never more than the configured cap. Reporting
+    // the cap instead would have a card holding one timer claim six rows' worth
+    // of space in every masonry calculation.
+    if (style === 'listy') {
+      const cap = CountdownService.resolveMaxTimers(this.config);
+      return 1 + Math.min(cap, Math.max(1, this._timers.length));
     }
     
     if (height) {

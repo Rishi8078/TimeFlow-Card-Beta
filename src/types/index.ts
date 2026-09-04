@@ -100,7 +100,7 @@ export interface ActionHandlerEvent extends Event {
 }
 
 // Card style options
-export type CardStyle = 'classic' | 'eventy' | 'classic-compact' | 'gridy' | 'minimal-square';
+export type CardStyle = 'classic' | 'eventy' | 'classic-compact' | 'gridy' | 'minimal-square' | 'listy';
 export type CardMode = 'count_down' | 'count_up';
 
 // Unit each dot represents in the 'gridy' style when grid_dots is 'auto'.
@@ -110,7 +110,7 @@ export interface CardConfig {
   type: string;
 
   // Card style
-  style?: CardStyle;  // 'classic' = circle progress, 'eventy' = compact horizontal, 'classic-compact' = horizontal with circle, 'gridy' = horizontal card with dot-grid progress, 'minimal-square' = single-unit square circle card
+  style?: CardStyle;  // 'classic' = circle progress, 'eventy' = compact horizontal, 'classic-compact' = horizontal with circle, 'gridy' = horizontal card with dot-grid progress, 'minimal-square' = single-unit square circle card, 'listy' = one row per running timer
   mode?: CardMode;    // 'count_down' = time remaining, 'count_up' = time elapsed since the configured date
 
   // Basic countdown configuration
@@ -125,6 +125,11 @@ export interface CardConfig {
   auto_discover_google?: boolean; // NEW: Automatically find and use Google Home timers
   alexa_device_filter?: string[];  // NEW: Only use timers from specific Alexa devices
   prefer_labeled_timers?: boolean; // NEW: Prefer timers with labels over unnamed ones
+
+  // Multi-timer list ('listy' style)
+  max_timers?: number;            // Rows to draw before the list is truncated (default 5)
+  show_timer_device?: boolean;    // Show the device name on each row, for lists spanning devices
+  show_timer_progress?: boolean;  // Draw a progress bar under each row (default true)
 
   // Display configuration
   title?: string;

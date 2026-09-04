@@ -9,7 +9,7 @@ import { TemplateService } from '../services/TemplateService';
 import { CountdownService } from '../services/CountdownService';
 import { StyleManager } from '../utils/StyleManager';
 import { setupLocalize, LocalizeFunction } from '../utils/localize';
-import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent } from '../types/index';
+import { HomeAssistant, CountdownState, CardConfig, ActionHandlerEvent, ListRow, ListRowKind, ListEntryConfig } from '../types/index';
 import { createActionHandler, createHandleAction } from '../utils/action-handler';
 import { getLocalizedEventyLabel } from '../utils/TimeUtils';
 import '../utils/ErrorDisplay';
@@ -43,6 +43,9 @@ const GRID_DOT_MAX = 200;
 const GRID_ROW_MAX = 50;
 const GRID_DOT_SIZE_DEFAULT = 10;
 const GRID_DOT_SIZE_MIN = 4;
+
+// Listy progress ring: 2 * pi * r for the r=16 circle drawn in _renderListyRing.
+const LISTY_RING_CIRCUMFERENCE = 100.53;
 const GRID_DOT_SIZE_MAX = 40;
 
 
@@ -77,10 +80,15 @@ export class TimeFlowCardBeta extends LitElement {
   // rather than a composite object.
   @state() private _displaySignature: string = '';
 
-  // Rows for the 'listy' style: every live timer the card can see, already
-  // sorted and capped. Left empty for every other style, which never asks for
+  // Rows for the 'listy' style: every live timer the card can see plus any
+  // countdowns pinned through `cards`, already sorted, capped and resolved to
+  // display strings. Left empty for every other style, which never asks for
   // more than one timer and should not pay to enumerate the rest.
-  @state() private _timers: TimerData[] = [];
+  @state() private _listRows: ListRow[] = [];
+
+  // Timer rows only, kept alongside _listRows so the wake plan can find the
+  // soonest deadline without re-parsing the display strings.
+  private _listTimers: TimerData[] = [];
 
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
@@ -107,6 +115,10 @@ export class TimeFlowCardBeta extends LitElement {
   // Services instances (could be injected if needed)
   private templateService = new TemplateService();
   private countdownService = new CountdownService(this.templateService, DateParser);
+  // A second countdown, used only to evaluate the entries pinned into a 'listy'
+  // card. Kept apart from countdownService so resolving someone's target_date
+  // for a row cannot disturb the state the card itself renders from.
+  private _entryCountdown = new CountdownService(this.templateService, DateParser);
   private styleManager = new StyleManager();
 
   static get styles(): CSSResult {
@@ -598,44 +610,43 @@ export class TimeFlowCardBeta extends LitElement {
         100% { transform: scale(1); }
       }
       
-      /* ── Listy: one row per running timer ─────────────────────────── */
+      /* ── Listy: one pill per timer ─────────────────────────────────── */
       .card-content-listy {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        padding: 16px;
+        padding: 14px 12px 12px 12px;
         box-sizing: border-box;
         width: 100%;
+        /* Neutral surfaces are mixed from the text colour rather than hardcoded,
+           so the same rules land correctly on a light theme and a dark one. The
+           flat fallbacks are for engines without color-mix. */
+        --timeflow-listy-row-bg: #f4f5f8;
+        --timeflow-listy-row-bg: color-mix(in srgb, currentColor 4%, transparent);
+        --timeflow-listy-row-border: rgba(0, 0, 0, 0.04);
+        --timeflow-listy-row-border: color-mix(in srgb, currentColor 6%, transparent);
+        --timeflow-listy-chip-bg: #ffffff;
+        --timeflow-listy-chip-bg: color-mix(in srgb, var(--card-background-color, #fff) 88%, currentColor 4%);
+        --timeflow-listy-ring-track: rgba(0, 0, 0, 0.08);
+        --timeflow-listy-ring-track: color-mix(in srgb, currentColor 12%, transparent);
+        --timeflow-listy-row-text: var(--timeflow-card-text-color, var(--primary-text-color, #141416));
       }
 
       .listy-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 10px;
-      }
-
-      .listy-header-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      .listy-header-icon ha-icon {
-        --mdc-icon-size: 18px;
+        margin-bottom: 11px;
+        padding: 2px 6px;
       }
 
       .listy-title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.25px;
         line-height: 1.2;
         color: var(--timeflow-card-text-color, var(--primary-text-color));
         /* A long card title must not push the count off the edge. */
-        flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -645,103 +656,138 @@ export class TimeFlowCardBeta extends LitElement {
       .listy-count {
         flex-shrink: 0;
         min-width: 22px;
-        padding: 1px 7px;
-        border-radius: 11px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 0.75rem;
-        font-weight: 600;
-        text-align: center;
-        color: var(--timeflow-card-text-color, var(--primary-text-color));
-        background: rgba(127, 127, 127, 0.18);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--secondary-text-color, #52525b);
+        background: var(--timeflow-listy-row-bg);
+        border: 1px solid var(--timeflow-listy-row-border);
       }
 
-      .listy-empty {
-        padding: 6px 0 2px;
-        font-size: 0.875rem;
-        opacity: 0.6;
-        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+      .listy-count.is-empty {
+        opacity: 0.65;
       }
 
       .listy-rows {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+        width: 100%;
       }
 
       .listy-row {
         display: flex;
-        align-items: baseline;
-        gap: 12px;
+        align-items: center;
+        gap: 14px;
+        padding: 9px 18px 9px 11px;
+        box-sizing: border-box;
+        width: 100%;
+        border-radius: var(--timeflow-listy-pill-radius, 16px);
+        background: var(--timeflow-listy-row-bg);
+        border: 1px solid var(--timeflow-listy-row-border);
+      }
+
+      .listy-row.is-empty {
+        background: transparent;
+        border-style: dashed;
+        border-color: var(--timeflow-listy-ring-track);
+      }
+
+      .listy-row.is-empty .listy-row-title,
+      .listy-row.is-empty .listy-row-subtitle,
+      .listy-row.is-empty .listy-row-chip ha-icon {
+        opacity: 0.6;
+      }
+
+      .listy-row-chip {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        flex-shrink: 0;
+        background: var(--timeflow-listy-chip-bg);
+      }
+
+      .listy-row-chip ha-icon {
+        --mdc-icon-size: 24px;
+        color: var(--secondary-text-color);
       }
 
       .listy-row-text {
         display: flex;
         flex-direction: column;
-        gap: 1px;
+        justify-content: center;
         /* min-width:0 is what lets the ellipsis below actually engage. */
         flex: 1 1 auto;
         min-width: 0;
       }
 
-      .listy-row-label {
-        font-size: 0.9375rem;
-        font-weight: 500;
+      .listy-row-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        letter-spacing: -0.2px;
         line-height: 1.25;
-        color: var(--timeflow-card-text-color, var(--primary-text-color));
+        color: var(--timeflow-listy-row-text);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .listy-row-device {
-        font-size: 0.75rem;
+      .listy-row-subtitle {
+        margin-top: 2px;
+        font-size: 0.83rem;
+        font-weight: 400;
         line-height: 1.2;
-        opacity: 0.6;
-        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+        color: var(--secondary-text-color, #6b7280);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .listy-row-time {
-        flex-shrink: 0;
-        font-size: 0.9375rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        /* Without tabular figures the row twitches sideways every second as
-           digit widths change. */
-        color: var(--timeflow-card-text-color, var(--primary-text-color));
+      /* A row with its own background sets the text colour for both lines: the
+         theme's secondary colour is picked for the theme's surface, not for an
+         arbitrary one the user chose. */
+      .listy-row.has-custom-bg .listy-row-subtitle {
+        color: var(--timeflow-listy-row-text);
+        opacity: 0.7;
       }
 
-      .listy-row.is-paused .listy-row-label,
-      .listy-row.is-paused .listy-row-time {
+      .listy-row.paused .listy-row-title,
+      .listy-row.paused .listy-row-subtitle,
+      .listy-row.paused .listy-row-chip {
         opacity: 0.55;
       }
 
-      .listy-row.is-finished .listy-row-time {
-        color: var(--timeflow-card-progress-color, var(--progress-color, #4caf50));
+      .listy-row-ring {
+        flex-shrink: 0;
+        display: block;
+        /* Start the arc at twelve o'clock rather than three. */
+        transform: rotate(-90deg);
       }
 
-      .listy-row-track {
-        height: 3px;
-        margin-top: -4px;
-        border-radius: 2px;
-        overflow: hidden;
-        background: rgba(127, 127, 127, 0.2);
+      .listy-ring-track {
+        stroke: var(--timeflow-listy-ring-track);
       }
 
-      .listy-row-fill {
-        height: 100%;
-        border-radius: 2px;
-        background: var(--timeflow-card-progress-color, var(--progress-color, #4caf50));
-        transition: width 0.3s linear;
+      .listy-ring-value {
+        stroke: var(--timeflow-card-progress-color, var(--primary-color, #94809a));
+        transition: stroke-dashoffset 0.3s linear;
       }
 
-      .listy-row-fill.is-paused {
+      .listy-row.paused .listy-ring-value {
         opacity: 0.45;
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .listy-row-fill {
+        .listy-ring-value {
           transition: none;
         }
       }
@@ -929,7 +975,7 @@ export class TimeFlowCardBeta extends LitElement {
     // a finished timer on top.
     if (config.style === 'listy') {
       let soonest = Number.POSITIVE_INFINITY;
-      for (const timer of this._timers) {
+      for (const timer of this._listTimers) {
         if (timer.isActive && timer.remaining > 0 && timer.remaining < soonest) {
           soonest = timer.remaining;
         }
@@ -1147,9 +1193,10 @@ export class TimeFlowCardBeta extends LitElement {
     // Done inside the same pass so it shares the discovery walk's watch set and
     // lands before the signature is taken.
     if (resolvedConfig.style === 'listy') {
-      this._timers = this.countdownService.listAllTimers(resolvedConfig, this.hass);
-    } else if (this._timers.length > 0) {
-      this._timers = [];
+      await this._buildListRows(resolvedConfig);
+    } else if (this._listRows.length > 0) {
+      this._listRows = [];
+      this._listTimers = [];
     }
 
     const signature = this._computeDisplaySignature();
@@ -1204,20 +1251,195 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * One line per row, carrying exactly what the row draws: identity, formatted
-   * time, label and the rounded progress width. Progress is rounded to whole
-   * percent because a bar a few hundred pixels wide cannot show finer than that.
+   * One line per row, carrying exactly what the row draws. Progress is rounded
+   * to whole percent because a ring 42px across cannot show finer than that.
    */
-  private _computeListSignature(compact: boolean): string {
-    return this._timers
-      .map((timer) => [
-        timer.timerId ?? timer.entityId ?? '',
-        this._formatTimerRowTime(timer, compact),
-        this._getTimerRowLabel(timer),
-        Math.round(timer.progress),
-        timer.finished ? 'done' : (timer.isPaused ? 'paused' : 'run'),
-      ].join('\u0001'))
+  private _computeListSignature(_compact: boolean): string {
+    return this._listRows
+      .map((row) => [row.key, row.title, row.subtitle, Math.round(row.progress), row.state].join('\u0001'))
       .join('\u0002');
+  }
+
+  /**
+   * Assembles the 'listy' rows for this pass.
+   *
+   * Two sources, in the order they are drawn: live timers from auto-discovery
+   * or an explicit timer_entity, then whatever the user pinned through `cards`.
+   * A card with neither is simply empty; a card with only `cards` is a list of
+   * countdowns and never touches discovery.
+   */
+  private async _buildListRows(config: CardConfig): Promise<void> {
+    const timers = this.countdownService.listAllTimers(config, this.hass);
+    this._listTimers = timers;
+
+    const rows: ListRow[] = this._buildTimerRows(config, timers);
+    rows.push(...(await this._buildEntryRows(config)));
+
+    this._listRows = rows;
+  }
+
+  /**
+   * Timer rows. The subtitle comes from the same TimerEntityService call the
+   * single-timer styles use, so the wording and its translations are shared
+   * rather than reinvented per style.
+   */
+  private _buildTimerRows(config: CardConfig, timers: TimerData[]): ListRow[] {
+    const compact = config.compact_format !== false;
+    const showSeconds = config.show_seconds !== false;
+
+    // With one device in the list its name adds nothing to every row, and the
+    // integration reads better. With several, the device is the only thing
+    // telling two "Alexa Timer" rows apart, so it becomes the title.
+    const devices = new Set(timers.map((t) => t.deviceName).filter(Boolean));
+    const useDeviceTitle = config.show_timer_device === true
+      || (config.show_timer_device !== false && devices.size > 1);
+
+    return timers.map((timer, index) => {
+      const kind: ListRowKind = timer.isAlexaTimer ? 'alexa' : (timer.isGoogleTimer ? 'google' : 'timer');
+      const brand = kind === 'alexa'
+        ? 'Alexa Timer'
+        : (kind === 'google' ? 'Google Home' : (timer.deviceName || 'Timer'));
+
+      const palette = this._listRowPalette(kind, config);
+
+      return {
+        key: timer.timerId ?? timer.entityId ?? `timer-${index}`,
+        kind,
+        title: (useDeviceTitle && timer.deviceName) ? timer.deviceName : brand,
+        subtitle: TimerEntityService.getTimerSubtitle(
+          timer,
+          showSeconds,
+          this._localize || undefined,
+          compact
+        ),
+        progress: Math.min(100, Math.max(0, timer.progress)),
+        state: timer.finished ? 'finished' : (timer.isPaused ? 'paused' : 'running'),
+        icon: palette.icon,
+        iconColor: palette.iconColor,
+        iconBackground: palette.iconBackground,
+        ringColor: palette.ringColor,
+      };
+    });
+  }
+
+  /**
+   * Rows for the countdowns pinned through `cards`.
+   *
+   * Each entry is evaluated by its own CountdownService rather than the card's:
+   * the card's instance carries the state the rest of the styles render from,
+   * and running someone else's target_date through it would overwrite that.
+   */
+  private async _buildEntryRows(config: CardConfig): Promise<ListRow[]> {
+    const entries = Array.isArray(config.cards) ? config.cards : [];
+    if (entries.length === 0) return [];
+
+    const compact = config.compact_format !== false;
+    const rows: ListRow[] = [];
+
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
+      if (!entry || typeof entry !== 'object') continue;
+
+      const entryConfig = { ...entry } as CardConfig;
+      const service = this._entryCountdown;
+      service.beginPass();
+
+      let subtitle = '';
+      let progress = 0;
+      let expired = false;
+
+      try {
+        await service.updateCountdown(entryConfig, this.hass);
+        expired = service.isExpired();
+        progress = await service.calculateProgress(entryConfig, this.hass);
+        subtitle = entry.subtitle || service.getSubtitle(
+          entryConfig,
+          this.hass,
+          this._localize || undefined,
+          compact
+        );
+      } catch (err) {
+        // A bad target_date on one entry must not take the whole list down.
+        subtitle = entry.subtitle || '';
+      }
+
+      if (expired && entry.expired_text) {
+        subtitle = entry.expired_text;
+      }
+
+      // Whatever the entry read is part of what this card reacts to.
+      service.getWatchedEntities().forEach((id) => this.countdownService.noteWatchedEntity(id));
+
+      const palette = this._listRowPalette('event', config, entry);
+
+      rows.push({
+        key: `entry-${index}`,
+        kind: 'event',
+        title: entry.title || 'Countdown',
+        subtitle,
+        progress: Math.min(100, Math.max(0, progress)),
+        state: expired ? 'finished' : 'running',
+        icon: palette.icon,
+        iconColor: palette.iconColor,
+        iconBackground: palette.iconBackground,
+        background: entry.background_color,
+        textColor: entry.text_color,
+        ringColor: palette.ringColor,
+      });
+    }
+
+    return rows;
+  }
+
+  /**
+   * Icon and tint for a row kind. The Alexa and Google chips keep their brand
+   * colours in every theme - they read as logos, and a tint that follows the
+   * theme would make them look like a rendering bug rather than a brand.
+   *
+   * Icons default to mdi: so the card works on a stock install. Users running
+   * one of the community icon packs can point alexa_icon / google_icon at
+   * something better (phu:alexa-logo, m3of:android-google-home).
+   */
+  private _listRowPalette(
+    kind: ListRowKind,
+    config: CardConfig,
+    entry?: ListEntryConfig
+  ): { icon: string; iconColor: string; iconBackground: string; ringColor: string } {
+    const accent = config.progress_color;
+
+    if (kind === 'alexa') {
+      return {
+        icon: config.alexa_icon || 'mdi:amazon-alexa',
+        iconColor: config.alexa_color || '#009bbd',
+        iconBackground: '#dff3f7',
+        ringColor: accent || '#94809a',
+      };
+    }
+
+    if (kind === 'google') {
+      return {
+        icon: config.google_icon || 'mdi:google-home',
+        iconColor: '#34a853',
+        iconBackground: '#fef3c7',
+        ringColor: accent || '#b2d4bd',
+      };
+    }
+
+    if (kind === 'event') {
+      return {
+        icon: entry?.header_icon || config.header_icon || 'mdi:calendar-clock',
+        iconColor: entry?.header_icon_color || 'var(--primary-color, #475569)',
+        iconBackground: entry?.header_icon_background || 'var(--timeflow-listy-chip-bg)',
+        ringColor: entry?.progress_color || accent || 'var(--primary-color, #94809a)',
+      };
+    }
+
+    return {
+      icon: config.timer_icon || 'mdi:timer-outline',
+      iconColor: 'var(--secondary-text-color, #475569)',
+      iconBackground: 'var(--timeflow-listy-chip-bg)',
+      ringColor: accent || 'var(--primary-color, #94809a)',
+    };
   }
 
   render(): TemplateResult {
@@ -1260,46 +1482,41 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * Renders the Listy style - one row per running timer.
+   * Renders the Listy style - one pill per timer.
    *
    * Every other style answers "what is the one timer on this device doing".
    * This one answers "what is running right now", across as many Alexa and
-   * Google devices as auto-discovery turns up, which is what a kitchen with
-   * three timers going actually needs to see.
+   * Google devices as auto-discovery turns up, plus any countdowns pinned
+   * through `cards`.
    */
   private _renderListyCard(): TemplateResult {
     const {
       expired_animation = true,
-      header_icon,
-      header_icon_color,
-      header_icon_background,
-      compact_format,
       progress_color,
       text_color,
       width,
       height,
       aspect_ratio,
-      show_timer_progress
+      show_timer_progress,
+      pill_radius
     } = this._resolvedConfig;
 
     const { cardBackground, textColor } = this._getCardColors();
-    const rowProgressColor = progress_color || text_color || 'var(--progress-color, #4caf50)';
     const dimensionStyles = this.styleManager.generateCardDimensionStyles(width, height, aspect_ratio);
 
     const cardStyles = [
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
-      `--timeflow-card-progress-color: ${rowProgressColor}`,
+      ...(progress_color || text_color ? [`--timeflow-card-progress-color: ${progress_color || text_color}`] : []),
+      // '9999px' turns the squircles into full stadium capsules.
+      ...(pill_radius ? [`--timeflow-listy-pill-radius: ${pill_radius}`] : []),
       ...dimensionStyles
     ].join('; ');
 
     const cardClasses = this._getCardClasses(expired_animation);
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
-    const hasHeaderIcon = this._hasHeaderIcon(header_icon);
-    const compact = compact_format !== false;
-    const showProgress = show_timer_progress !== false;
-    const titleText = this._getTitleText();
-    const t = this._localize;
+    const showRing = show_timer_progress !== false;
+    const rows = this._listRows;
 
     return html`
       <ha-card
@@ -1311,119 +1528,114 @@ export class TimeFlowCardBeta extends LitElement {
       >
         <div class="card-content-listy">
           <div class="listy-header">
-            ${hasHeaderIcon ? html`
-              <div
-                class="listy-header-icon"
-                style="background: ${header_icon_background || 'rgba(var(--rgb-primary-color, 66, 133, 244), 0.15)'};"
-              >
-                <ha-icon
-                  icon="${header_icon}"
-                  style="color: ${header_icon_color || 'var(--primary-color, var(--primary-text-color))'}"
-                ></ha-icon>
-              </div>
-            ` : ''}
-            <h2 class="listy-title">${titleText}</h2>
-            ${this._timers.length > 0 ? html`
-              <span class="listy-count">${this._timers.length}</span>
-            ` : ''}
+            <span class="listy-title">${this._getTitleText()}</span>
+            <span class="listy-count ${rows.length === 0 ? 'is-empty' : ''}">${rows.length}</span>
           </div>
 
-          ${this._timers.length === 0 ? html`
-            <div class="listy-empty">${t ? t('timer.no_timers') : 'No timers'}</div>
-          ` : html`
-            <div class="listy-rows">
-              ${repeat(
-                this._timers,
-                (timer) => timer.timerId ?? timer.entityId ?? '',
-                (timer) => this._renderTimerRow(timer, compact, showProgress)
-              )}
-            </div>
-          `}
+          ${rows.length === 0
+            ? this._renderListyEmpty()
+            : html`
+              <div class="listy-rows">
+                ${repeat(rows, (row) => row.key, (row) => this._renderListyRow(row, showRing))}
+              </div>
+            `}
         </div>
       </ha-card>
     `;
   }
 
   /**
-   * One timer row. Keyed by timer id at the call site, so a timer finishing in
-   * the middle of the list does not make every row below it jump to a new
-   * element and replay its transitions.
+   * One pill. Keyed by row id at the call site, so a timer finishing in the
+   * middle of the list does not make every row below it jump to a new element
+   * and replay its transitions.
    */
-  private _renderTimerRow(timer: TimerData, compact: boolean, showProgress: boolean): TemplateResult {
-    const stateClass = timer.finished ? 'is-finished' : (timer.isPaused ? 'is-paused' : 'is-running');
-    const showDevice = this._shouldShowRowDevice(timer);
+  private _renderListyRow(row: ListRow, showRing: boolean): TemplateResult {
+    const rowStyles = [
+      ...(row.background ? [`background: ${row.background}`, 'border-color: transparent'] : []),
+      ...(row.textColor ? [`--timeflow-listy-row-text: ${row.textColor}`] : []),
+    ].join('; ');
 
     return html`
-      <div class="listy-row ${stateClass}">
+      <div class="listy-row ${row.state} ${row.background ? 'has-custom-bg' : ''}" style="${rowStyles}">
+        <div
+          class="listy-row-chip"
+          style="${row.iconBackground ? `background: ${row.iconBackground}` : ''}"
+        >
+          <ha-icon
+            icon="${row.icon}"
+            style="${row.iconColor ? `color: ${row.iconColor}` : ''}"
+          ></ha-icon>
+        </div>
+
         <div class="listy-row-text">
-          <span class="listy-row-label">${this._getTimerRowLabel(timer)}</span>
-          ${showDevice ? html`
-            <span class="listy-row-device">${timer.deviceName}</span>
-          ` : ''}
+          <span class="listy-row-title">${row.title}</span>
+          <span class="listy-row-subtitle">${row.subtitle}</span>
         </div>
-        <span class="listy-row-time">${this._formatTimerRowTime(timer, compact)}</span>
+
+        ${showRing ? this._renderListyRing(row) : ''}
       </div>
-      ${showProgress ? html`
-        <div class="listy-row-track">
-          <div
-            class="listy-row-fill ${stateClass}"
-            style="width: ${Math.min(100, Math.max(0, timer.progress))}%"
-          ></div>
-        </div>
-      ` : ''}
     `;
   }
 
   /**
-   * The device name is repeated on every row only when it tells the rows apart.
-   * A card watching a single Echo would otherwise print the same word five
-   * times; one watching a kitchen and a bedroom speaker needs it on both.
+   * The progress ring. r=16 gives a circumference of 2*pi*16 = 100.53, which is
+   * the dasharray the offset below is measured against; changing the radius
+   * means changing both.
    */
-  private _shouldShowRowDevice(timer: TimerData): boolean {
-    if (this._resolvedConfig.show_timer_device === false) return false;
-    if (!timer.deviceName) return false;
-    if (this._resolvedConfig.show_timer_device === true) return true;
+  private _renderListyRing(row: ListRow): TemplateResult {
+    const circumference = LISTY_RING_CIRCUMFERENCE;
+    const offset = circumference - (Math.min(100, Math.max(0, row.progress)) / 100) * circumference;
 
-    return this._timers.some((other) => other.deviceName && other.deviceName !== timer.deviceName);
+    return html`
+      <svg class="listy-row-ring" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+        <circle class="listy-ring-track" cx="21" cy="21" r="16" fill="none" stroke-width="4.5"></circle>
+        <circle
+          class="listy-ring-value"
+          cx="21"
+          cy="21"
+          r="16"
+          fill="none"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${offset}"
+          style="${row.ringColor ? `stroke: ${row.ringColor}` : ''}"
+        ></circle>
+      </svg>
+    `;
   }
 
   /**
-   * Row label: the name the user gave the timer, falling back to the device it
-   * is running on. An unnamed timer on a named speaker reads better as
-   * "Kitchen" than as a blank.
+   * The empty state gets a pill of its own rather than a line of grey text: a
+   * card that keeps its shape when the last timer finishes does not make the
+   * dashboard jump, and the dashed outline reads as "waiting" rather than
+   * "broken".
    */
-  private _getTimerRowLabel(timer: TimerData): string {
-    const label = timer.userDefinedLabel || timer.timerLabel;
-    if (label && label.trim()) return label;
-    if (timer.deviceName) return timer.deviceName;
-    return this._localize ? this._localize('timer.timer_ready') : 'Timer';
-  }
-
-  /**
-   * Right-hand column of a row. Finished and paused timers say so in words,
-   * because a bare "0:00" or a frozen clock reads as a broken row rather than a
-   * deliberate state.
-   */
-  private _formatTimerRowTime(timer: TimerData, compact: boolean): string {
+  private _renderListyEmpty(): TemplateResult {
     const t = this._localize;
 
-    if (timer.finished) {
-      return t ? t('timer.complete') : 'Timer complete';
-    }
-
-    const showSeconds = this._resolvedConfig.show_seconds !== false;
-    const formatted = TimerEntityService.formatRemainingTime(
-      timer.remaining,
-      showSeconds,
-      this._localize || undefined,
-      compact
-    );
-
-    if (timer.isPaused) {
-      return `${formatted} · ${t ? t('timer.paused') : 'Paused'}`;
-    }
-
-    return formatted;
+    return html`
+      <div class="listy-row is-empty">
+        <div class="listy-row-chip">
+          <ha-icon icon="mdi:timer-sand-empty"></ha-icon>
+        </div>
+        <div class="listy-row-text">
+          <span class="listy-row-title">${t ? t('timer.no_timers') : 'No timers'}</span>
+          <span class="listy-row-subtitle">${t ? t('timer.list_quiet') : 'All quiet across devices'}</span>
+        </div>
+        <svg class="listy-row-ring" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+          <circle
+            class="listy-ring-track"
+            cx="21"
+            cy="21"
+            r="16"
+            fill="none"
+            stroke-width="4.5"
+            stroke-dasharray="4 4"
+          ></circle>
+        </svg>
+      </div>
+    `;
   }
 
   private _renderCard(): TemplateResult {
@@ -2201,7 +2413,7 @@ export class TimeFlowCardBeta extends LitElement {
     // of space in every masonry calculation.
     if (style === 'listy') {
       const cap = CountdownService.resolveMaxTimers(this.config);
-      return 1 + Math.min(cap, Math.max(1, this._timers.length));
+      return 1 + Math.min(cap, Math.max(1, this._listRows.length));
     }
     
     if (height) {

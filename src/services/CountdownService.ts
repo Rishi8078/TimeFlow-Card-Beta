@@ -295,6 +295,18 @@ export class CountdownService {
   }
 
   /**
+   * Folds an entity read elsewhere into this pass's watch set. The 'listy'
+   * style evaluates its pinned entries through a second CountdownService, and
+   * whatever those entries consulted still has to reach the card's
+   * shouldUpdate guard.
+   */
+  noteWatchedEntity(entityId: string): void {
+    if (entityId) {
+      this._watchedEntities.add(entityId);
+    }
+  }
+
+  /**
    * Every live timer this card can see, flattened across devices and ordered the
    * way a list wants to read them. Backs the 'listy' style; nothing else calls
    * it, so the single-timer path pays none of its cost.

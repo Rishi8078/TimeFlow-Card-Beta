@@ -37,31 +37,76 @@ A beautiful countdown timer card for Home Assistant with animated progress circl
        type: module
    ```
 
-## 🧾 Listy: showing several timers at once
+## 🧾 Listy: several timers in one card
 
-Every other style shows one timer. `style: listy` shows one row per running
+Every other style shows one timer. `style: listy` shows one pill per running
 timer, across as many Alexa and Google Home devices as auto-discovery finds — so
-a kitchen with pasta, bread and the oven going shows all three instead of
+a kitchen with pizza, eggs and the oven going shows all three instead of
 whichever finishes first.
 
 ```yaml
 type: custom:timeflow-card-beta
 style: listy
-title: Kitchen timers
+title: Smart Timers
 auto_discover_alexa: true
 auto_discover_google: true
 max_timers: 5
 ```
 
 Rows are ordered the way you need to read them: anything finished sits at the
-top, then running timers soonest-first, then paused ones. Each row shows the
-name you gave the timer, falling back to the device it is running on.
+top, then running timers soonest-first, then paused ones. Each row shows where
+the timer lives, what it is counting, and a progress ring.
 
-| Option                 | Type    | Default | Description                                                        |
-|------------------------|---------|---------|--------------------------------------------------------------------|
-| `max_timers`           | number  | `5`     | Rows to draw before the list is truncated (1–20)                    |
-| `show_timer_progress`  | boolean | `true`  | Draw a progress bar under each row                                  |
-| `show_timer_device`    | boolean | auto    | Show the device name per row; by default only when devices differ   |
+### Pinning your own countdowns
+
+Set `cards` to pin countdowns into the same list. With auto-discovery on, the
+discovered smart timers are pulled in alongside them; with it off, the card is
+just your list.
+
+```yaml
+type: custom:timeflow-card-beta
+style: listy
+title: Smart Timers
+auto_discover_alexa: true
+cards:
+  - title: Trip To Poland
+    target_date: '2026-11-01'
+    header_icon: mdi:bag-suitcase
+    background_color: '#3d2e38'
+    text_color: '#ffffff'
+    header_icon_background: '#594452'
+    header_icon_color: '#d6c7b2'
+    progress_color: '#94809a'
+```
+
+Each entry takes `target_date`, `creation_date`, `count_up_goal_date`,
+`count_up_cycle`, `mode`, `title`, `subtitle`, `expired_text`, `header_icon`,
+`header_icon_color`, `header_icon_background`, `background_color`, `text_color`
+and `progress_color`. Pinned entries always render; `max_timers` caps only the
+discovered timers.
+
+### Options
+
+| Option                 | Type    | Default   | Description                                                            |
+|------------------------|---------|-----------|------------------------------------------------------------------------|
+| `max_timers`           | number  | `5`       | Timer rows before the list is truncated (1–20)                          |
+| `cards`                | list    | `[]`      | Countdowns pinned into the list                                         |
+| `show_timer_progress`  | boolean | `true`    | Draw the progress ring on each row                                      |
+| `show_timer_device`    | boolean | auto      | Force device names as row titles (see below)                            |
+| `pill_radius`          | string  | `16px`    | Row corner radius; `9999px` for stadium capsules                        |
+| `alexa_icon`           | string  | `mdi:amazon-alexa` | Icon for Alexa rows                                            |
+| `google_icon`          | string  | `mdi:google-home`  | Icon for Google Home rows                                      |
+| `timer_icon`           | string  | `mdi:timer-outline` | Icon for standard `timer.*` rows                              |
+
+**Row titles.** With one device in the list, rows are titled by integration
+("Alexa Timer", "Google Home"). Once the list spans more than one device they
+switch to device names ("Kitchen", "Office"), which is the only thing telling
+two Alexa rows apart. `show_timer_device: true` forces device names always;
+`false` forces the integration name.
+
+**Icons.** The defaults are `mdi:` so the card works on a stock install. If you
+run one of the community icon packs, point the icon options at them —
+`alexa_icon: phu:alexa-logo`, `google_icon: m3of:android-google-home`.
 
 Pointing `timer_entity` at a single device instead of using auto-discovery lists
 just that device's timers.

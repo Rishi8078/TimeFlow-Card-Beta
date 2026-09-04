@@ -106,6 +106,53 @@ export type CardMode = 'count_down' | 'count_up';
 // Unit each dot represents in the 'gridy' style when grid_dots is 'auto'.
 export type GridDotUnit = 'auto' | 'minute' | 'hour' | 'day' | 'week' | 'month';
 
+/**
+ * One countdown pinned into a 'listy' card. A trimmed CardConfig: the fields
+ * that make sense for a single row, with the card-level ones (style, actions,
+ * dimensions) left to the card that hosts it.
+ */
+export interface ListEntryConfig {
+  target_date?: string;
+  creation_date?: string;
+  count_up_goal_date?: string;
+  count_up_cycle?: string | number;
+  mode?: CardMode;
+  title?: string;
+  subtitle?: string;
+  expired_text?: string;
+  header_icon?: string;
+  header_icon_color?: string;
+  header_icon_background?: string;
+  background_color?: string;
+  text_color?: string;
+  progress_color?: string;
+  [key: string]: any;
+}
+
+/** What the row kind decides: which icon, which tint, which ring colour. */
+export type ListRowKind = 'alexa' | 'google' | 'timer' | 'event';
+
+/**
+ * A single row of the 'listy' style, fully resolved. Building these in the
+ * update pass rather than the renderer is what lets the display signature see
+ * the list: a row's text and progress are what decides whether a repaint is
+ * worth doing.
+ */
+export interface ListRow {
+  key: string;
+  kind: ListRowKind;
+  title: string;
+  subtitle: string;
+  progress: number;
+  state: 'running' | 'paused' | 'finished';
+  icon: string;
+  iconColor?: string;
+  iconBackground?: string;
+  background?: string;
+  textColor?: string;
+  ringColor?: string;
+}
+
 export interface CardConfig {
   type: string;
 
@@ -127,9 +174,14 @@ export interface CardConfig {
   prefer_labeled_timers?: boolean; // NEW: Prefer timers with labels over unnamed ones
 
   // Multi-timer list ('listy' style)
-  max_timers?: number;            // Rows to draw before the list is truncated (default 5)
-  show_timer_device?: boolean;    // Show the device name on each row, for lists spanning devices
-  show_timer_progress?: boolean;  // Draw a progress bar under each row (default true)
+  max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
+  show_timer_device?: boolean;    // Force the device name as the row title; by default it appears only when the list spans devices
+  show_timer_progress?: boolean;  // Draw the progress ring on each row (default true)
+  cards?: ListEntryConfig[];      // Countdown entries pinned to the list, alongside any discovered timers
+  alexa_icon?: string;            // Icon for Alexa rows (default mdi:amazon-alexa)
+  google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
+  timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
+  pill_radius?: string;           // Row corner radius (default 16px; '9999px' for stadium capsules)
 
   // Display configuration
   title?: string;
@@ -199,7 +251,6 @@ export interface CardConfig {
   // Alexa-specific styling (NEW)
   alexa_color?: string;           // Custom color for Alexa timers
   show_alexa_device?: boolean;    // Show device name in subtitle
-  alexa_icon?: string;           // Custom icon for Alexa timers
 
   // Debug options
   debug?: boolean;

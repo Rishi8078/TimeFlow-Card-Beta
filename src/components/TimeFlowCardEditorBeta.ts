@@ -235,6 +235,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'max_timers': 'Maximum Timers Shown',
             'show_timer_progress': 'Row Progress Bars',
             'show_timer_device': 'Show Device Name',
+            'pill_radius': 'Row Shape',
+            'alexa_icon': 'Alexa Row Icon',
+            'google_icon': 'Google Row Icon',
+            'timer_icon': 'Timer Row Icon',
             'show_alexa_device': 'Show Alexa Device Name',
             'show_days': 'Days',
             'show_hours': 'Hours',
@@ -545,7 +549,28 @@ export class TimeFlowCardEditorBeta extends LitElement {
                                 { name: 'show_timer_progress', selector: { boolean: {} } },
                                 { name: 'show_timer_device', selector: { boolean: {} } },
                             ]
-                        }
+                        },
+                        {
+                            name: 'pill_radius',
+                            selector: {
+                                select: {
+                                    custom_value: true,
+                                    options: [
+                                        { value: '16px', label: 'Squircle (16px)' },
+                                        { value: '9999px', label: 'Capsule' }
+                                    ],
+                                    mode: 'dropdown'
+                                }
+                            }
+                        },
+                        {
+                            type: 'grid',
+                            schema: [
+                                { name: 'alexa_icon', selector: { icon: {} } },
+                                { name: 'google_icon', selector: { icon: {} } },
+                            ]
+                        },
+                        { name: 'timer_icon', selector: { icon: {} } }
                     ]
                 }
             ] : []),

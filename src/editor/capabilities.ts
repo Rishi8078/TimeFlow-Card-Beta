@@ -23,7 +23,7 @@ export type StyleName =
  * from which source keys are set, so no synthetic key can leak into a user's
  * YAML.
  */
-export type SourceType = 'date' | 'timer' | 'auto' | 'countdowns';
+export type SourceType = 'date' | 'timer' | 'auto';
 
 export interface StyleCapabilities {
   /** Title line. */
@@ -140,12 +140,13 @@ export function getCapabilities(config: CardConfig | null | undefined): StyleCap
 export function getSourceType(config: CardConfig | null | undefined): SourceType {
   if (!config) return 'date';
 
-  if (getStyle(config) === 'listy' && Array.isArray(config.countdowns) && config.countdowns.length > 0) {
-    return 'countdowns';
-  }
   if (config.timer_entity) return 'timer';
   if (config.auto_discover_alexa || config.auto_discover_google) return 'auto';
-  return 'date';
+
+  // A list has no use for a date: listAllTimers() reads timer_entity or the
+  // discovery flags and never target_date, so a date-driven listy card renders
+  // nothing but its empty state. Discovery is the sane default there.
+  return getStyle(config) === 'listy' ? 'auto' : 'date';
 }
 
 /**
@@ -160,19 +161,15 @@ export function usesDateFields(source: SourceType): boolean {
 /**
  * The sources the picker offers for a given config.
  *
- * `countdowns` is listed only once a card actually has entries. Until the list
- * editor lands there is no way to create one from the UI, and offering a source
- * that cannot be populated would just be a dead option - selecting it would
- * leave the config with no source at all and the picker would spring back.
+ * The list style drops Date, because it cannot count to one. Pinned countdowns
+ * are deliberately not a source: they are additive - the card renders them
+ * alongside whatever timers it finds - so modelling them as one more radio
+ * option asked the user to choose between two things that combine.
  */
 export function availableSources(config: CardConfig | null | undefined): SourceType[] {
-  const sources: SourceType[] = ['date', 'timer', 'auto'];
-
-  if (getStyle(config) === 'listy' && Array.isArray(config?.countdowns) && config!.countdowns!.length > 0) {
-    sources.push('countdowns');
-  }
-
-  return sources;
+  return getStyle(config) === 'listy'
+    ? ['timer', 'auto']
+    : ['date', 'timer', 'auto'];
 }
 
 /**
@@ -187,7 +184,6 @@ export const SOURCE_SELECTOR_KEYS: Record<SourceType, string[]> = {
   date: [],
   timer: ['timer_entity'],
   auto: ['auto_discover_alexa', 'auto_discover_google'],
-  countdowns: ['countdowns'],
 };
 
 /**

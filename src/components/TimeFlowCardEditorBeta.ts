@@ -50,7 +50,6 @@ const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
     timer: 'Follow one timer, sensor or input_datetime entity',
     auto: 'Follows any running Alexa or Google Home timer',
-    countdowns: 'Show the countdowns pinned to this card, plus any discovered timers',
 };
 
 /**
@@ -359,7 +358,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             date: { label: 'Date', icon: 'mdi:calendar' },
             timer: { label: 'Entity', icon: 'mdi:timer-outline' },
             auto: { label: 'Smart Timers', icon: 'mdi:creation-outline' },
-            countdowns: { label: 'Pinned', icon: 'mdi:format-list-bulleted' },
         };
 
         const options = availableSources(config).map((value) => ({
@@ -658,7 +656,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         return html`
             <div class="editor-root">
-            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             <div class="editor-block">
                 <span class="editor-section-label">Style</span>
                 <ha-form
@@ -670,6 +667,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     .computeHelper=${this._computeHelper}
                 ></ha-form>
             </div>
+            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
             ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${timerListSchema.length > 0 ? html`

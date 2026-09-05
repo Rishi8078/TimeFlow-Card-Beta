@@ -88,12 +88,14 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     getSourceType(dateCfg({ auto_discover_alexa: true })) === 'auto');
   check('Source: an explicit entity outranks discovery',
     getSourceType(dateCfg({ timer_entity: 'timer.x', auto_discover_google: true })) === 'timer');
-  check('Source: pinned countdowns win on listy',
-    getSourceType({ style: 'listy', countdowns: [{ target_date: 'x' }] }) === 'countdowns');
-  check('Source: countdowns are ignored off listy',
-    getSourceType({ style: 'classic', countdowns: [{ target_date: 'x' }] }) === 'date');
-  check('Source: an empty countdowns list is not a source',
-    getSourceType({ style: 'listy', countdowns: [] }) === 'date');
+  // Pinned countdowns are not a source: they render alongside whatever timers
+  // the card finds, so they never change what the picker reads.
+  check('Source: pinned countdowns do not change the source',
+    getSourceType({ style: 'listy', countdowns: [{ target_date: 'x' }], timer_entity: 'timer.x' }) === 'timer');
+  check('Source: a listy card with nothing set falls back to discovery',
+    getSourceType({ style: 'listy' }) === 'auto');
+  check('Source: other styles still fall back to date',
+    getSourceType({ style: 'classic' }) === 'date');
   check('Style: an unknown style falls back to classic', getStyle({ style: 'nonsense' }) === 'classic');
 }
 
@@ -175,12 +177,12 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Switch: choosing Entity clears the discovery toggles',
     toTimer.auto_discover_alexa === undefined && toTimer.auto_discover_google === undefined);
 
+  // Switching source must never touch the pinned list: it is additive, so it
+  // survives every move between Entity and Smart Timers.
   const pinned = { style: 'listy', countdowns: [{ target_date: 'x' }], timer_entity: 'timer.y' };
-  const toPinned = applySource(pinned, 'countdowns');
-  check('Switch: choosing Pinned clears the entity but keeps the list',
-    toPinned.timer_entity === undefined && toPinned.countdowns.length === 1);
-  const offPinned = applySource(pinned, 'date');
-  check('Switch: leaving Pinned drops the list selector', offPinned.countdowns === undefined);
+  check('Switch: the pinned list survives a source change',
+    applySource(pinned, 'auto').countdowns.length === 1
+    && applySource(pinned, 'timer').countdowns.length === 1);
 
   // Round trip: nothing the user typed should be lost either way.
   const roundTrip = applySource(applySource(start, 'auto'), 'date');
@@ -244,22 +246,22 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── Which sources the picker offers ─────────────────────────────────────────
 
 {
-  for (const style of STYLES) {
+  for (const style of STYLES.filter((s) => s !== 'listy')) {
     const offered = availableSources({ style });
-    check(`Sources offered: ${style} lists the three real sources`,
+    check(`Sources offered: ${style} lists all three`,
       offered.join(',') === 'date,timer,auto', offered.join(','));
   }
-  const withPinned = availableSources({ style: 'listy', countdowns: [{ target_date: 'x' }] });
-  check('Sources offered: listy adds Pinned once entries exist',
-    withPinned.includes('countdowns'), withPinned.join(','));
-  check('Sources offered: an empty list does not offer Pinned',
-    !availableSources({ style: 'listy', countdowns: [] }).includes('countdowns'));
+
+  // A listy card cannot count to a date - listAllTimers never reads
+  // target_date, so a date-driven list renders its empty state.
+  check('Sources offered: listy does not offer Date',
+    availableSources({ style: 'listy' }).join(',') === 'timer,auto');
 
   // Whatever getSourceType infers must be selectable, or the picker shows a
   // value none of its options carry.
   const configs = [
     dateCfg(), dateCfg({ timer_entity: 'timer.x' }), dateCfg({ auto_discover_alexa: true }),
-    { style: 'listy', countdowns: [{ target_date: 'x' }] },
+    { style: 'listy' }, { style: 'listy', timer_entity: 'timer.x' },
   ];
   const unrepresentable = configs.filter((c) => !availableSources(c).includes(getSourceType(c)));
   check('Sources offered: every inferred source is selectable', unrepresentable.length === 0);
@@ -516,9 +518,12 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const elsewhere = STYLES.filter((style) => style !== 'listy' && findRepeater({ style, target_date: 'x' }));
   check('Repeater: absent from every other style', elsewhere.length === 0, elsewhere.join(', ') || 'none');
 
-  // Pinning entries is what makes the source selectable, so the two have to agree.
-  check('Repeater: pinning entries makes the Pinned source available',
-    availableSources({ style: 'listy', countdowns: [{ target_date: 'x' }] }).includes('countdowns'));
+  // The list is additive, so it is reachable whichever source is selected.
+  const reachableUnder = ['timer', 'auto'].every((src) =>
+    !!findRepeater(src === 'timer'
+      ? { style: 'listy', timer_entity: 'timer.x' }
+      : { style: 'listy', auto_discover_alexa: true }));
+  check('Repeater: reachable under every listy source', reachableUnder);
 }
 
 // ── Tinted groups ───────────────────────────────────────────────────────────

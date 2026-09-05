@@ -57,13 +57,18 @@ function templatable(
   };
 }
 
+/**
+ * Rendered by ha-select-box, which takes a description per option - so the
+ * picker can say what each style actually looks like instead of leaving the
+ * name to carry it.
+ */
 const STYLE_OPTIONS = [
-  { value: 'classic', label: 'Classic' },
-  { value: 'eventy', label: 'Eventy' },
-  { value: 'classic-compact', label: 'Classic Compact' },
-  { value: 'gridy', label: 'Gridy' },
-  { value: 'minimal-square', label: 'Minimal Square' },
-  { value: 'listy', label: 'Listy (multiple timers)' },
+  { value: 'classic', label: 'Classic', description: 'Progress ring with the countdown inside' },
+  { value: 'classic-compact', label: 'Classic Compact', description: 'A row, with a small ring' },
+  { value: 'eventy', label: 'Eventy', description: 'A row, with one big number' },
+  { value: 'gridy', label: 'Gridy', description: 'A row, with a dot grid for progress' },
+  { value: 'minimal-square', label: 'Minimal Square', description: 'One number in a thick ring' },
+  { value: 'listy', label: 'Listy', description: 'One row per running timer' },
 ];
 
 const GRID_DOT_UNIT_OPTIONS = [
@@ -89,9 +94,10 @@ const GRID_ROW_OPTIONS = [
  * shape of the whole form, so it leads in every mode.
  */
 export function styleSchema(): FormSchema[] {
-  return [
-    { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
-  ];
+  return [{
+    name: 'style',
+    selector: { select: { options: STYLE_OPTIONS, mode: 'box', box_max_columns: 2 } },
+  }];
 }
 
 /**
@@ -118,11 +124,6 @@ function sourceSection(source: SourceType): FormSchema[] {
         { name: 'auto_discover_google', selector: { boolean: {} } },
       ],
     }];
-  }
-
-  if (source === 'countdowns') {
-    // The list itself is edited by its own control; nothing to add here yet.
-    return [];
   }
 
   // Direction only means something for a date. A kitchen timer counts down.

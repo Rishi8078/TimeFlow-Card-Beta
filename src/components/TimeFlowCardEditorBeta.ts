@@ -73,7 +73,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             .editor-root {
                 display: flex;
                 flex-direction: column;
-                gap: 20px;
+                gap: 24px;
             }
             .date-field-container {
                 display: flex;
@@ -168,6 +168,16 @@ export class TimeFlowCardEditorBeta extends LitElement {
                rather than a rule. The tint is mixed from the text colour, so it
                lands correctly on a light theme and a dark one alike; the flat
                value is the fallback for engines without color-mix. */
+            /* A heading and its fields, with no framing of their own. */
+            .editor-block {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            /* The same, tinted: for a section holding several fields that need
+               to read as one group. The tint is mixed from the text colour so
+               it lands correctly on a light theme and a dark one alike; the
+               flat value is the fallback for engines without color-mix. */
             .editor-section {
                 display: flex;
                 flex-direction: column;
@@ -177,7 +187,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 background: rgba(127, 127, 127, 0.08);
                 background: color-mix(in srgb, currentColor 5%, transparent);
             }
-            .editor-section ha-control-select {
+            ha-control-select {
                 /* ha-control-select defaults to 40px, which assumes an icon or
                    a label. Stacking both needs the taller variant Home
                    Assistant uses for its own icon+label selects, or the text
@@ -308,7 +318,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         }));
 
         return html`
-            <div class="editor-section">
+            <div class="editor-block">
                 <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
                     .options=${options}
@@ -583,7 +593,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return html`
             <div class="editor-root">
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
-            <div class="editor-section">
+            <div class="editor-block">
                 <span class="editor-section-label">Style</span>
                 <ha-form
                     .hass=${this.hass}

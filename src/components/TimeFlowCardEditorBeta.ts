@@ -157,10 +157,19 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: block;
                 width: 100%;
             }
+            /* A section heading, distinct from a field label: heavier, and
+               preceded by a rule. Home Assistant has no non-collapsible section
+               component for card editors, so this borrows the colour token its
+               own ha-form-divider uses. */
             .editor-section-label {
-                font-weight: 500;
+                font-weight: 600;
                 font-size: 14px;
                 color: var(--primary-text-color);
+            }
+            .editor-divider {
+                border: none;
+                border-top: 1px solid var(--ha-color-border-neutral-quiet, var(--divider-color));
+                margin: 0;
             }
             .style-picker {
                 display: flex;
@@ -285,6 +294,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
      * named `source_type` would be echoed straight back into the config on
      * every change - the source is inferred from real keys, never stored.
      */
+    /** The rule that separates one section from the one above it. */
+    private _renderDivider(): TemplateResult {
+        return html`<hr class="editor-divider" />`;
+    }
+
     private _renderSourcePicker(config: CardConfig, source: SourceType): TemplateResult {
         const labels: Record<SourceType, { label: string; icon: string }> = {
             date: { label: 'Date', icon: 'mdi:calendar' },
@@ -406,6 +420,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         if (source !== 'auto') return form;
 
         return html`
+            ${this._renderDivider()}
             <div class="date-field-container">
                 <span class="editor-section-label">Auto Discover</span>
                 ${form}
@@ -578,6 +593,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return html`
             <div class="editor-root">
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
+            ${this._renderDivider()}
             <div class="style-picker">
                 <span class="editor-section-label">Style</span>
                 <ha-form
@@ -591,6 +607,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             </div>
             ${dateFields}
             ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
+            ${this._renderDivider()}
             ${showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
             ${textSchema.length > 0 ? html`

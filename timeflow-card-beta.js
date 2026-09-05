@@ -1178,10 +1178,19 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 display: block;
                 width: 100%;
             }
+            /* A section heading, distinct from a field label: heavier, and
+               preceded by a rule. Home Assistant has no non-collapsible section
+               component for card editors, so this borrows the colour token its
+               own ha-form-divider uses. */
             .editor-section-label {
-                font-weight: 500;
+                font-weight: 600;
                 font-size: 14px;
                 color: var(--primary-text-color);
+            }
+            .editor-divider {
+                border: none;
+                border-top: 1px solid var(--ha-color-border-neutral-quiet, var(--divider-color));
+                margin: 0;
             }
             .style-picker {
                 display: flex;
@@ -1207,7 +1216,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 flex-direction: column;
                 gap: 24px;
             }
-        `}connectedCallback(){super.connectedCallback(),this._codeEditorReady||customElements.whenDefined("ha-code-editor").then(()=>{this._codeEditorReady=!0})}setConfig(e){var t;this._config={...e};const i=mt(this._config);this._pendingSource&&"date"!==i&&i!==this._pendingSource&&(this._pendingSource=null);for(const s of Rt)this._templateModeTouched.has(s)||(this._templateMode={...this._templateMode,[s]:this._isTemplate(String(null!==(t=e[s])&&void 0!==t?t:""))})}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_toSelectorValue(e){if(!e||this._isTemplate(e))return;const t=new Date(e);if(isNaN(t.getTime()))return;const i=e=>String(e).padStart(2,"0");return`${`${t.getFullYear()}-${i(t.getMonth()+1)}-${i(t.getDate())}`} ${`${i(t.getHours())}:${i(t.getMinutes())}:${i(t.getSeconds())}`}`}_fromSelectorValue(e){if(!e)return"";const t=e.trim().replace(" ","T");return 16===t.length?`${t}:00`:t}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,ariaLabel:zt[e],icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
+        `}connectedCallback(){super.connectedCallback(),this._codeEditorReady||customElements.whenDefined("ha-code-editor").then(()=>{this._codeEditorReady=!0})}setConfig(e){var t;this._config={...e};const i=mt(this._config);this._pendingSource&&"date"!==i&&i!==this._pendingSource&&(this._pendingSource=null);for(const s of Rt)this._templateModeTouched.has(s)||(this._templateMode={...this._templateMode,[s]:this._isTemplate(String(null!==(t=e[s])&&void 0!==t?t:""))})}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_toSelectorValue(e){if(!e||this._isTemplate(e))return;const t=new Date(e);if(isNaN(t.getTime()))return;const i=e=>String(e).padStart(2,"0");return`${`${t.getFullYear()}-${i(t.getMonth()+1)}-${i(t.getDate())}`} ${`${i(t.getHours())}:${i(t.getMinutes())}:${i(t.getSeconds())}`}`}_fromSelectorValue(e){if(!e)return"";const t=e.trim().replace(" ","T");return 16===t.length?`${t}:00`:t}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderDivider(){return G`<hr class="editor-divider" />`}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,ariaLabel:zt[e],icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
             <div class="source-picker">
                 <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
@@ -1236,6 +1245,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 .computeHelper=${Nt}
             ></ha-form>
         `;return"auto"!==i?s:G`
+            ${this._renderDivider()}
             <div class="date-field-container">
                 <span class="editor-section-label">Auto Discover</span>
                 ${s}
@@ -1306,6 +1316,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
         `:j;return G`
             <div class="editor-root">
             ${this._renderSourcePicker(i,s)}
+            ${this._renderDivider()}
             <div class="style-picker">
                 <span class="editor-section-label">Style</span>
                 <ha-form
@@ -1319,6 +1330,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
             </div>
             ${u}
             ${this._renderSourceFields(i,r,s)}
+            ${this._renderDivider()}
             ${l?this._renderTitleField():j}
             ${c?this._renderSubtitleField():j}
             ${o.length>0?G`

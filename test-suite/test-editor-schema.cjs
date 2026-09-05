@@ -442,6 +442,48 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   }
 }
 
+// ── Nothing is missing, nothing is invented ─────────────────────────────────
+
+{
+  // Both directions between CardConfig and the form. CardConfig carries an
+  // index signature, so TypeScript cannot catch either a key the editor forgot
+  // or a name it misspells - a typo would quietly write junk into the YAML.
+  const typesSrc = fs.readFileSync(path.join(repoRoot, 'src/types/index.ts'), 'utf8');
+  const body = typesSrc.match(/export interface CardConfig \{([\s\S]*?)\n\}/)[1];
+  const declared = [...body.matchAll(/^  ([a-z_]+)\??:/gm)].map((m) => m[1]);
+
+  // Keys the config form is not responsible for.
+  const NOT_IN_FORM = [
+    'type',        // the card type, set by Home Assistant
+    'countdowns',  // the listy list, pending its own editor
+    'grid_options' // Home Assistant's own Layout tab owns this
+  ];
+
+  const reachable = new Set();
+  for (const style of STYLES) {
+    for (const cfg of [
+      { style, target_date: 'x', mode: 'count_up' },
+      { style, target_date: 'x', mode: 'count_down' },
+      { style, timer_entity: 'timer.x' },
+      { style, auto_discover_alexa: true },
+    ]) {
+      fieldNames(computeSchema(cfg)).forEach((n) => reachable.add(n));
+    }
+  }
+  fieldNames(styleSchema()).forEach((n) => reachable.add(n));
+  // Rendered by the editor component rather than composed into the schema.
+  ['title', 'subtitle', 'expired_text', 'target_date', 'creation_date', 'count_up_goal_date']
+    .forEach((n) => reachable.add(n));
+
+  const missing = declared.filter((k) => !reachable.has(k) && !NOT_IN_FORM.includes(k));
+  check('Coverage: every config key has an editor field', missing.length === 0,
+    missing.join(', ') || `${declared.length - NOT_IN_FORM.length} keys covered`);
+
+  const undeclared = [...reachable].filter((k) => !declared.includes(k));
+  check('Coverage: the editor writes no key CardConfig does not declare',
+    undeclared.length === 0, undeclared.join(', ') || 'none');
+}
+
 // ── Tinted groups ───────────────────────────────────────────────────────────
 
 {

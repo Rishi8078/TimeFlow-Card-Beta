@@ -296,13 +296,14 @@ function progressSection(caps: StyleCapabilities): FormSchema[] {
   const schema: FormSchema[] = [];
 
   if (caps.ringGeometry) {
-    schema.push(group('ring', 'Ring', [{
-      type: 'grid',
-      schema: [
-        { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1, unit_of_measurement: 'px' } } },
-        { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5, unit_of_measurement: 'px' } } },
-      ],
-    }]));
+    // Full width, not a two-column grid. ha-selector-number gives the slider
+    // `flex: 1` beside a fixed-width box, so halving the row halves only the
+    // slider: the 3:1 ratio that reads as "control plus readout" collapses to
+    // about 1:1 and the two stop looking like one control.
+    schema.push(group('ring', 'Ring', [
+      { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1, unit_of_measurement: 'px' } } },
+      { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5, unit_of_measurement: 'px' } } },
+    ]));
   }
 
   if (caps.progressTrack) {

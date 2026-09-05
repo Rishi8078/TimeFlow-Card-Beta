@@ -385,7 +385,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── The split around the title ──────────────────────────────────────────────
 
 {
-  const { computeSourceSchema, computeTextSchema, computeUnitsSchema, computePanelsSchema } =
+  const { computeSourceSchema, computeTextSchema, computeExpiredSchema, computeUnitsSchema, computePanelsSchema } =
     require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
@@ -397,7 +397,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
       const parts = JSON.stringify([
-        ...computeSourceSchema(cfg), ...computeTextSchema(cfg),
+        ...computeSourceSchema(cfg), ...computeTextSchema(cfg), ...computeExpiredSchema(cfg),
         ...computeUnitsSchema(cfg), ...computePanelsSchema(cfg),
       ]);
       if (whole !== parts) {
@@ -405,7 +405,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       }
     }
   }
-  check('Split: the four parts always reassemble into computeSchema', true);
+  check('Split: the five parts always reassemble into computeSchema', true);
 
   // Mode belongs above the title, the text fields below it.
   const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));
@@ -417,6 +417,13 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const units = fieldNames(computeUnitsSchema(dateCfg()));
   check('Split: the units part carries the toggles', units.includes('show_days') && units.includes('show_seconds'));
   check('Split: compact_format rides with the units', units.includes('compact_format'));
+
+  // expired_animation belongs with the expired text, not with the colours.
+  check('Split: expired_animation sits in its own part',
+    fieldNames(computeExpiredSchema(dateCfg())).join(',') === 'expired_animation');
+  const appearance = computePanelsSchema(dateCfg()).find((i) => i.title === 'Appearance');
+  check('Split: Appearance no longer holds expired_animation',
+    !fieldNames([appearance]).includes('expired_animation'));
 
   const bottom = fieldNames(computePanelsSchema(dateCfg()));
   check('Split: the panels part holds no unit toggles', !bottom.some((n) => n.startsWith('show_')));

@@ -240,7 +240,6 @@ function appearanceSection(caps: StyleCapabilities): FormSchema[] {
   schema.push(
     templatable('background_color', { text: {} }),
     templatable('text_color', { text: {} }),
-    { name: 'expired_animation', selector: { boolean: {} } },
   );
 
   return [{
@@ -364,6 +363,7 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
   return [
     ...computeSourceSchema(config, source),
     ...computeTextSchema(config, source),
+    ...computeExpiredSchema(config),
     ...computeUnitsSchema(config),
     ...computePanelsSchema(config),
   ];
@@ -387,6 +387,15 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
 /** The text fields the editor does not render itself. */
 export function computeTextSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   return textSection(getCapabilities(config), source ?? getSourceType(config));
+}
+
+/**
+ * The expired-animation switch, which sits directly under the expired text the
+ * editor renders rather than off in Appearance - the two describe the same
+ * moment, and separating them made the pair hard to find.
+ */
+export function computeExpiredSchema(_config: CardConfig): FormSchema[] {
+  return [{ name: 'expired_animation', selector: { boolean: {} } }];
 }
 
 /** The time-unit toggles, which the editor puts in a section of their own. */

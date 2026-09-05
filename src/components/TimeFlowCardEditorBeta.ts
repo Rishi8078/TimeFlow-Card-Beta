@@ -2,7 +2,7 @@ import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
-import { computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
+import { computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -618,6 +618,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
         const textSchema = computeTextSchema(displayCfg as CardConfig, source);
+        const expiredSchema = computeExpiredSchema(displayCfg as CardConfig);
         const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
         const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
         const caps = getCapabilities(displayCfg as CardConfig);
@@ -686,6 +687,14 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 </div>
             ` : nothing}
             ${showsExpiredText ? this._renderExpiredTextField() : nothing}
+            <ha-form
+                .hass=${this.hass}
+                .data=${displayCfg}
+                .schema=${expiredSchema}
+                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                .computeLabel=${computeLabel}
+                .computeHelper=${this._computeHelper}
+            ></ha-form>
             ${unitsSchema.length > 0 ? html`
                 <div class="editor-section units-section">
                     <span class="editor-section-label">Time Units</span>

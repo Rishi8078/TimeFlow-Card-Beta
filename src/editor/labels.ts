@@ -10,7 +10,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'timer_entity': 'Timer Entity',
   'mode': 'Mode',
   'target_date': 'Target Date/Time',
-  'creation_date': 'Start Date (for progress)',
+  'creation_date': 'Start Date',
   'count_up_goal_date': 'Goal Date',
   'count_up_cycle': 'Count-up Cycle',
   'auto_discover_alexa': 'Alexa',
@@ -63,9 +63,8 @@ export const FIELD_HELPERS: Record<string, string> = {
 
   // Timer Source
   'timer_entity': 'Select a timer, sensor, or input_datetime entity',
-  'mode': 'Choose whether the card counts down to a date or counts up from a date',
   'target_date': 'ISO date, entity, or template: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
-  'creation_date': 'Start date for countdown progress calculation (optional)',
+  'creation_date': 'Where the progress ring starts filling from.',
   'count_up_goal_date': 'Optional goal/end date for count-up circle progress',
   'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
 

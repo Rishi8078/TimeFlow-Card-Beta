@@ -120,10 +120,16 @@ function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema
   return [{ name: 'count_up_cycle', selector: { text: {} } }];
 }
 
+/**
+ * Everything in the text group except the title.
+ *
+ * The title is rendered by the editor instead, so it can carry the same
+ * picker/template toggle the dates have - it is one of the keys people most
+ * often want a template in.
+ */
 function textSection(caps: StyleCapabilities, source: SourceType): FormSchema[] {
   const schema: FormSchema[] = [];
 
-  if (caps.title) schema.push({ name: 'title', selector: { text: {} } });
   if (caps.subtitle) schema.push({ name: 'subtitle', selector: { text: {} } });
 
   // Prefix and suffix are applied in getSubtitle()'s standard-countdown branch;
@@ -333,12 +339,30 @@ function actionsSection(): FormSchema[] {
  * the config says.
  */
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
-  const caps = getCapabilities(config);
+  return [...computeSourceSchema(config, source), ...computeRestSchema(config, source)];
+}
+
+/**
+ * The part of the form above the title: how the countdown is sourced.
+ *
+ * Split out because the editor renders the title itself, between the two
+ * halves. Concatenating these two gives computeSchema() exactly.
+ */
+export function computeSourceSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   const activeSource = source ?? getSourceType(config);
 
   return [
     ...sourceSection(activeSource),
     ...countUpCycleSection(config, activeSource),
+  ];
+}
+
+/** The part of the form below the title. */
+export function computeRestSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+  const caps = getCapabilities(config);
+  const activeSource = source ?? getSourceType(config);
+
+  return [
     ...textSection(caps, activeSource),
     ...timeUnitsSection(caps),
     ...timerListSection(caps),

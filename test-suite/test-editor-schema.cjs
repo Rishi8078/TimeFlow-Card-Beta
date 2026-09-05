@@ -250,7 +250,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   // Field -> the capability flag that must be true for it to appear.
   const gated = {
-    title: 'title',
+    // `title` is not here: like `style`, the editor renders it itself so it can
+    // carry a picker/template toggle. Its capability gate lives in the
+    // component, checked separately below.
     subtitle: 'subtitle',
     expired_text: 'expiredText',
     compact_format: 'compactFormat',
@@ -306,6 +308,11 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Style: it is not duplicated inside the form',
     !fieldNames(computeSchema({ style: 'classic' })).includes('style'));
 
+  // Same for the title: rendered by the editor with its own template toggle.
+  const titleInForm = STYLES.filter((style) =>
+    fieldNames(computeSchema({ style, target_date: 'x' })).includes('title'));
+  check('Title: never appears inside the form', titleInForm.length === 0, titleInForm.join(', ') || 'none');
+
   for (const style of STYLES) {
     for (const cfg of [
       { style, target_date: 'x' },
@@ -347,6 +354,37 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       .map((i) => i.title);
     check(`No empty panels on ${style}`, empties.length === 0, empties.join(', ') || 'none');
   }
+}
+
+// ── The split around the title ──────────────────────────────────────────────
+
+{
+  const { computeSourceSchema, computeRestSchema } = require(path.join(outDir, 'editor', 'schema.js'));
+
+  for (const style of STYLES) {
+    for (const cfg of [
+      { style, target_date: 'x' },
+      { style, target_date: 'x', mode: 'count_up' },
+      { style, timer_entity: 'timer.x' },
+      { style, auto_discover_alexa: true },
+    ]) {
+      const whole = JSON.stringify(computeSchema(cfg));
+      const halves = JSON.stringify([...computeSourceSchema(cfg), ...computeRestSchema(cfg)]);
+      if (whole !== halves) {
+        check(`Split: halves reassemble on ${style}`, false, JSON.stringify(cfg));
+      }
+    }
+  }
+  check('Split: the two halves always reassemble into computeSchema', true);
+
+  // Mode belongs above the title, the text fields below it.
+  const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));
+  check('Split: the source half carries mode and the cycle',
+    top.includes('mode') && top.includes('count_up_cycle'), top.join(', '));
+  const bottom = fieldNames(computeRestSchema(dateCfg()));
+  check('Split: the rest carries the text fields', bottom.includes('subtitle') && bottom.includes('expired_text'));
+  check('Split: neither half contains the title',
+    !top.includes('title') && !bottom.includes('title'));
 }
 
 // ── Section order ───────────────────────────────────────────────────────────

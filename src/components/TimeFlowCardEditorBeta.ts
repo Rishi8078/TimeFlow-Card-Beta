@@ -1,12 +1,16 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
-import { computeSchema, styleSchema } from '../editor/schema';
-import { SourceType, applySource, availableSources, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
+import { computeRestSchema, computeSourceSchema, styleSchema } from '../editor/schema';
+import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
-/** The three date keys the editor renders with a picker/template toggle. */
-const DATE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date'] as const;
+/**
+ * Keys the editor renders itself, with a picker/template toggle: the three
+ * dates, plus the title. Everything else that accepts a template is a plain
+ * text field, where a template can simply be typed.
+ */
+const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title'] as const;
 
 const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
@@ -204,7 +208,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         // Open in template mode for values that already are templates, unless
         // the user has said otherwise for that field.
-        for (const key of DATE_FIELDS) {
+        for (const key of TEMPLATABLE_FIELDS) {
             if (this._templateModeTouched.has(key)) continue;
             this._templateMode = {
                 ...this._templateMode,
@@ -329,6 +333,48 @@ export class TimeFlowCardEditorBeta extends LitElement {
         label: string,
         helper: string
     ): TemplateResult {
+        return this._renderTemplatableField(configKey, label, helper, html`
+            <div class="date-picker">
+                <ha-form
+                    .hass=${this.hass}
+                    .data=${{ [configKey]: this._toSelectorValue(String(this._config[configKey] ?? '')) }}
+                    .schema=${[{ name: configKey, selector: { datetime: {} } }]}
+                    .computeLabel=${() => ''}
+                    @value-changed=${(e: CustomEvent) => this._updateDateField(
+                        configKey,
+                        this._fromSelectorValue(e.detail?.value?.[configKey] ?? '')
+                    )}
+                ></ha-form>
+            </div>
+        `);
+    }
+
+    /** The title, with the same toggle - plain text on one side, Jinja on the other. */
+    private _renderTitleField(): TemplateResult {
+        return this._renderTemplatableField('title', 'Title', 'Falls back to the timer or entity name', html`
+            <div class="date-picker">
+                <ha-form
+                    .hass=${this.hass}
+                    .data=${{ title: this._config.title ?? '' }}
+                    .schema=${[{ name: 'title', selector: { text: {} } }]}
+                    .computeLabel=${() => ''}
+                    @value-changed=${(e: CustomEvent) =>
+                        this._updateDateField('title', e.detail?.value?.title ?? '')}
+                ></ha-form>
+            </div>
+        `);
+    }
+
+    /**
+     * A field with a picker/template toggle: `plain` is whatever the field
+     * looks like normally, and template mode swaps it for the Jinja editor.
+     */
+    private _renderTemplatableField(
+        configKey: string,
+        label: string,
+        helper: string,
+        plain: TemplateResult
+    ): TemplateResult {
         const value = String(this._config[configKey] ?? '');
         const templateMode = !!this._templateMode[configKey];
 
@@ -378,18 +424,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         <div class="date-helper">Jinja template, entity id, or ISO date string</div>
                     `
                 : html`
-                        <div class="date-picker">
-                            <ha-form
-                                .hass=${this.hass}
-                                .data=${{ [configKey]: this._toSelectorValue(value) }}
-                                .schema=${[{ name: configKey, selector: { datetime: {} } }]}
-                                .computeLabel=${() => ''}
-                                @value-changed=${(e: CustomEvent) => this._updateDateField(
-                                    configKey,
-                                    this._fromSelectorValue(e.detail?.value?.[configKey] ?? '')
-                                )}
-                            ></ha-form>
-                        </div>
+                        ${plain}
                         <div class="date-helper">${helper}</div>
                     `
             }
@@ -438,7 +473,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
         };
 
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
-        const schema = computeSchema(displayCfg as CardConfig, source);
+        const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
+        const restSchema = computeRestSchema(displayCfg as CardConfig, source);
+        const showsTitle = getCapabilities(displayCfg as CardConfig).title;
 
         // The date pickers live outside ha-form because each carries a
         // picker/template toggle, and the template rule says a date field must
@@ -461,8 +498,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 )
                 : this._renderDateField(
                     'creation_date',
-                    'Creation Date',
-                    'Optional start date for countdown progress'
+                    'Start Date',
+                    'Where the progress ring starts filling from. Without it the ring stays empty.'
                 )}
             </div>
         ` : nothing;
@@ -484,7 +521,16 @@ export class TimeFlowCardEditorBeta extends LitElement {
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}
-                .schema=${schema}
+                .schema=${sourceSchema}
+                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                .computeLabel=${computeLabel}
+                .computeHelper=${computeHelper}
+            ></ha-form>
+            ${showsTitle ? this._renderTitleField() : nothing}
+            <ha-form
+                .hass=${this.hass}
+                .data=${displayCfg}
+                .schema=${restSchema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${computeLabel}
                 .computeHelper=${computeHelper}

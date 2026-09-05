@@ -105,6 +105,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 gap: 6px;
                 padding: 8px 0 4px 0;
             }
+            .source-picker ha-control-select {
+                /* ha-control-select defaults to 40px, which assumes an icon or
+                   a label. Stacking both needs the taller variant Home
+                   Assistant uses for its own icon+label selects, or the text
+                   collides with the icon above it. */
+                --control-select-thickness: 56px;
+                --control-select-border-radius: 12px;
+                --control-select-padding: 5px;
+            }
             .source-picker-label {
                 font-weight: 500;
                 font-size: 14px;
@@ -196,7 +205,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const labels: Record<SourceType, { label: string; icon: string }> = {
             date: { label: 'Date', icon: 'mdi:calendar' },
             timer: { label: 'Entity', icon: 'mdi:timer-outline' },
-            auto: { label: 'Discover', icon: 'mdi:magnify' },
+            auto: { label: 'Smart Timers', icon: 'mdi:sparkles' },
             countdowns: { label: 'Pinned', icon: 'mdi:format-list-bulleted' },
         };
 

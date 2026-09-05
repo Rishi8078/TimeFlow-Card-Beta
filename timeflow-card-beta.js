@@ -1151,6 +1151,15 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 gap: 6px;
                 padding: 8px 0 4px 0;
             }
+            .source-picker ha-control-select {
+                /* ha-control-select defaults to 40px, which assumes an icon or
+                   a label. Stacking both needs the taller variant Home
+                   Assistant uses for its own icon+label selects, or the text
+                   collides with the icon above it. */
+                --control-select-thickness: 56px;
+                --control-select-border-radius: 12px;
+                --control-select-padding: 5px;
+            }
             .source-picker-label {
                 font-weight: 500;
                 font-size: 14px;
@@ -1166,7 +1175,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 gap: 16px;
                 padding: 16px 0;
             }
-        `}setConfig(e){this._config={...e};const t=e.target_date||"",i=e.creation_date||"",s=e.count_up_goal_date||"";this._targetDateTemplateMode=this._isTemplate(t),this._creationDateTemplateMode=this._isTemplate(i),this._countUpGoalDateTemplateMode=this._isTemplate(s)}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_convertToDatetimeLocal(e){if(!e||this._isTemplate(e))return"";try{const t=new Date(e);if(isNaN(t.getTime()))return"";const i=t.getFullYear(),s=String(t.getMonth()+1).padStart(2,"0"),r=String(t.getDate()).padStart(2,"0"),o=String(t.getHours()).padStart(2,"0");return`${i}-${s}-${r}T${o}:${String(t.getMinutes()).padStart(2,"0")}`}catch{return""}}_convertFromDatetimeLocal(e){return e?e+":00":""}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Discover",icon:"mdi:magnify"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
+        `}setConfig(e){this._config={...e};const t=e.target_date||"",i=e.creation_date||"",s=e.count_up_goal_date||"";this._targetDateTemplateMode=this._isTemplate(t),this._creationDateTemplateMode=this._isTemplate(i),this._countUpGoalDateTemplateMode=this._isTemplate(s)}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_convertToDatetimeLocal(e){if(!e||this._isTemplate(e))return"";try{const t=new Date(e);if(isNaN(t.getTime()))return"";const i=t.getFullYear(),s=String(t.getMonth()+1).padStart(2,"0"),r=String(t.getDate()).padStart(2,"0"),o=String(t.getHours()).padStart(2,"0");return`${i}-${s}-${r}T${o}:${String(t.getMinutes()).padStart(2,"0")}`}catch{return""}}_convertFromDatetimeLocal(e){return e?e+":00":""}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:sparkles"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
             <div class="source-picker">
                 <span class="source-picker-label">Countdown Source</span>
                 <ha-control-select

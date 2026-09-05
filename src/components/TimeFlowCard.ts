@@ -1409,7 +1409,7 @@ export class TimeFlowCardBeta extends LitElement {
     if (kind === 'alexa') {
       return {
         icon: config.alexa_icon || 'mdi:amazon-alexa',
-        iconColor: config.alexa_color || '#009bbd',
+        iconColor: '#009bbd',
         iconBackground: '#dff3f7',
         ringColor: accent || '#94809a',
       };

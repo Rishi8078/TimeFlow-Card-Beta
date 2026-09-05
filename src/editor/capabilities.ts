@@ -1,0 +1,153 @@
+import { CardConfig } from '../types/index';
+
+/**
+ * What each style can actually render, and which timer source a card is using.
+ *
+ * These two answers are the whole basis of the editor's shape. Everything the
+ * form decides to show or hide is a lookup in here rather than a condition
+ * written inline next to a field, so the rules stay checkable against
+ * EDITOR-CONFIG-MATRIX.md instead of being scattered through a 700-line
+ * schema builder.
+ */
+
+export type StyleName =
+  | 'classic'
+  | 'eventy'
+  | 'classic-compact'
+  | 'gridy'
+  | 'minimal-square'
+  | 'listy';
+
+/**
+ * Where a card gets its countdown. Not stored in the config: it is inferred
+ * from which source keys are set, so no synthetic key can leak into a user's
+ * YAML.
+ */
+export type SourceType = 'date' | 'timer' | 'auto' | 'countdowns';
+
+export interface StyleCapabilities {
+  /** Title line. */
+  title: boolean;
+  /** Custom subtitle override. */
+  subtitle: boolean;
+  /** Text shown once the countdown completes. */
+  expiredText: boolean;
+  /** Compact vs full time wording. */
+  compactFormat: boolean;
+  /** show_years … show_minutes. */
+  timeUnits: boolean;
+  /** show_seconds on its own - listy formats timer rows with it. */
+  showSeconds: boolean;
+  /** Header icon and its two colours. */
+  headerIcon: boolean;
+  /** progress_color. */
+  progressColor: boolean;
+  /** stroke_width + icon_size: only styles that draw a configurable ring. */
+  ringGeometry: boolean;
+  /** invert_progress. */
+  invertProgress: boolean;
+  /** progress_bg_stroke + progress_bg_opacity. */
+  progressTrack: boolean;
+  /** The gridy dot grid. */
+  dotGrid: boolean;
+  /** The listy row list. */
+  timerList: boolean;
+  width: boolean;
+  height: boolean;
+  aspectRatio: boolean;
+}
+
+/**
+ * Derived by tracing which renderer reads which key - see the "Axis 2" table in
+ * EDITOR-CONFIG-MATRIX.md. A `false` here means the style's renderer never
+ * looks at that config, so showing the field would be a lie.
+ */
+export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
+  classic: {
+    title: true, subtitle: true, expiredText: true, compactFormat: true,
+    timeUnits: true, showSeconds: true, headerIcon: true,
+    progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    dotGrid: false, timerList: false,
+    width: true, height: true, aspectRatio: true,
+  },
+  eventy: {
+    // Sizes itself around one big number; draws no ring at all.
+    title: true, subtitle: true, expiredText: true, compactFormat: true,
+    timeUnits: true, showSeconds: true, headerIcon: true,
+    progressColor: false, ringGeometry: false, invertProgress: false, progressTrack: false,
+    dotGrid: false, timerList: false,
+    width: false, height: false, aspectRatio: false,
+  },
+  'classic-compact': {
+    title: true, subtitle: true, expiredText: true, compactFormat: true,
+    timeUnits: true, showSeconds: true, headerIcon: true,
+    progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    dotGrid: false, timerList: false,
+    width: true, height: false, aspectRatio: false,
+  },
+  gridy: {
+    // Dots instead of a ring: keeps the colours, loses the geometry.
+    title: true, subtitle: true, expiredText: true, compactFormat: true,
+    timeUnits: true, showSeconds: true, headerIcon: false,
+    progressColor: true, ringGeometry: false, invertProgress: true, progressTrack: true,
+    dotGrid: true, timerList: false,
+    width: true, height: true, aspectRatio: true,
+  },
+  'minimal-square': {
+    // A single value inside a ring. Renders no text whatsoever.
+    title: false, subtitle: false, expiredText: false, compactFormat: false,
+    timeUnits: false, showSeconds: false, headerIcon: false,
+    progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    dotGrid: false, timerList: false,
+    width: true, height: true, aspectRatio: true,
+  },
+  listy: {
+    // Each row draws its own small ring; the card-level ring options do nothing.
+    // header_icon survives only as the fallback icon for pinned countdowns.
+    title: true, subtitle: false, expiredText: true, compactFormat: true,
+    timeUnits: false, showSeconds: true, headerIcon: true,
+    progressColor: true, ringGeometry: false, invertProgress: false, progressTrack: false,
+    dotGrid: false, timerList: true,
+    width: true, height: true, aspectRatio: true,
+  },
+};
+
+const DEFAULT_STYLE: StyleName = 'classic';
+
+/** The config's style, falling back to classic for anything unrecognised. */
+export function getStyle(config: CardConfig | null | undefined): StyleName {
+  const style = config?.style as StyleName | undefined;
+  return style && style in STYLE_CAPABILITIES ? style : DEFAULT_STYLE;
+}
+
+export function getCapabilities(config: CardConfig | null | undefined): StyleCapabilities {
+  return STYLE_CAPABILITIES[getStyle(config)];
+}
+
+/**
+ * Which source a card is using, read off the keys it has set.
+ *
+ * The order matches how the card itself resolves a timer at render time -
+ * pinned countdowns, then an explicit entity, then discovery, then a date - so
+ * the editor always describes what the card will actually do, even for a config
+ * that sets more than one.
+ */
+export function getSourceType(config: CardConfig | null | undefined): SourceType {
+  if (!config) return 'date';
+
+  if (getStyle(config) === 'listy' && Array.isArray(config.countdowns) && config.countdowns.length > 0) {
+    return 'countdowns';
+  }
+  if (config.timer_entity) return 'timer';
+  if (config.auto_discover_alexa || config.auto_discover_google) return 'auto';
+  return 'date';
+}
+
+/**
+ * True when the card counts to a date the user typed, which is the only case
+ * where the date fields, `mode` and the subtitle prefix/suffix mean anything.
+ * A timer entity brings its own start, end and direction.
+ */
+export function usesDateFields(source: SourceType): boolean {
+  return source === 'date';
+}

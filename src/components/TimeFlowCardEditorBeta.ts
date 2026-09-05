@@ -1,6 +1,9 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
+import { computeSchema } from '../editor/schema';
+import { getSourceType, usesDateFields } from '../editor/capabilities';
+import { computeLabel, computeHelper } from '../editor/labels';
 
 /**
  * TimeFlow Card Editor Beta
@@ -161,118 +164,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
         this._fireConfigChanged(newConfig);
     }
 
-    private _computeHelper(schema: any): string {
-        const helpers: Record<string, string> = {
-            // Timer Source
-            'timer_entity': 'Select a timer, sensor, or input_datetime entity',
-            'mode': 'Choose whether the card counts down to a date or counts up from a date',
-            'target_date': 'ISO date, entity, or template: "2024-12-31T23:59:59", "{{ states(\'input_datetime.deadline\') }}"',
-            'creation_date': 'Start date for countdown progress calculation (optional)',
-            'count_up_goal_date': 'Optional goal/end date for count-up circle progress',
-            'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
-            'auto_discover_alexa': 'Automatically find active Alexa timers',
-            'auto_discover_google': 'Automatically find active Google Home timers',
-
-            // Display
-            'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
-            'subtitle': 'Shows time remaining by default; only set for custom text',
-            'subtitle_prefix': 'Text before countdown (e.g., "in", "Only")',
-            'subtitle_suffix': 'Text after countdown (e.g., "left", "remaining")',
-            'expired_text': 'Text shown when countdown completes',
-            'compact_format': '"2d 5h 30m" vs "2 days 5 hours 30 minutes"',
-
-            // Colors
-            'progress_color': 'Progress circle color (hex, name, rgb, or template)',
-            'background_color': 'Card background color',
-            'text_color': 'Text color for title and countdown',
-
-            // Layout
-            'width': 'Card width (e.g., "300px", "100%", "20em")',
-            'height': 'Card height (e.g., "200px", "auto")',
-            'aspect_ratio': 'Width:height ratio (e.g., "16/9", "4/3", "1/1")',
-
-            // Progress Circle
-            'stroke_width': 'Thickness of the progress circle ring',
-            'icon_size': 'Size of the progress circle',
-            'progress_bg_stroke': 'Background circle stroke color (e.g., "#515751", "rgba(81, 87, 81, 0.2)")',
-            'progress_bg_opacity': 'Background circle opacity as percentage (0-100)',
-            'invert_progress': 'Start the progress circle full and subtract from it instead of filling it up',
-
-            // Header Icon
-            'header_icon': 'Material Design icon name (e.g., "mdi:cake-variant")',
-            'header_icon_color': 'Icon color (hex, name, or template)',
-            'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
-
-            // Style
-            'style': 'Card style: Classic, Eventy, Classic Compact, Gridy, or Minimal Square',
-
-            // Dot grid (gridy)
-            'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',
-            'grid_dot_unit': 'What one dot represents when dots is "auto". Auto picks the unit that keeps the grid readable',
-            'grid_rows': 'Rows to wrap the dots into. Auto fits as many per row as the card width allows',
-            'grid_dot_size': 'Preferred dot diameter in pixels. Dots still grow past this to fill the card width',
-        };
-        return helpers[schema.name] || '';
-    }
-
-    private _computeLabel(schema: any): string {
-        if (schema.label)
-            return schema.label;
-
-        const labels: Record<string, string> = {
-            'timer_entity': 'Timer Entity',
-            'mode': 'Mode',
-            'target_date': 'Target Date/Time',
-            'creation_date': 'Start Date (for progress)',
-            'count_up_goal_date': 'Goal Date',
-            'count_up_cycle': 'Count-up Cycle',
-            'auto_discover_alexa': 'Auto-discover Alexa Timers',
-            'auto_discover_google': 'Auto-discover Google Timers',
-            'max_timers': 'Maximum Timers Shown',
-            'alexa_icon': 'Alexa Row Icon',
-            'google_icon': 'Google Row Icon',
-            'timer_icon': 'Timer Row Icon',
-            'show_days': 'Days',
-            'show_hours': 'Hours',
-            'show_minutes': 'Minutes',
-            'show_seconds': 'Seconds',
-            'show_months': 'Months',
-            'show_years': 'Years',
-            'show_weeks': 'Weeks',
-            'compact_format': 'Compact Format',
-            'subtitle_prefix': 'Subtitle Prefix',
-            'subtitle_suffix': 'Subtitle Suffix',
-            'expired_animation': 'Expired Animation',
-            'expired_text': 'Expired Text',
-            'progress_color': 'Progress Color',
-            'background_color': 'Background Color',
-            'text_color': 'Text Color',
-            'stroke_width': 'Stroke Width',
-            'icon_size': 'Circle Size',
-            'grid_dots': 'Dots',
-            'grid_dot_unit': 'Dot Unit',
-            'grid_rows': 'Rows',
-            'grid_dot_size': 'Dot Size',
-            'progress_bg_stroke': 'Background Stroke Color',
-            'progress_bg_opacity': 'Background Opacity',
-            'invert_progress': 'Invert Progress',
-            'aspect_ratio': 'Aspect Ratio',
-            'header_icon': 'Header Icon',
-            'header_icon_color': 'Icon Color',
-            'header_icon_background': 'Icon Background',
-            'style': 'Card Style',
-        };
-
-        if (labels[schema.name]) return labels[schema.name];
-
-        const key = (schema.name ?? '').toString();
-        if (!key) return '';
-        return key
-            .split('_')
-            .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ');
-    }
-
     private _renderDateField(
         configKey: 'target_date' | 'creation_date' | 'count_up_goal_date',
         label: string,
@@ -365,265 +256,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
             compact_format: this._getEffectiveCompactFormat()
         };
 
-        const selectedStyle = displayCfg.style || 'classic';
+        const schema = computeSchema(displayCfg as CardConfig);
+        const source = getSourceType(displayCfg as CardConfig);
 
-        const schema = [
-            // ═══════════════════════════════════════════════════════════
-            // CARD STYLE - Choose card appearance
-            // ═══════════════════════════════════════════════════════════════════════════════
-            { 
-                name: 'mode', 
-                selector: { 
-                    select: { 
-                        options: [
-                            { value: 'count_down', label: 'Count Down' },
-                            { value: 'count_up', label: 'Count Up' }
-                        ],
-                        mode: 'dropdown'
-                    } 
-                } 
-            },
-            { 
-                name: 'style', 
-                selector: { 
-                    select: { 
-                        options: [
-                            { value: 'classic', label: 'Classic' },
-                            { value: 'eventy', label: 'Eventy' },
-                            { value: 'classic-compact', label: 'Classic Compact' },
-                            { value: 'gridy', label: 'Gridy' },
-                            { value: 'minimal-square', label: 'Minimal Square' },
-                            { value: 'listy', label: 'Listy (multiple timers)' }
-                        ],
-                        mode: 'dropdown'
-                    } 
-                } 
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // TIMER SOURCE - Most important, always visible at top
-            // ═══════════════════════════════════════════════════════════
-            { name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } },
-
-            // Smart Assistant Auto-Discovery (visible toggles)
-            {
-                type: 'grid',
-                schema: [
-                    { name: 'auto_discover_alexa', selector: { boolean: {} } },
-                    { name: 'auto_discover_google', selector: { boolean: {} } },
-                ]
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // DISPLAY - Title, subtitle, and expired text
-            // ═══════════════════════════════════════════════════════════
-            { name: 'title', selector: { text: {} } },
-            { name: 'subtitle', selector: { text: {} } },
-            {
-                type: 'grid',
-                schema: [
-                    { name: 'subtitle_prefix', selector: { text: {} } },
-                    { name: 'subtitle_suffix', selector: { text: {} } },
-                ]
-            },
-            { name: 'expired_text', selector: { text: {} } },
-
-            // ═══════════════════════════════════════════════════════════
-            // HEADER ICON - Expandable
-            // ═══════════════════════════════════════════════════════════
-            ...((selectedStyle === 'gridy' || selectedStyle === 'minimal-square') ? [] : [
-                {
-                    type: "expandable",
-                    title: "Header Icon",
-                    icon: "mdi:image-filter-vintage",
-                    schema: [
-                        { name: 'header_icon', selector: { icon: {} } },
-                        {
-                            type: 'grid',
-                            schema: [
-                                { name: 'header_icon_color', selector: { text: {} } },
-                                { name: 'header_icon_background', selector: { text: {} } },
-                            ]
-                        },
-                    ]
-                }
-            ]),
-
-            // ═══════════════════════════════════════════════════════════
-            // TIME UNITS - Always visible as grid
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: 'grid',
-                schema: [
-                    { name: 'show_years', selector: { boolean: {} } },
-                    { name: 'show_months', selector: { boolean: {} } },
-                    { name: 'show_weeks', selector: { boolean: {} } },
-                    { name: 'show_days', selector: { boolean: {} } },
-                    { name: 'show_hours', selector: { boolean: {} } },
-                    { name: 'show_minutes', selector: { boolean: {} } },
-                    { name: 'show_seconds', selector: { boolean: {} } },
-                    { name: 'compact_format', selector: { boolean: {} } },
-                ]
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // APPEARANCE - Expandable (secondary settings)
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Appearance",
-                icon: "mdi:palette",
-                schema: [
-                    { name: 'progress_color', selector: { text: {} } },
-                    { name: 'background_color', selector: { text: {} } },
-                    { name: 'text_color', selector: { text: {} } },
-                    { name: 'expired_animation', selector: { boolean: {} } },
-                ]
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // LAYOUT - Expandable
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Layout",
-                icon: "mdi:page-layout-body",
-                schema: [
-                    {
-                        type: 'grid',
-                        schema: [
-                            { name: 'width', selector: { text: {} } },
-                            { name: 'height', selector: { text: {} } },
-                        ]
-                    },
-                    { name: 'aspect_ratio', selector: { text: {} } },
-                ]
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // PROGRESS CIRCLE - Expandable
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Progress Circle",
-                icon: "mdi:circle-slice-3",
-                schema: [
-                    {
-                        type: "grid",
-                        schema: [
-                            { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1 } } },
-                            { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5 } } },
-                        ]
-                    },
-                    { name: 'count_up_cycle', selector: { text: {} } },
-                    { name: 'progress_bg_stroke', selector: { text: {} } },
-                    { name: 'progress_bg_opacity', selector: { number: { min: 0, max: 100, step: 5 } } },
-                    { name: 'invert_progress', selector: { boolean: {} } },
-                ]
-            },
-
-            // ═══════════════════════════════════════════════════════════
-            // TIMER LIST - Expandable, listy style only
-            // ═══════════════════════════════════════════════════════════
-            ...(selectedStyle === 'listy' ? [
-                {
-                    type: "expandable",
-                    title: "Timer List",
-                    icon: "mdi:format-list-bulleted",
-                    schema: [
-                        {
-                            name: 'max_timers',
-                            selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } }
-                        },
-                        {
-                            type: 'grid',
-                            schema: [
-                                { name: 'alexa_icon', selector: { icon: {} } },
-                                { name: 'google_icon', selector: { icon: {} } },
-                            ]
-                        },
-                        { name: 'timer_icon', selector: { icon: {} } }
-                    ]
-                }
-            ] : []),
-
-            // ═══════════════════════════════════════════════════════════
-            // DOT GRID - Expandable, gridy style only
-            // ═══════════════════════════════════════════════════════════
-            ...(selectedStyle === 'gridy' ? [
-                {
-                    type: "expandable",
-                    title: "Dot Grid",
-                    icon: "mdi:dots-grid",
-                    schema: [
-                        {
-                            name: 'grid_dots',
-                            selector: {
-                                select: {
-                                    custom_value: true,
-                                    options: [
-                                        { value: 'auto', label: 'Auto (match the timeframe)' }
-                                    ],
-                                    mode: 'dropdown'
-                                }
-                            }
-                        },
-                        {
-                            name: 'grid_dot_unit',
-                            selector: {
-                                select: {
-                                    options: [
-                                        { value: 'auto', label: 'Auto' },
-                                        { value: 'minute', label: 'Minute' },
-                                        { value: 'hour', label: 'Hour' },
-                                        { value: 'day', label: 'Day' },
-                                        { value: 'week', label: 'Week' },
-                                        { value: 'month', label: 'Month' }
-                                    ],
-                                    mode: 'dropdown'
-                                }
-                            }
-                        },
-                        {
-                            name: 'grid_rows',
-                            selector: {
-                                select: {
-                                    custom_value: true,
-                                    options: [
-                                        { value: 'auto', label: 'Auto (fit the width)' },
-                                        { value: '1', label: '1' },
-                                        { value: '2', label: '2' },
-                                        { value: '3', label: '3' },
-                                        { value: '4', label: '4' },
-                                        { value: '5', label: '5' },
-                                        { value: '6', label: '6' }
-                                    ],
-                                    mode: 'dropdown'
-                                }
-                            }
-                        },
-                        { name: 'grid_dot_size', selector: { number: { min: 4, max: 40, step: 1, mode: 'box' } } },
-                    ]
-                }
-            ] : []),
-
-            // ═══════════════════════════════════════════════════════════
-            // ACTIONS - Expandable
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Tap Actions",
-                icon: "mdi:gesture-tap",
-                schema: [
-                    { name: 'tap_action', selector: { ui_action: {} } },
-                    { name: 'hold_action', selector: { ui_action: {} } },
-                    { name: 'double_tap_action', selector: { ui_action: {} } },
-                ]
-            },
-        ];
-
-        return html`
-            <!-- Date Fields with Template Toggle -->
+        // The date pickers live outside ha-form because each carries a
+        // picker/template toggle, and the template rule says a date field must
+        // stay free text when someone wants Jinja in it. They are only shown
+        // for a date-driven card: a timer entity, auto-discovery or a list of
+        // pinned countdowns each bring their own start and end.
+        const dateFields = usesDateFields(source) ? html`
             <div class="date-fields-section">
                 ${this._renderDateField(
             'target_date',
@@ -649,14 +290,17 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     () => this._toggleCreationDateMode()
                 )}
             </div>
-            
+        ` : nothing;
+
+        return html`
+            ${dateFields}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}
                 .schema=${schema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                .computeLabel=${this._computeLabel}
-                .computeHelper=${this._computeHelper}
+                .computeLabel=${computeLabel}
+                .computeHelper=${computeHelper}
             ></ha-form>
         `;
     }

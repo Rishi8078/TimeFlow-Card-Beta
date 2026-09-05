@@ -244,8 +244,6 @@ export interface CardConfig {
   expired_animation?: boolean;
   expired_text?: string;
 
-  // Alexa-specific styling
-  alexa_color?: string;           // Custom colour for the Alexa chip in the listy style
 
   // Allow any additional string properties to fix template key indexing
   [key: string]: any;

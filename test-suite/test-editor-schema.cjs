@@ -442,6 +442,51 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   }
 }
 
+// ── The capability table matches the card ───────────────────────────────────
+
+{
+  // The dimension flags are the ones that drifted: classic-compact was marked
+  // as taking a width while its renderer never read one, so the editor offered
+  // a field that did nothing. These three keys are read directly in each
+  // renderer, so they can be checked against the source rather than trusted.
+  const cardSrc = fs.readFileSync(path.join(repoRoot, 'src/components/TimeFlowCard.ts'), 'utf8');
+
+  const rendererBody = (name) => {
+    const i = cardSrc.indexOf(`private ${name}(`);
+    if (i === -1) return '';
+    const j = cardSrc.indexOf('{', i);
+    let depth = 0;
+    for (let k = j; k < cardSrc.length; k++) {
+      if (cardSrc[k] === '{') depth++;
+      else if (cardSrc[k] === '}' && --depth === 0) return cardSrc.slice(j, k + 1);
+    }
+    return '';
+  };
+
+  const RENDERERS = {
+    classic: '_renderCard',
+    eventy: '_renderEventyCard',
+    'classic-compact': '_renderClassicCompactCard',
+    gridy: '_renderGridyCard',
+    'minimal-square': '_renderMinimalSquareCard',
+    listy: '_renderListyCard',
+  };
+
+  const wrong = [];
+  for (const [style, renderer] of Object.entries(RENDERERS)) {
+    const body = rendererBody(renderer);
+    if (!body) { wrong.push(`${renderer} not found`); continue; }
+    for (const [key, cap] of [['width', 'width'], ['height', 'height'], ['aspect_ratio', 'aspectRatio']]) {
+      const readsIt = new RegExp(`\\b${key}\\b`).test(body);
+      if (readsIt !== STYLE_CAPABILITIES[style][cap]) {
+        wrong.push(`${style}.${cap}=${STYLE_CAPABILITIES[style][cap]} but ${renderer} ${readsIt ? 'reads' : 'ignores'} ${key}`);
+      }
+    }
+  }
+  check('Capabilities: dimension flags match what each renderer reads',
+    wrong.length === 0, wrong.join('; ') || 'all match');
+}
+
 // ── Section order ───────────────────────────────────────────────────────────
 
 {

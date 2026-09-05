@@ -79,11 +79,13 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     width: false, height: false, aspectRatio: false,
   },
   'classic-compact': {
+    // Sizes itself like eventy: its renderer reads none of width, height or
+    // aspect_ratio and emits no dimension styles at all.
     title: true, subtitle: true, expiredText: true, compactFormat: true,
     timeUnits: true, showSeconds: true, headerIcon: true,
     progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
     dotGrid: false, timerList: false,
-    width: true, height: false, aspectRatio: false,
+    width: false, height: false, aspectRatio: false,
   },
   gridy: {
     // Dots instead of a ring: keeps the colours, loses the geometry.

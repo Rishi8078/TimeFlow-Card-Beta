@@ -203,11 +203,13 @@ export class TimeFlowCardEditorBeta extends LitElement {
                rather than a rule. The tint is mixed from the text colour, so it
                lands correctly on a light theme and a dark one alike; the flat
                value is the fallback for engines without color-mix. */
-            /* A heading and its fields, with no framing of their own. */
+            /* A heading and its fields, with no framing of their own. The gap
+               matches .editor-section so every section heading sits the same
+               distance above its content. */
             .editor-block {
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
+                gap: 8px;
             }
             /* ha-form-grid takes its row gap from --ha-space-6 and its column
                count from --form-grid-column-count, both of which inherit
@@ -236,6 +238,13 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 border-radius: 12px;
                 background: rgba(127, 127, 127, 0.08);
                 background: color-mix(in srgb, currentColor 5%, transparent);
+            }
+            /* Its :host is inline-block with width:auto, so without this it
+               sizes to its label instead of lining up with the source picker
+               above it. */
+            ha-control-select-menu {
+                display: block;
+                width: 100%;
             }
             ha-control-select {
                 /* ha-control-select defaults to 40px, which assumes an icon or
@@ -374,7 +383,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         return html`
             <div class="editor-block">
-                <span class="editor-section-label">Style</span>
+                <span class="editor-section-label">Card Style</span>
                 ${this._menuReady
                     ? html`
                         <ha-control-select-menu

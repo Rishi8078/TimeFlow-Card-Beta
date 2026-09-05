@@ -13,8 +13,8 @@ export const FIELD_LABELS: Record<string, string> = {
   'creation_date': 'Start Date',
   'count_up_goal_date': 'Goal Date',
   'count_up_cycle': 'Count-up Cycle',
-  'auto_discover_alexa': 'Alexa',
-  'auto_discover_google': 'Google Home',
+  'auto_discover_alexa': 'Alexa Timers',
+  'auto_discover_google': 'Google Home Timers',
   'max_timers': 'Maximum Timers Shown',
   'alexa_icon': 'Alexa Row Icon',
   'google_icon': 'Google Row Icon',
@@ -53,7 +53,6 @@ export const FIELD_LABELS: Record<string, string> = {
 export const FIELD_HELPERS: Record<string, string> = {
   // Section descriptions. ha-form-expandable renders these inside the panel,
   // so they cost nothing while it is collapsed.
-  'section_auto_discover': 'Finds running timers on their own. Turn off whichever assistant you do not have.',
   'section_header_icon': 'Icon shown beside the title. On the list style it is the fallback icon for pinned countdowns.',
   'section_appearance': 'Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
   'section_layout': 'Leave a field empty to let the card size itself.',

@@ -81,22 +81,16 @@ function sourceSection(source: SourceType): FormSchema[] {
   }
 
   if (source === 'auto') {
+    // Just the pair. The editor puts the "Auto Discover" heading above them,
+    // the same way it heads Style and Countdown Source - these are the only
+    // fields this source has, so burying them in a collapsible panel would be
+    // wrong.
     return [{
-      type: 'expandable',
-      name: 'section_auto_discover',
-      flatten: true,
-      title: 'Auto Discover',
-      icon: 'mdi:creation-outline',
-      // Open by default: these are the only fields this source has, and a
-      // collapsed panel would leave the card looking unconfigurable.
-      expanded: true,
-      schema: [{
-        type: 'grid',
-        schema: [
-          { name: 'auto_discover_alexa', selector: { boolean: {} } },
-          { name: 'auto_discover_google', selector: { boolean: {} } },
-        ],
-      }],
+      type: 'grid',
+      schema: [
+        { name: 'auto_discover_alexa', selector: { boolean: {} } },
+        { name: 'auto_discover_google', selector: { boolean: {} } },
+      ],
     }];
   }
 

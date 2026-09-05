@@ -382,6 +382,40 @@ export class TimeFlowCardEditorBeta extends LitElement {
         );
     }
 
+    /**
+     * The chosen source's own fields. Auto-discovery gets a heading and a line
+     * of explanation, matching the Style and Countdown Source blocks; the other
+     * sources are a single self-explanatory field and need neither.
+     */
+    private _renderSourceFields(
+        displayCfg: CardConfig,
+        schema: unknown[],
+        source: SourceType
+    ): TemplateResult {
+        const form = html`
+            <ha-form
+                .hass=${this.hass}
+                .data=${displayCfg}
+                .schema=${schema}
+                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                .computeLabel=${computeLabel}
+                .computeHelper=${computeHelper}
+            ></ha-form>
+        `;
+
+        if (source !== 'auto') return form;
+
+        return html`
+            <div class="date-field-container">
+                <span class="editor-section-label">Auto Discover</span>
+                ${form}
+                <div class="date-helper">
+                    Finds running timers on their own. Turn off whichever assistant you do not have.
+                </div>
+            </div>
+        `;
+    }
+
     /** The ordinary, non-template half of a text field. */
     private _renderPlainTextField(configKey: string): TemplateResult {
         return html`
@@ -556,14 +590,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ></ha-form>
             </div>
             ${dateFields}
-            <ha-form
-                .hass=${this.hass}
-                .data=${displayCfg}
-                .schema=${sourceSchema}
-                @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                .computeLabel=${computeLabel}
-                .computeHelper=${computeHelper}
-            ></ha-form>
+            ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
             ${textSchema.length > 0 ? html`

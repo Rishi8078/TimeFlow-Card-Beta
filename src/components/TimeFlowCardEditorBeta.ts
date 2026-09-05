@@ -135,22 +135,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 color: var(--secondary-text-color);
                 margin-top: 4px;
             }
-            input[type="datetime-local"] {
+            /* The date and time inputs come from Home Assistant, so they carry
+               the theme's own styling. This only has to stop them huddling on
+               the left of a wide panel. */
+            .date-picker {
                 width: 100%;
-                /* Without this the padding and border are added *to* the 100%,
-                   so the field runs past the panel edge. */
-                box-sizing: border-box;
-                min-height: 48px;
-                padding: 12px;
-                border: 1px solid var(--divider-color);
-                border-radius: 4px;
-                background: var(--card-background-color);
-                color: var(--primary-text-color);
-                font-size: 14px;
             }
-            input[type="datetime-local"]:focus {
-                outline: none;
-                border-color: var(--primary-color);
+            .date-picker ha-form {
+                display: block;
+                width: 100%;
             }
             .editor-section-label {
                 font-weight: 500;
@@ -224,28 +217,34 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return value.includes('{{') || value.includes('{%');
     }
 
-    private _convertToDatetimeLocal(isoDate: string): string {
-        if (!isoDate || this._isTemplate(isoDate)) return '';
-        // Convert ISO format to datetime-local format (YYYY-MM-DDTHH:MM)
-        // Use local time components to avoid timezone shift from toISOString()
-        try {
-            const date = new Date(isoDate);
-            if (isNaN(date.getTime())) return '';
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        } catch {
-            return '';
-        }
+    /**
+     * Config value -> the "YYYY-MM-DD HH:MM:SS" that ha-selector-datetime wants.
+     * Undefined for an empty or template value, so the picker starts blank
+     * rather than on the epoch.
+     */
+    private _toSelectorValue(isoDate: string): string | undefined {
+        if (!isoDate || this._isTemplate(isoDate)) return undefined;
+
+        // Local components, never toISOString(): the whole point of the
+        // conversion is that a date the user typed stays on the day they typed
+        // it. Seconds are carried through - ha-time-input runs with
+        // enable-second, and rounding 23:59:59 down to 23:59:00 every time the
+        // editor opened would quietly move people's deadlines.
+        const date = new Date(isoDate);
+        if (isNaN(date.getTime())) return undefined;
+
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+        const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        return `${day} ${time}`;
     }
 
-    private _convertFromDatetimeLocal(localDate: string): string {
-        if (!localDate) return '';
-        // Convert datetime-local to ISO format with seconds
-        return localDate + ':00';
+    /** The selector's value back into the ISO form the card stores. */
+    private _fromSelectorValue(value: string): string {
+        if (!value) return '';
+        const iso = value.trim().replace(' ', 'T');
+        // ha-time-input can hand back HH:MM when seconds are disabled.
+        return iso.length === 16 ? `${iso}:00` : iso;
     }
 
     private _fireConfigChanged(config: CardConfig) {
@@ -379,11 +378,18 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         <div class="date-helper">Jinja template, entity id, or ISO date string</div>
                     `
                 : html`
-                        <input
-                            type="datetime-local"
-                            .value=${this._convertToDatetimeLocal(value)}
-                            @input=${(e: Event) => this._updateDateField(configKey, this._convertFromDatetimeLocal((e.target as HTMLInputElement).value))}
-                        />
+                        <div class="date-picker">
+                            <ha-form
+                                .hass=${this.hass}
+                                .data=${{ [configKey]: this._toSelectorValue(value) }}
+                                .schema=${[{ name: configKey, selector: { datetime: {} } }]}
+                                .computeLabel=${() => ''}
+                                @value-changed=${(e: CustomEvent) => this._updateDateField(
+                                    configKey,
+                                    this._fromSelectorValue(e.detail?.value?.[configKey] ?? '')
+                                )}
+                            ></ha-form>
+                        </div>
                         <div class="date-helper">${helper}</div>
                     `
             }

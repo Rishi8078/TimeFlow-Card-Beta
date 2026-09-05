@@ -1164,22 +1164,15 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 color: var(--secondary-text-color);
                 margin-top: 4px;
             }
-            input[type="datetime-local"] {
+            /* The date and time inputs come from Home Assistant, so they carry
+               the theme's own styling. This only has to stop them huddling on
+               the left of a wide panel. */
+            .date-picker {
                 width: 100%;
-                /* Without this the padding and border are added *to* the 100%,
-                   so the field runs past the panel edge. */
-                box-sizing: border-box;
-                min-height: 48px;
-                padding: 12px;
-                border: 1px solid var(--divider-color);
-                border-radius: 4px;
-                background: var(--card-background-color);
-                color: var(--primary-text-color);
-                font-size: 14px;
             }
-            input[type="datetime-local"]:focus {
-                outline: none;
-                border-color: var(--primary-color);
+            .date-picker ha-form {
+                display: block;
+                width: 100%;
             }
             .editor-section-label {
                 font-weight: 500;
@@ -1213,7 +1206,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 gap: 16px;
                 padding: 16px 0;
             }
-        `}connectedCallback(){super.connectedCallback(),this._codeEditorReady||customElements.whenDefined("ha-code-editor").then(()=>{this._codeEditorReady=!0})}setConfig(e){var t;this._config={...e};const i=ht(this._config);this._pendingSource&&"date"!==i&&i!==this._pendingSource&&(this._pendingSource=null);for(const s of Rt)this._templateModeTouched.has(s)||(this._templateMode={...this._templateMode,[s]:this._isTemplate(String(null!==(t=e[s])&&void 0!==t?t:""))})}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_convertToDatetimeLocal(e){if(!e||this._isTemplate(e))return"";try{const t=new Date(e);if(isNaN(t.getTime()))return"";const i=t.getFullYear(),s=String(t.getMonth()+1).padStart(2,"0"),r=String(t.getDate()).padStart(2,"0"),o=String(t.getHours()).padStart(2,"0");return`${i}-${s}-${r}T${o}:${String(t.getMinutes()).padStart(2,"0")}`}catch{return""}}_convertFromDatetimeLocal(e){return e?e+":00":""}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,ariaLabel:zt[e],icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
+        `}connectedCallback(){super.connectedCallback(),this._codeEditorReady||customElements.whenDefined("ha-code-editor").then(()=>{this._codeEditorReady=!0})}setConfig(e){var t;this._config={...e};const i=ht(this._config);this._pendingSource&&"date"!==i&&i!==this._pendingSource&&(this._pendingSource=null);for(const s of Rt)this._templateModeTouched.has(s)||(this._templateMode={...this._templateMode,[s]:this._isTemplate(String(null!==(t=e[s])&&void 0!==t?t:""))})}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_toSelectorValue(e){if(!e||this._isTemplate(e))return;const t=new Date(e);if(isNaN(t.getTime()))return;const i=e=>String(e).padStart(2,"0");return`${`${t.getFullYear()}-${i(t.getMonth()+1)}-${i(t.getDate())}`} ${`${i(t.getHours())}:${i(t.getMinutes())}:${i(t.getSeconds())}`}`}_fromSelectorValue(e){if(!e)return"";const t=e.trim().replace(" ","T");return 16===t.length?`${t}:00`:t}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,ariaLabel:zt[e],icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
             <div class="source-picker">
                 <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
@@ -1262,11 +1255,15 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                             `}
                         <div class="date-helper">Jinja template, entity id, or ISO date string</div>
                     `:G`
-                        <input
-                            type="datetime-local"
-                            .value=${this._convertToDatetimeLocal(r)}
-                            @input=${t=>this._updateDateField(e,this._convertFromDatetimeLocal(t.target.value))}
-                        />
+                        <div class="date-picker">
+                            <ha-form
+                                .hass=${this.hass}
+                                .data=${{[e]:this._toSelectorValue(r)}}
+                                .schema=${[{name:e,selector:{datetime:{}}}]}
+                                .computeLabel=${()=>""}
+                                @value-changed=${t=>{var i,s,r;return this._updateDateField(e,this._fromSelectorValue(null!==(r=null===(s=null===(i=t.detail)||void 0===i?void 0:i.value)||void 0===s?void 0:s[e])&&void 0!==r?r:""))}}
+                            ></ha-form>
+                        </div>
                         <div class="date-helper">${i}</div>
                     `}
             </div>

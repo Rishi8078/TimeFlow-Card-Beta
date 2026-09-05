@@ -567,14 +567,19 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
             ${textSchema.length > 0 ? html`
-                <ha-form
-                    .hass=${this.hass}
-                    .data=${displayCfg}
-                    .schema=${textSchema}
-                    @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                    .computeLabel=${computeLabel}
-                    .computeHelper=${computeHelper}
-                ></ha-form>
+                <div class="date-field-container">
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${displayCfg}
+                        .schema=${textSchema}
+                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                        .computeLabel=${computeLabel}
+                        .computeHelper=${computeHelper}
+                    ></ha-form>
+                    <div class="date-helper">
+                        Wrap the automatic countdown, e.g. "in" 3 days "left". Ignored when you set a Subtitle.
+                    </div>
+                </div>
             ` : nothing}
             ${showsExpiredText ? this._renderExpiredTextField() : nothing}
             <ha-form

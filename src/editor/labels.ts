@@ -71,8 +71,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
   'subtitle': 'Shows time remaining by default; only set for custom text',
-  'subtitle_prefix': 'Goes before the automatic countdown, e.g. "in". Ignored when you set a Subtitle.',
-  'subtitle_suffix': 'Goes after it, e.g. "left". Ignored when you set a Subtitle.',
   'compact_format': 'Short form: "2d 5h 30m"',
 
   // Colors

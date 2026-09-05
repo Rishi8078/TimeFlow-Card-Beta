@@ -57,39 +57,44 @@ function styleSection(): FormSchema[] {
 }
 
 /**
- * How the card finds its countdown. The entity and discovery toggles stay
- * visible whatever the current source, because clearing them is how a user
- * moves back to a date until the dedicated source picker lands.
+ * The fields belonging to the chosen source, and only those. The picker that
+ * chooses between sources is rendered by the editor component, outside the
+ * form: it is a control ha-form has no selector for, and keeping it out means
+ * no synthetic key can reach the config.
  */
 function sourceSection(source: SourceType): FormSchema[] {
-  const schema: FormSchema[] = [];
-
-  // Direction only means something for a date. A kitchen timer counts down.
-  if (usesDateFields(source)) {
-    schema.push({
-      name: 'mode',
-      selector: {
-        select: {
-          options: [
-            { value: 'count_down', label: 'Count Down' },
-            { value: 'count_up', label: 'Count Up' },
-          ],
-          mode: 'dropdown',
-        },
-      },
-    });
+  if (source === 'timer') {
+    return [{ name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } }];
   }
 
-  schema.push({ name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } });
-  schema.push({
-    type: 'grid',
-    schema: [
-      { name: 'auto_discover_alexa', selector: { boolean: {} } },
-      { name: 'auto_discover_google', selector: { boolean: {} } },
-    ],
-  });
+  if (source === 'auto') {
+    return [{
+      type: 'grid',
+      schema: [
+        { name: 'auto_discover_alexa', selector: { boolean: {} } },
+        { name: 'auto_discover_google', selector: { boolean: {} } },
+      ],
+    }];
+  }
 
-  return schema;
+  if (source === 'countdowns') {
+    // The list itself is edited by its own control; nothing to add here yet.
+    return [];
+  }
+
+  // Direction only means something for a date. A kitchen timer counts down.
+  return [{
+    name: 'mode',
+    selector: {
+      select: {
+        options: [
+          { value: 'count_down', label: 'Count Down' },
+          { value: 'count_up', label: 'Count Up' },
+        ],
+        mode: 'dropdown',
+      },
+    },
+  }];
 }
 
 /**

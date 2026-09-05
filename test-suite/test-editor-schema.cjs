@@ -23,7 +23,8 @@ execFileSync(
   { cwd: repoRoot, stdio: 'pipe' }
 );
 const { computeSchema } = require(path.join(outDir, 'editor', 'schema.js'));
-const { getSourceType, getStyle, STYLE_CAPABILITIES } = require(path.join(outDir, 'editor', 'capabilities.js'));
+const { getSourceType, getStyle, STYLE_CAPABILITIES, availableSources, applySource } =
+  require(path.join(outDir, 'editor', 'capabilities.js'));
 const { computeLabel, computeHelper } = require(path.join(outDir, 'editor', 'labels.js'));
 
 const results = [];
@@ -99,17 +100,91 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Count-up: the cycle field is hidden for a timer entity', !timer.includes('count_up_cycle'));
 }
 
-// ── Source fields stay reachable ────────────────────────────────────────────
+// ── Only the chosen source's fields are shown ───────────────────────────────
 
 {
-  // Without these a user who set a timer entity could never get back to a date.
+  // Before the picker existed these had to stay visible so a user could get
+  // back to a date. The picker owns that job now, so each source shows only
+  // its own fields.
+  const dateNames = fieldNames(computeSchema(dateCfg()));
+  check('Source fields: a date card offers no entity or discovery fields',
+    !dateNames.includes('timer_entity')
+    && !dateNames.includes('auto_discover_alexa')
+    && !dateNames.includes('auto_discover_google'));
+
+  const timerNames = fieldNames(computeSchema(dateCfg({ timer_entity: 'timer.x' })));
+  check('Source fields: a timer card offers the entity picker', timerNames.includes('timer_entity'));
+  check('Source fields: a timer card hides the discovery toggles',
+    !timerNames.includes('auto_discover_alexa') && !timerNames.includes('auto_discover_google'));
+
+  const autoNames = fieldNames(computeSchema(dateCfg({ auto_discover_alexa: true })));
+  check('Source fields: a discovery card offers both toggles',
+    autoNames.includes('auto_discover_alexa') && autoNames.includes('auto_discover_google'));
+  check('Source fields: a discovery card hides the entity picker', !autoNames.includes('timer_entity'));
+}
+
+// ── Switching source ────────────────────────────────────────────────────────
+
+{
+  const start = dateCfg({ timer_entity: 'timer.x', creation_date: '2026-01-01', title: 'Keep me' });
+
+  const toDate = applySource(start, 'date');
+  check('Switch: choosing Date clears the entity selector', toDate.timer_entity === undefined);
+  check('Switch: choosing Date keeps the dates the user typed',
+    toDate.target_date === start.target_date && toDate.creation_date === '2026-01-01');
+  check('Switch: choosing Date keeps unrelated config', toDate.title === 'Keep me');
+  check('Switch: the picker agrees with the result', getSourceType(toDate) === 'date');
+
+  const toAuto = applySource(start, 'auto');
+  check('Switch: choosing Discover clears the entity', toAuto.timer_entity === undefined);
+  check('Switch: choosing Discover turns both integrations on',
+    toAuto.auto_discover_alexa === true && toAuto.auto_discover_google === true);
+  check('Switch: Discover resolves to the auto source', getSourceType(toAuto) === 'auto');
+  check('Switch: Discover still keeps the typed date', toAuto.target_date === start.target_date);
+
+  const bothOn = applySource(dateCfg({ auto_discover_google: true }), 'auto');
+  check('Switch: an existing discovery choice is not overwritten',
+    bothOn.auto_discover_google === true && bothOn.auto_discover_alexa === undefined);
+
+  const toTimer = applySource(dateCfg({ auto_discover_alexa: true }), 'timer');
+  check('Switch: choosing Entity clears the discovery toggles',
+    toTimer.auto_discover_alexa === undefined && toTimer.auto_discover_google === undefined);
+
+  const pinned = { style: 'listy', countdowns: [{ target_date: 'x' }], timer_entity: 'timer.y' };
+  const toPinned = applySource(pinned, 'countdowns');
+  check('Switch: choosing Pinned clears the entity but keeps the list',
+    toPinned.timer_entity === undefined && toPinned.countdowns.length === 1);
+  const offPinned = applySource(pinned, 'date');
+  check('Switch: leaving Pinned drops the list selector', offPinned.countdowns === undefined);
+
+  // Round trip: nothing the user typed should be lost either way.
+  const roundTrip = applySource(applySource(start, 'auto'), 'date');
+  check('Switch: a round trip preserves typed data',
+    roundTrip.target_date === start.target_date && roundTrip.creation_date === '2026-01-01');
+}
+
+// ── Which sources the picker offers ─────────────────────────────────────────
+
+{
   for (const style of STYLES) {
-    const names = fieldNames(computeSchema({ style, timer_entity: 'timer.x' }));
-    const reachable = names.includes('timer_entity')
-      && names.includes('auto_discover_alexa')
-      && names.includes('auto_discover_google');
-    check(`Source fields: always reachable on ${style}`, reachable);
+    const offered = availableSources({ style });
+    check(`Sources offered: ${style} lists the three real sources`,
+      offered.join(',') === 'date,timer,auto', offered.join(','));
   }
+  const withPinned = availableSources({ style: 'listy', countdowns: [{ target_date: 'x' }] });
+  check('Sources offered: listy adds Pinned once entries exist',
+    withPinned.includes('countdowns'), withPinned.join(','));
+  check('Sources offered: an empty list does not offer Pinned',
+    !availableSources({ style: 'listy', countdowns: [] }).includes('countdowns'));
+
+  // Whatever getSourceType infers must be selectable, or the picker shows a
+  // value none of its options carry.
+  const configs = [
+    dateCfg(), dateCfg({ timer_entity: 'timer.x' }), dateCfg({ auto_discover_alexa: true }),
+    { style: 'listy', countdowns: [{ target_date: 'x' }] },
+  ];
+  const unrepresentable = configs.filter((c) => !availableSources(c).includes(getSourceType(c)));
+  check('Sources offered: every inferred source is selectable', unrepresentable.length === 0);
 }
 
 // ── Style gating matches the capability table ───────────────────────────────

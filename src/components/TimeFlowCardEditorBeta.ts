@@ -2,8 +2,15 @@ import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 import { computeSchema } from '../editor/schema';
-import { getSourceType, usesDateFields } from '../editor/capabilities';
+import { SourceType, applySource, availableSources, getSourceType, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
+
+const SOURCE_HELPERS: Record<string, string> = {
+    date: 'Count to a date or entity you choose',
+    timer: 'Follow one timer, sensor or input_datetime entity',
+    auto: 'Follow whichever Alexa or Google Home timers are running',
+    countdowns: 'Show the countdowns pinned to this card, plus any discovered timers',
+};
 
 /**
  * TimeFlow Card Editor Beta
@@ -92,6 +99,21 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 outline: none;
                 border-color: var(--primary-color);
             }
+            .source-picker {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px 0 4px 0;
+            }
+            .source-picker-label {
+                font-weight: 500;
+                font-size: 14px;
+                color: var(--primary-text-color);
+            }
+            .source-picker-helper {
+                font-size: 12px;
+                color: var(--secondary-text-color);
+            }
             .date-fields-section {
                 display: flex;
                 flex-direction: column;
@@ -162,6 +184,55 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         this._config = newConfig;
         this._fireConfigChanged(newConfig);
+    }
+
+    /**
+     * Where the card gets its countdown. Rendered outside ha-form for two
+     * reasons: ha-form has no selector that looks like this, and a schema field
+     * named `source_type` would be echoed straight back into the config on
+     * every change - the source is inferred from real keys, never stored.
+     */
+    private _renderSourcePicker(config: CardConfig, source: SourceType): TemplateResult {
+        const labels: Record<SourceType, { label: string; icon: string }> = {
+            date: { label: 'Date', icon: 'mdi:calendar' },
+            timer: { label: 'Entity', icon: 'mdi:timer-outline' },
+            auto: { label: 'Discover', icon: 'mdi:magnify' },
+            countdowns: { label: 'Pinned', icon: 'mdi:format-list-bulleted' },
+        };
+
+        const options = availableSources(config).map((value) => ({
+            value,
+            label: labels[value].label,
+            icon: html`<ha-icon .icon=${labels[value].icon}></ha-icon>`,
+        }));
+
+        return html`
+            <div class="source-picker">
+                <span class="source-picker-label">Countdown Source</span>
+                <ha-control-select
+                    .options=${options}
+                    .value=${source}
+                    @value-changed=${this._sourceChanged}
+                ></ha-control-select>
+                <span class="source-picker-helper">${SOURCE_HELPERS[source]}</span>
+            </div>
+        `;
+    }
+
+    /**
+     * Switching source clears the selectors belonging to the others, so the
+     * picker always agrees with what the card will actually render. Only
+     * selectors are cleared - a target_date survives a trip through Entity mode
+     * and is still there on the way back.
+     */
+    private _sourceChanged(ev: CustomEvent): void {
+        ev.stopPropagation();
+        const next = ev.detail?.value as SourceType | undefined;
+        if (!next || next === getSourceType(this._config)) return;
+
+        const updated = applySource(this._config, next);
+        this._config = updated;
+        this._fireConfigChanged(updated);
     }
 
     private _renderDateField(
@@ -293,6 +364,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ` : nothing;
 
         return html`
+            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
             <ha-form
                 .hass=${this.hass}

@@ -151,3 +151,61 @@ export function getSourceType(config: CardConfig | null | undefined): SourceType
 export function usesDateFields(source: SourceType): boolean {
   return source === 'date';
 }
+
+/**
+ * The sources the picker offers for a given config.
+ *
+ * `countdowns` is listed only once a card actually has entries. Until the list
+ * editor lands there is no way to create one from the UI, and offering a source
+ * that cannot be populated would just be a dead option - selecting it would
+ * leave the config with no source at all and the picker would spring back.
+ */
+export function availableSources(config: CardConfig | null | undefined): SourceType[] {
+  const sources: SourceType[] = ['date', 'timer', 'auto'];
+
+  if (getStyle(config) === 'listy' && Array.isArray(config?.countdowns) && config!.countdowns!.length > 0) {
+    sources.push('countdowns');
+  }
+
+  return sources;
+}
+
+/**
+ * The keys that decide which source wins, grouped by the source that owns them.
+ *
+ * Switching source clears the *other* groups: these are selectors, not data.
+ * Nothing the user typed is touched - `target_date` and its companions survive
+ * a trip through timer mode and back, which is the whole reason the clearing is
+ * safe to do automatically.
+ */
+export const SOURCE_SELECTOR_KEYS: Record<SourceType, string[]> = {
+  date: [],
+  timer: ['timer_entity'],
+  auto: ['auto_discover_alexa', 'auto_discover_google'],
+  countdowns: ['countdowns'],
+};
+
+/**
+ * The config that results from choosing `next`, with the competing selectors
+ * removed and the chosen one primed where it needs to be.
+ */
+export function applySource(config: CardConfig, next: SourceType): CardConfig {
+  const updated: CardConfig = { ...config };
+
+  for (const source of Object.keys(SOURCE_SELECTOR_KEYS) as SourceType[]) {
+    if (source === next) continue;
+    for (const key of SOURCE_SELECTOR_KEYS[source]) {
+      delete updated[key];
+    }
+  }
+
+  // Discovery needs at least one integration switched on, or the card would
+  // have no source at all and the picker would read as 'date' again. Both go
+  // on; unticking the one you do not own is the obvious next move.
+  if (next === 'auto' && !updated.auto_discover_alexa && !updated.auto_discover_google) {
+    updated.auto_discover_alexa = true;
+    updated.auto_discover_google = true;
+  }
+
+  return updated;
+}

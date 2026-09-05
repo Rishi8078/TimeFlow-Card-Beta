@@ -34,14 +34,14 @@ export const FIELD_LABELS: Record<string, string> = {
   'progress_color': 'Progress Color',
   'background_color': 'Background Color',
   'text_color': 'Text Color',
-  'stroke_width': 'Stroke Width',
-  'icon_size': 'Circle Size',
+  'stroke_width': 'Thickness',
+  'icon_size': 'Size',
   'grid_dots': 'Dots',
   'grid_dot_unit': 'Dot Unit',
   'grid_rows': 'Rows',
   'grid_dot_size': 'Dot Size',
-  'progress_bg_stroke': 'Background Stroke Color',
-  'progress_bg_opacity': 'Background Opacity',
+  'progress_bg_stroke': 'Colour',
+  'progress_bg_opacity': 'Opacity',
   'invert_progress': 'Invert Progress',
   'aspect_ratio': 'Aspect Ratio',
   'header_icon': 'Icon',
@@ -56,7 +56,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   'section_header_icon': 'Shown beside the card title.',
   'section_appearance': 'Colours accept #4caf50, rgb(), a CSS name, var(--…), or an entity id.',
   'section_layout': 'Leave a field empty to let the card size itself.',
-  'section_progress': 'The ring drawn around the countdown, and the track behind it.',
+  'section_progress': 'The ring drawn around the countdown.',
   'section_dot_grid': 'How many dots the grid draws, and what one dot represents.',
   'section_timer_list': 'How many timer rows to draw, and the icon for each source. The defaults are mdi: icons so they work on a stock install.',
   'section_actions': 'What happens when the card is tapped, held, or double-tapped.',
@@ -78,11 +78,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Layout
 
   // Progress Circle
-  'stroke_width': 'Thickness of the progress circle ring',
-  'icon_size': 'Size of the progress circle',
-  'progress_bg_stroke': 'Background circle stroke color (e.g., "#515751", "rgba(81, 87, 81, 0.2)")',
-  'progress_bg_opacity': 'Background circle opacity as percentage (0-100)',
-  'invert_progress': 'Start the progress circle full and subtract from it instead of filling it up',
+  'invert_progress': 'Start full and empty out, instead of filling up.',
 
   // Header Icon
 

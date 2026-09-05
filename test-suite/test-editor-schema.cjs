@@ -442,6 +442,38 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   }
 }
 
+// ── Tinted groups ───────────────────────────────────────────────────────────
+
+{
+  const groups = [];
+  for (const style of STYLES) {
+    const walk = (items) => {
+      for (const item of items || []) {
+        if (item.type === 'tf_group') groups.push(item);
+        if (Array.isArray(item.schema)) walk(item.schema);
+      }
+    };
+    walk(computeSchema({ style, target_date: 'x' }));
+  }
+
+  check('Groups: the progress panel uses them', groups.length > 0, `${groups.length} found`);
+
+  // Same trap as a named expandable: without flatten, ha-form scopes the whole
+  // group's data under its name and every field inside silently stops saving.
+  const unflattened = groups.filter((g) => g.flatten !== true).map((g) => g.title);
+  check('Groups: every group sets flatten', unflattened.length === 0, unflattened.join(', ') || 'all flattened');
+
+  const untitled = groups.filter((g) => !g.title).map((g) => g.name);
+  check('Groups: every group has a title', untitled.length === 0, untitled.join(', ') || 'all titled');
+
+  // A group name must not collide with a real config key, or flattening would
+  // write it into the user's YAML.
+  const configKeys = new Set();
+  for (const style of STYLES) fieldNames(computeSchema({ style })).forEach((n) => configKeys.add(n));
+  const collisions = groups.filter((g) => configKeys.has(g.name)).map((g) => g.name);
+  check('Groups: no group name collides with a config key', collisions.length === 0, collisions.join(', ') || 'none');
+}
+
 // ── The capability table matches the card ───────────────────────────────────
 
 {

@@ -39,6 +39,11 @@ export type FormSchema = Record<string, any>;
  * `selector` before it looks at `type`, so an item carrying one would render as
  * an ordinary field and the toggle would never appear.
  */
+/** A titled, tinted group of fields - see ha-form-tf-group.ts. */
+function group(name: string, title: string, schema: FormSchema[]): FormSchema {
+  return { type: 'tf_group', name: `group_${name}`, flatten: true, title, schema };
+}
+
 function templatable(
   name: string,
   plainSelector: Record<string, any>,
@@ -279,24 +284,34 @@ function layoutSection(caps: StyleCapabilities): FormSchema[] {
   }];
 }
 
+/**
+ * Two groups and a switch, rather than five fields in a row: the ring's own
+ * dimensions, then the track behind it. The units show inside the fields, so
+ * the helpers that used to say "in pixels" and "as a percentage" are gone.
+ *
+ * progress_bg_stroke stays a plain text field on purpose - it is not in the
+ * card's templateKeys, so a template typed into it would render literally.
+ */
 function progressSection(caps: StyleCapabilities): FormSchema[] {
   const schema: FormSchema[] = [];
 
   if (caps.ringGeometry) {
-    schema.push({
+    schema.push(group('ring', 'Ring', [{
       type: 'grid',
       schema: [
-        { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1 } } },
-        { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5 } } },
+        { name: 'stroke_width', selector: { number: { min: 1, max: 50, step: 1, unit_of_measurement: 'px' } } },
+        { name: 'icon_size', selector: { number: { min: 10, max: 350, step: 5, unit_of_measurement: 'px' } } },
       ],
-    });
+    }]));
   }
+
   if (caps.progressTrack) {
-    schema.push(
-      { name: 'progress_bg_stroke', selector: { text: {} } },
-      { name: 'progress_bg_opacity', selector: { number: { min: 0, max: 100, step: 5 } } },
-    );
+    schema.push(group('track', 'Track', [
+      { name: 'progress_bg_stroke', selector: { text: { placeholder: '#515751, rgba(81, 87, 81, 0.2)' } } },
+      { name: 'progress_bg_opacity', selector: { number: { min: 0, max: 100, step: 5, unit_of_measurement: '%' } } },
+    ]));
   }
+
   if (caps.invertProgress) schema.push({ name: 'invert_progress', selector: { boolean: {} } });
 
   if (schema.length === 0) return [];

@@ -688,7 +688,9 @@ export class TimeFlowCardBeta extends LitElement {
         padding: 9px 18px 9px 11px;
         box-sizing: border-box;
         width: 100%;
-        border-radius: var(--timeflow-listy-pill-radius, 16px);
+        /* The same token ha-card uses, so rows are shaped by the user's theme
+           rather than by a number this style invented for itself. */
+        border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
         background: var(--timeflow-listy-row-bg);
         border: 1px solid var(--timeflow-listy-row-border);
       }
@@ -1291,8 +1293,7 @@ export class TimeFlowCardBeta extends LitElement {
     // integration reads better. With several, the device is the only thing
     // telling two "Alexa Timer" rows apart, so it becomes the title.
     const devices = new Set(timers.map((t) => t.deviceName).filter(Boolean));
-    const useDeviceTitle = config.show_timer_device === true
-      || (config.show_timer_device !== false && devices.size > 1);
+    const useDeviceTitle = devices.size > 1;
 
     return timers.map((timer, index) => {
       const kind: ListRowKind = timer.isAlexaTimer ? 'alexa' : (timer.isGoogleTimer ? 'google' : 'timer');
@@ -1496,9 +1497,7 @@ export class TimeFlowCardBeta extends LitElement {
       text_color,
       width,
       height,
-      aspect_ratio,
-      show_timer_progress,
-      pill_radius
+      aspect_ratio
     } = this._resolvedConfig;
 
     const { cardBackground, textColor } = this._getCardColors();
@@ -1508,14 +1507,11 @@ export class TimeFlowCardBeta extends LitElement {
       ...(cardBackground ? [`background: ${cardBackground}`, `--timeflow-card-background-color: ${cardBackground}`] : []),
       ...(textColor ? [`color: ${textColor}`, `--timeflow-card-text-color: ${textColor}`] : []),
       ...(progress_color || text_color ? [`--timeflow-card-progress-color: ${progress_color || text_color}`] : []),
-      // '9999px' turns the squircles into full stadium capsules.
-      ...(pill_radius ? [`--timeflow-listy-pill-radius: ${pill_radius}`] : []),
       ...dimensionStyles
     ].join('; ');
 
     const cardClasses = this._getCardClasses(expired_animation);
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
-    const showRing = show_timer_progress !== false;
     const rows = this._listRows;
 
     return html`
@@ -1536,7 +1532,7 @@ export class TimeFlowCardBeta extends LitElement {
             ? this._renderListyEmpty()
             : html`
               <div class="listy-rows">
-                ${repeat(rows, (row) => row.key, (row) => this._renderListyRow(row, showRing))}
+                ${repeat(rows, (row) => row.key, (row) => this._renderListyRow(row))}
               </div>
             `}
         </div>
@@ -1549,7 +1545,7 @@ export class TimeFlowCardBeta extends LitElement {
    * middle of the list does not make every row below it jump to a new element
    * and replay its transitions.
    */
-  private _renderListyRow(row: ListRow, showRing: boolean): TemplateResult {
+  private _renderListyRow(row: ListRow): TemplateResult {
     const rowStyles = [
       ...(row.background ? [`background: ${row.background}`, 'border-color: transparent'] : []),
       ...(row.textColor ? [`--timeflow-listy-row-text: ${row.textColor}`] : []),
@@ -1572,7 +1568,7 @@ export class TimeFlowCardBeta extends LitElement {
           <span class="listy-row-subtitle">${row.subtitle}</span>
         </div>
 
-        ${showRing ? this._renderListyRing(row) : ''}
+        ${this._renderListyRing(row)}
       </div>
     `;
   }

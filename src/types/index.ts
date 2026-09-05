@@ -175,13 +175,10 @@ export interface CardConfig {
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
-  show_timer_device?: boolean;    // Force the device name as the row title; by default it appears only when the list spans devices
-  show_timer_progress?: boolean;  // Draw the progress ring on each row (default true)
   cards?: ListEntryConfig[];      // Countdown entries pinned to the list, alongside any discovered timers
   alexa_icon?: string;            // Icon for Alexa rows (default mdi:amazon-alexa)
   google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
-  pill_radius?: string;           // Row corner radius (default 16px; '9999px' for stadium capsules)
 
   // Display configuration
   title?: string;

@@ -91,9 +91,6 @@ discovered timers.
 |------------------------|---------|-----------|------------------------------------------------------------------------|
 | `max_timers`           | number  | `5`       | Timer rows before the list is truncated (1–20)                          |
 | `cards`                | list    | `[]`      | Countdowns pinned into the list                                         |
-| `show_timer_progress`  | boolean | `true`    | Draw the progress ring on each row                                      |
-| `show_timer_device`    | boolean | auto      | Force device names as row titles (see below)                            |
-| `pill_radius`          | string  | `16px`    | Row corner radius; `9999px` for stadium capsules                        |
 | `alexa_icon`           | string  | `mdi:amazon-alexa` | Icon for Alexa rows                                            |
 | `google_icon`          | string  | `mdi:google-home`  | Icon for Google Home rows                                      |
 | `timer_icon`           | string  | `mdi:timer-outline` | Icon for standard `timer.*` rows                              |
@@ -101,8 +98,7 @@ discovered timers.
 **Row titles.** With one device in the list, rows are titled by integration
 ("Alexa Timer", "Google Home"). Once the list spans more than one device they
 switch to device names ("Kitchen", "Office"), which is the only thing telling
-two Alexa rows apart. `show_timer_device: true` forces device names always;
-`false` forces the integration name.
+two Alexa rows apart.
 
 **Icons.** The defaults are `mdi:` so the card works on a stock install. If you
 run one of the community icon packs, point the icon options at them —

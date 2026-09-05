@@ -22,7 +22,7 @@ execFileSync(
    '--outDir', outDir, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck'],
   { cwd: repoRoot, stdio: 'pipe' }
 );
-const { computeSchema } = require(path.join(outDir, 'editor', 'schema.js'));
+const { computeSchema, styleSchema } = require(path.join(outDir, 'editor', 'schema.js'));
 const { getSourceType, getStyle, STYLE_CAPABILITIES, availableSources, applySource, resolveSource } =
   require(path.join(outDir, 'editor', 'capabilities.js'));
 const { computeLabel, computeHelper } = require(path.join(outDir, 'editor', 'labels.js'));
@@ -206,6 +206,16 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     getSourceType(applySource(dateCfg({ timer_entity: 'timer.x' }), 'date')) === 'date');
 }
 
+{
+  // Regression: pick an entity, then clear it. The config reads as 'date' again,
+  // but the user is still in Entity mode and expects the picker to stay put.
+  const cleared = dateCfg();
+  check('Pending: clearing the entity keeps you in Entity mode',
+    resolveSource(cleared, 'timer') === 'timer');
+  check('Pending: and the entity field stays on screen',
+    fieldNames(computeSchema(cleared, resolveSource(cleared, 'timer'))).includes('timer_entity'));
+}
+
 // ── Which sources the picker offers ─────────────────────────────────────────
 
 {
@@ -276,7 +286,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   for (const style of STYLES) {
     const names = fieldNames(computeSchema({ style }));
-    const universal = ['style', 'background_color', 'text_color', 'expired_animation',
+    const universal = ['background_color', 'text_color', 'expired_animation',
       'tap_action', 'hold_action', 'double_tap_action'];
     const missing = universal.filter((n) => !names.includes(n));
     check(`Universal fields: present on ${style}`, missing.length === 0, missing.join(', ') || 'all present');
@@ -284,8 +294,26 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 }
 
 {
+  // The style picker is rendered above the form, not composed into it: with the
+  // date pickers also living outside ha-form, leaving it in the schema put it
+  // first for a timer card and third for a date one.
+  check('Style: the picker is its own schema', styleSchema()[0].name === 'style');
+  check('Style: it is not duplicated inside the form',
+    !fieldNames(computeSchema({ style: 'classic' })).includes('style'));
+
+  for (const style of STYLES) {
+    for (const cfg of [
+      { style, target_date: 'x' },
+      { style, timer_entity: 'timer.x' },
+      { style, auto_discover_alexa: true },
+    ]) {
+      const ok = styleSchema().length === 1 && !fieldNames(computeSchema(cfg)).includes('style');
+      if (!ok) check(`Style: leads the form on ${style}`, false, JSON.stringify(cfg));
+    }
+  }
+  check('Style: leads the form in every mode, every style', true);
+
   const names = fieldNames(computeSchema({ style: 'classic' }));
-  check('Style picker comes first', computeSchema({ style: 'classic' })[0].name === 'style');
   check('No duplicate fields', new Set(names).size === names.length,
     `${names.length} fields, ${new Set(names).size} unique`);
 }

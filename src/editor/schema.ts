@@ -49,8 +49,15 @@ const GRID_ROW_OPTIONS = [
   ...[1, 2, 3, 4, 5, 6].map((n) => ({ value: String(n), label: String(n) })),
 ];
 
-/** Style picker, always first: it decides the shape of everything below it. */
-function styleSection(): FormSchema[] {
+/**
+ * The style picker, on its own.
+ *
+ * Rendered by the editor above everything else rather than composed into the
+ * main form: the date pickers sit outside ha-form too, so leaving style in the
+ * schema put it first for a timer card but third for a date one. It decides the
+ * shape of the whole form, so it leads in every mode.
+ */
+export function styleSchema(): FormSchema[] {
   return [
     { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
   ];
@@ -295,7 +302,6 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
   const activeSource = source ?? getSourceType(config);
 
   return [
-    ...styleSection(),
     ...sourceSection(activeSource),
     ...countUpCycleSection(config, activeSource),
     ...textSection(caps, activeSource),

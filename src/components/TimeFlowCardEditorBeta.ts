@@ -1,7 +1,7 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
-import { computeSchema } from '../editor/schema';
+import { computeSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -104,6 +104,17 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 outline: none;
                 border-color: var(--primary-color);
             }
+            .editor-section-label {
+                font-weight: 500;
+                font-size: 14px;
+                color: var(--primary-text-color);
+            }
+            .style-picker {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px 0 0 0;
+            }
             .source-picker {
                 display: flex;
                 flex-direction: column;
@@ -115,14 +126,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
                    a label. Stacking both needs the taller variant Home
                    Assistant uses for its own icon+label selects, or the text
                    collides with the icon above it. */
-                --control-select-thickness: 56px;
-                --control-select-border-radius: 12px;
-                --control-select-padding: 5px;
-            }
-            .source-picker-label {
-                font-weight: 500;
-                font-size: 14px;
-                color: var(--primary-text-color);
+                --control-select-thickness: 64px;
+                --control-select-border-radius: 14px;
+                --control-select-padding: 6px;
             }
             .source-picker-helper {
                 font-size: 12px;
@@ -140,9 +146,13 @@ export class TimeFlowCardEditorBeta extends LitElement {
     setConfig(config: CardConfig) {
         this._config = { ...config } as CardConfig;
 
-        // Once the config names a real source, the remembered choice has either
-        // been satisfied or superseded.
-        if (this._pendingSource && getSourceType(this._config) !== 'date') {
+        // The remembered choice is dropped only when the config names a
+        // *different* source - a YAML edit, say. It deliberately survives the
+        // config agreeing with it, because clearing the entity afterwards would
+        // otherwise read as 'date' and throw the user out of Entity mode
+        // mid-edit.
+        const inferred = getSourceType(this._config);
+        if (this._pendingSource && inferred !== 'date' && inferred !== this._pendingSource) {
             this._pendingSource = null;
         }
 
@@ -228,7 +238,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         return html`
             <div class="source-picker">
-                <span class="source-picker-label">Countdown Source</span>
+                <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
                     .options=${options}
                     .value=${source}
@@ -387,6 +397,17 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ` : nothing;
 
         return html`
+            <div class="style-picker">
+                <span class="editor-section-label">Style</span>
+                <ha-form
+                    .hass=${this.hass}
+                    .data=${displayCfg}
+                    .schema=${styleSchema()}
+                    @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                    .computeLabel=${computeLabel}
+                    .computeHelper=${computeHelper}
+                ></ha-form>
+            </div>
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
             <ha-form

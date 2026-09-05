@@ -82,11 +82,21 @@ function sourceSection(source: SourceType): FormSchema[] {
 
   if (source === 'auto') {
     return [{
-      type: 'grid',
-      schema: [
-        { name: 'auto_discover_alexa', selector: { boolean: {} } },
-        { name: 'auto_discover_google', selector: { boolean: {} } },
-      ],
+      type: 'expandable',
+      name: 'section_auto_discover',
+      flatten: true,
+      title: 'Auto Discover',
+      icon: 'mdi:creation-outline',
+      // Open by default: these are the only fields this source has, and a
+      // collapsed panel would leave the card looking unconfigurable.
+      expanded: true,
+      schema: [{
+        type: 'grid',
+        schema: [
+          { name: 'auto_discover_alexa', selector: { boolean: {} } },
+          { name: 'auto_discover_google', selector: { boolean: {} } },
+        ],
+      }],
     }];
   }
 

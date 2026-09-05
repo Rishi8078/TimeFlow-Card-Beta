@@ -39,7 +39,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'grid_dots': 'Dots',
   'grid_dot_unit': 'Dot Unit',
   'grid_rows': 'Rows',
-  'grid_dot_size': 'Dot Size',
+  'grid_dot_size': 'Diameter',
   'progress_bg_stroke': 'Colour',
   'progress_bg_opacity': 'Opacity',
   'invert_progress': 'Invert Progress',

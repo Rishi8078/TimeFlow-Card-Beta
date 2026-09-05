@@ -17,6 +17,12 @@ import {
  * takes a config and returns a schema, which is what makes the shape of the
  * form testable on its own.
  *
+ * Each expandable carries a `name` plus `flatten: true`. The name is what lets
+ * ha-form-expandable look up a description through computeHelper and render it
+ * inside the panel; `flatten` is not optional next to it, because ha-form
+ * otherwise scopes the whole section's data under that key and every field in
+ * it silently loses its value.
+ *
  * Template rule (see EDITOR-CONFIG-MATRIX.md step 3): every key that supports
  * Jinja stays `selector: { text: {} }`. Typed selectors are only used for keys
  * that are not template-enabled and are genuinely numeric. In particular there
@@ -141,6 +147,8 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.headerIcon) return [];
   return [{
     type: 'expandable',
+    name: 'section_header_icon',
+    flatten: true,
     title: 'Header Icon',
     icon: 'mdi:image-filter-vintage',
     schema: [
@@ -179,6 +187,8 @@ function timerListSection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.timerList) return [];
   return [{
     type: 'expandable',
+    name: 'section_timer_list',
+    flatten: true,
     title: 'Timer List',
     icon: 'mdi:format-list-bulleted',
     schema: [
@@ -205,7 +215,14 @@ function appearanceSection(caps: StyleCapabilities): FormSchema[] {
     { name: 'expired_animation', selector: { boolean: {} } },
   );
 
-  return [{ type: 'expandable', title: 'Appearance', icon: 'mdi:palette', schema }];
+  return [{
+    type: 'expandable',
+    name: 'section_appearance',
+    flatten: true,
+    title: 'Appearance',
+    icon: 'mdi:palette',
+    schema,
+  }];
 }
 
 function layoutSection(caps: StyleCapabilities): FormSchema[] {
@@ -222,7 +239,14 @@ function layoutSection(caps: StyleCapabilities): FormSchema[] {
   if (caps.aspectRatio) schema.push({ name: 'aspect_ratio', selector: { text: {} } });
 
   if (schema.length === 0) return [];
-  return [{ type: 'expandable', title: 'Layout', icon: 'mdi:page-layout-body', schema }];
+  return [{
+    type: 'expandable',
+    name: 'section_layout',
+    flatten: true,
+    title: 'Layout',
+    icon: 'mdi:page-layout-body',
+    schema,
+  }];
 }
 
 function progressSection(caps: StyleCapabilities): FormSchema[] {
@@ -246,13 +270,22 @@ function progressSection(caps: StyleCapabilities): FormSchema[] {
   if (caps.invertProgress) schema.push({ name: 'invert_progress', selector: { boolean: {} } });
 
   if (schema.length === 0) return [];
-  return [{ type: 'expandable', title: 'Progress Circle', icon: 'mdi:circle-slice-3', schema }];
+  return [{
+    type: 'expandable',
+    name: 'section_progress',
+    flatten: true,
+    title: 'Progress Circle',
+    icon: 'mdi:circle-slice-3',
+    schema,
+  }];
 }
 
 function dotGridSection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.dotGrid) return [];
   return [{
     type: 'expandable',
+    name: 'section_dot_grid',
+    flatten: true,
     title: 'Dot Grid',
     icon: 'mdi:dots-grid',
     schema: [
@@ -277,6 +310,8 @@ function dotGridSection(caps: StyleCapabilities): FormSchema[] {
 function actionsSection(): FormSchema[] {
   return [{
     type: 'expandable',
+    name: 'section_actions',
+    flatten: true,
     title: 'Tap Actions',
     icon: 'mdi:gesture-tap',
     schema: [

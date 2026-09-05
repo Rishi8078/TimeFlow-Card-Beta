@@ -13,8 +13,8 @@ export const FIELD_LABELS: Record<string, string> = {
   'creation_date': 'Start Date (for progress)',
   'count_up_goal_date': 'Goal Date',
   'count_up_cycle': 'Count-up Cycle',
-  'auto_discover_alexa': 'Auto-discover Alexa Timers',
-  'auto_discover_google': 'Auto-discover Google Timers',
+  'auto_discover_alexa': 'Alexa',
+  'auto_discover_google': 'Google Home',
   'max_timers': 'Maximum Timers Shown',
   'alexa_icon': 'Alexa Row Icon',
   'google_icon': 'Google Row Icon',
@@ -51,6 +51,16 @@ export const FIELD_LABELS: Record<string, string> = {
 };
 
 export const FIELD_HELPERS: Record<string, string> = {
+  // Section descriptions. ha-form-expandable renders these inside the panel,
+  // so they cost nothing while it is collapsed.
+  'section_header_icon': 'Icon shown beside the title. On the list style it is the fallback icon for pinned countdowns.',
+  'section_appearance': 'Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
+  'section_layout': 'Leave a field empty to let the card size itself.',
+  'section_progress': 'The ring drawn around the countdown, and the track behind it.',
+  'section_dot_grid': 'How many dots the grid draws, and what one dot represents.',
+  'section_timer_list': 'How many timer rows to draw, and the icon for each source. The defaults are mdi: icons so they work on a stock install.',
+  'section_actions': 'What happens when the card is tapped, held, or double-tapped.',
+
   // Timer Source
   'timer_entity': 'Select a timer, sensor, or input_datetime entity',
   'mode': 'Choose whether the card counts down to a date or counts up from a date',
@@ -58,8 +68,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'creation_date': 'Start date for countdown progress calculation (optional)',
   'count_up_goal_date': 'Optional goal/end date for count-up circle progress',
   'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
-  'auto_discover_alexa': 'Automatically find active Alexa timers',
-  'auto_discover_google': 'Automatically find active Google Home timers',
 
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
@@ -67,7 +75,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   'subtitle_prefix': 'Text before countdown (e.g., "in", "Only")',
   'subtitle_suffix': 'Text after countdown (e.g., "left", "remaining")',
   'expired_text': 'Text shown when countdown completes',
-  'compact_format': '"2d 5h 30m" vs "2 days 5 hours 30 minutes"',
+  'compact_format': 'Short form: "2d 5h 30m"',
 
   // Colors
   'progress_color': 'Progress circle color (hex, name, rgb, or template)',

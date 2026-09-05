@@ -33,12 +33,17 @@ function check(name, pass, detail) {
   console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
 }
 
-/** Every field name in a schema, flattened through grids and expandables. */
+/**
+ * Every config key a schema writes, flattened through grids and expandables.
+ *
+ * Only items carrying a selector count: containers have names too now (an
+ * expandable needs one to get a description), but they write nothing.
+ */
 function fieldNames(schema) {
   const names = [];
   const walk = (items) => {
     for (const item of items || []) {
-      if (item.name) names.push(item.name);
+      if (item.name && item.selector) names.push(item.name);
       if (Array.isArray(item.schema)) walk(item.schema);
     }
   };
@@ -342,6 +347,40 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       .map((i) => i.title);
     check(`No empty panels on ${style}`, empties.length === 0, empties.join(', ') || 'none');
   }
+}
+
+// ── Section descriptions ────────────────────────────────────────────────────
+
+{
+  // ha-form-expandable renders a description by calling computeHelper with the
+  // section's schema, which needs a `name`. But ha-form's getValue() scopes a
+  // named item's data under that key unless `flatten` is set - so a name
+  // without a flatten silently blanks every field in the section.
+  const sections = [];
+  for (const style of STYLES) {
+    for (const item of computeSchema({ style, target_date: 'x', mode: 'count_up' })) {
+      if (item.type === 'expandable') sections.push(item);
+    }
+  }
+
+  const unnamed = sections.filter((i) => !i.name).map((i) => i.title);
+  check('Sections: every expandable is named', unnamed.length === 0, unnamed.join(', ') || 'all named');
+
+  const unflattened = sections.filter((i) => i.name && i.flatten !== true).map((i) => i.title);
+  check('Sections: every named expandable sets flatten (or its fields lose their values)',
+    unflattened.length === 0, unflattened.join(', ') || 'all flattened');
+
+  const undescribed = sections.filter((i) => !computeHelper({ name: i.name })).map((i) => i.title);
+  check('Sections: every section has a description',
+    undescribed.length === 0, undescribed.join(', ') || 'all described');
+
+  // A section name must never collide with a real config key, or flattening
+  // would write it into the user's YAML.
+  const configKeys = new Set();
+  for (const style of STYLES) fieldNames(computeSchema({ style })).forEach((n) => configKeys.add(n));
+  const collisions = sections.filter((i) => configKeys.has(i.name)).map((i) => i.name);
+  check('Sections: no section name collides with a config key',
+    collisions.length === 0, collisions.join(', ') || 'none');
 }
 
 // ── The template rule ───────────────────────────────────────────────────────

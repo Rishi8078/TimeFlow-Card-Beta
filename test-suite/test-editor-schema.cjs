@@ -23,7 +23,7 @@ execFileSync(
   { cwd: repoRoot, stdio: 'pipe' }
 );
 const { computeSchema } = require(path.join(outDir, 'editor', 'schema.js'));
-const { getSourceType, getStyle, STYLE_CAPABILITIES, availableSources, applySource } =
+const { getSourceType, getStyle, STYLE_CAPABILITIES, availableSources, applySource, resolveSource } =
   require(path.join(outDir, 'editor', 'capabilities.js'));
 const { computeLabel, computeHelper } = require(path.join(outDir, 'editor', 'labels.js'));
 
@@ -161,6 +161,49 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const roundTrip = applySource(applySource(start, 'auto'), 'date');
   check('Switch: a round trip preserves typed data',
     roundTrip.target_date === start.target_date && roundTrip.creation_date === '2026-01-01');
+}
+
+// ── A choice the config cannot express yet ──────────────────────────────────
+
+{
+  // Regression: choosing Entity clears the discovery flags but cannot invent an
+  // entity id, so inference still reads 'date'. Without the pending choice the
+  // picker snapped back to Date the moment it was clicked and the entity field
+  // never appeared.
+  const start = dateCfg({ auto_discover_alexa: true });
+  const afterClick = applySource(start, 'timer');
+
+  check('Pending: the config alone still reads as date', getSourceType(afterClick) === 'date');
+  check('Pending: the picker honours the choice anyway',
+    resolveSource(afterClick, 'timer') === 'timer');
+  // The schema has to be built from the resolved source, not the config's own,
+  // or the picker says Entity while the form still shows the date group.
+  const pendingNames = fieldNames(computeSchema(afterClick, resolveSource(afterClick, 'timer')));
+  check('Pending: the entity field is shown', pendingNames.includes('timer_entity'));
+  check('Pending: the date group is hidden', !pendingNames.includes('mode'));
+  check('Pending: the discovery toggles are gone', !pendingNames.includes('auto_discover_alexa'));
+
+  // Without the resolved source threaded through, the form contradicts the picker.
+  const unthreaded = fieldNames(computeSchema(afterClick));
+  check('Pending: inferring inside computeSchema would contradict the picker',
+    !unthreaded.includes('timer_entity') && unthreaded.includes('mode'));
+
+  // Once an entity is chosen, config and picker agree without help.
+  const chosen = { ...afterClick, timer_entity: 'timer.pasta' };
+  check('Pending: a chosen entity makes the choice real', getSourceType(chosen) === 'timer');
+  check('Pending: it is then ignored', resolveSource(chosen, 'timer') === 'timer');
+
+  // A config that names its own source always wins over a stale pending value.
+  check('Pending: a real source overrides a stale choice',
+    resolveSource(dateCfg({ auto_discover_google: true }), 'timer') === 'auto');
+  check('Pending: no choice means plain inference',
+    resolveSource(dateCfg({ timer_entity: 'timer.x' }), null) === 'timer');
+
+  // Sources that prime themselves need no pending value at all.
+  check('Pending: Discover needs no remembering',
+    getSourceType(applySource(dateCfg(), 'auto')) === 'auto');
+  check('Pending: Date needs no remembering',
+    getSourceType(applySource(dateCfg({ timer_entity: 'timer.x' }), 'date')) === 'date');
 }
 
 // ── Which sources the picker offers ─────────────────────────────────────────

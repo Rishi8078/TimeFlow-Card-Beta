@@ -186,6 +186,26 @@ export const SOURCE_SELECTOR_KEYS: Record<SourceType, string[]> = {
 };
 
 /**
+ * The source the editor should display: what the config says, unless the user
+ * has just chosen something the config cannot represent yet.
+ *
+ * Picking "Entity" clears the discovery flags but cannot invent an entity id -
+ * the selector *is* the value the user still has to supply. Until they pick
+ * one, getSourceType() sees no source key and reads the card as date-driven,
+ * which would snap the picker back the instant it was clicked. Once the config
+ * does name a source the pending choice stops mattering: either the user
+ * supplied what was missing, or they moved on to a different source.
+ */
+export function resolveSource(
+  config: CardConfig | null | undefined,
+  pending: SourceType | null
+): SourceType {
+  const inferred = getSourceType(config);
+  if (!pending || inferred !== 'date') return inferred;
+  return pending;
+}
+
+/**
  * The config that results from choosing `next`, with the competing selectors
  * removed and the chosen one primed where it needs to be.
  */

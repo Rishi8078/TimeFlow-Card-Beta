@@ -2,7 +2,7 @@ import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 import { computeSchema } from '../editor/schema';
-import { SourceType, applySource, availableSources, getSourceType, usesDateFields } from '../editor/capabilities';
+import { SourceType, applySource, availableSources, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
 const SOURCE_HELPERS: Record<string, string> = {
@@ -20,6 +20,11 @@ const SOURCE_HELPERS: Record<string, string> = {
 export class TimeFlowCardEditorBeta extends LitElement {
     @property({ type: Object }) hass: any = null;
     @state() private _config: CardConfig = { type: 'custom:timeflow-card-beta' } as CardConfig;
+
+    // A source the user has picked that the config cannot yet express - picking
+    // "Entity" before choosing an entity is the case that matters. Held here
+    // rather than written to the config so no synthetic key reaches their YAML.
+    @state() private _pendingSource: SourceType | null = null;
 
     // Track which date fields are in "template mode"
     @state() private _targetDateTemplateMode: boolean = false;
@@ -135,6 +140,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
     setConfig(config: CardConfig) {
         this._config = { ...config } as CardConfig;
 
+        // Once the config names a real source, the remembered choice has either
+        // been satisfied or superseded.
+        if (this._pendingSource && getSourceType(this._config) !== 'date') {
+            this._pendingSource = null;
+        }
+
         // Auto-detect if existing values are templates
         const targetDate = config.target_date || '';
         const creationDate = config.creation_date || '';
@@ -205,7 +216,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const labels: Record<SourceType, { label: string; icon: string }> = {
             date: { label: 'Date', icon: 'mdi:calendar' },
             timer: { label: 'Entity', icon: 'mdi:timer-outline' },
-            auto: { label: 'Smart Timers', icon: 'mdi:sparkles' },
+            auto: { label: 'Smart Timers', icon: 'mdi:creation-outline' },
             countdowns: { label: 'Pinned', icon: 'mdi:format-list-bulleted' },
         };
 
@@ -237,10 +248,13 @@ export class TimeFlowCardEditorBeta extends LitElement {
     private _sourceChanged(ev: CustomEvent): void {
         ev.stopPropagation();
         const next = ev.detail?.value as SourceType | undefined;
-        if (!next || next === getSourceType(this._config)) return;
+        if (!next || next === resolveSource(this._config, this._pendingSource)) return;
 
         const updated = applySource(this._config, next);
         this._config = updated;
+        // Remember the choice when the config alone cannot show it - "Entity"
+        // has nothing to store until an entity is picked.
+        this._pendingSource = getSourceType(updated) === next ? null : next;
         this._fireConfigChanged(updated);
     }
 
@@ -336,8 +350,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             compact_format: this._getEffectiveCompactFormat()
         };
 
-        const schema = computeSchema(displayCfg as CardConfig);
-        const source = getSourceType(displayCfg as CardConfig);
+        const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
+        const schema = computeSchema(displayCfg as CardConfig, source);
 
         // The date pickers live outside ha-form because each carries a
         // picker/template toggle, and the template rule says a date field must

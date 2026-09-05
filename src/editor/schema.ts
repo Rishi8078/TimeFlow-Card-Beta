@@ -283,16 +283,22 @@ function actionsSection(): FormSchema[] {
 /**
  * Assembles the form for one config: style first, then source, then only the
  * sections the chosen style actually renders.
+ *
+ * `source` is passed in rather than inferred because the editor may be showing
+ * a choice the config cannot express yet - picking "Entity" before picking an
+ * entity. Inferring it here would leave the form describing a date-driven card
+ * while the picker above it said otherwise. Omit it and it falls back to what
+ * the config says.
  */
-export function computeSchema(config: CardConfig): FormSchema[] {
+export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   const caps = getCapabilities(config);
-  const source = getSourceType(config);
+  const activeSource = source ?? getSourceType(config);
 
   return [
     ...styleSection(),
-    ...sourceSection(source),
-    ...countUpCycleSection(config, source),
-    ...textSection(caps, source),
+    ...sourceSection(activeSource),
+    ...countUpCycleSection(config, activeSource),
+    ...textSection(caps, activeSource),
     ...headerIconSection(caps),
     ...timeUnitsSection(caps),
     ...timerListSection(caps),

@@ -105,20 +105,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 border-color: var(--primary-color);
             }
             .editor-section-label {
-                display: flex;
-                align-items: center;
-                gap: 6px;
                 font-weight: 500;
                 font-size: 14px;
                 color: var(--primary-text-color);
-            }
-            /* The expandable sections get their descriptions from ha-form,
-               which renders them inside the panel. These two blocks have no
-               panel to hide text in, so they carry an icon instead. */
-            .editor-section-label ha-icon {
-                --mdc-icon-size: 16px;
-                color: var(--secondary-text-color);
-                cursor: help;
             }
             .style-picker {
                 display: flex;
@@ -140,10 +129,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 --control-select-thickness: 64px;
                 --control-select-border-radius: 14px;
                 --control-select-padding: 6px;
-            }
-            .source-picker-helper {
-                font-size: 12px;
-                color: var(--secondary-text-color);
             }
             .date-fields-section {
                 display: flex;
@@ -244,24 +229,20 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const options = availableSources(config).map((value) => ({
             value,
             label: labels[value].label,
+            // ha-control-select renders ariaLabel into the option's `title`, so
+            // this is the hover text as well as what a screen reader announces.
+            ariaLabel: SOURCE_HELPERS[value],
             icon: html`<ha-icon .icon=${labels[value].icon}></ha-icon>`,
         }));
 
         return html`
             <div class="source-picker">
-                <span class="editor-section-label">
-                    Countdown Source
-                    <ha-icon
-                        icon="mdi:help-circle-outline"
-                        title="Only the fields for the chosen source are shown. Switching sources keeps any dates you have already typed."
-                    ></ha-icon>
-                </span>
+                <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
                     .options=${options}
                     .value=${source}
                     @value-changed=${this._sourceChanged}
                 ></ha-control-select>
-                <span class="source-picker-helper">${SOURCE_HELPERS[source]}</span>
             </div>
         `;
     }
@@ -416,13 +397,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return html`
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             <div class="style-picker">
-                <span class="editor-section-label">
-                    Style
-                    <ha-icon
-                        icon="mdi:help-circle-outline"
-                        title="The style decides which options this editor shows: each one renders a different set of them."
-                    ></ha-icon>
-                </span>
+                <span class="editor-section-label">Style</span>
                 <ha-form
                     .hass=${this.hass}
                     .data=${displayCfg}

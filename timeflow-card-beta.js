@@ -1146,20 +1146,9 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 border-color: var(--primary-color);
             }
             .editor-section-label {
-                display: flex;
-                align-items: center;
-                gap: 6px;
                 font-weight: 500;
                 font-size: 14px;
                 color: var(--primary-text-color);
-            }
-            /* The expandable sections get their descriptions from ha-form,
-               which renders them inside the panel. These two blocks have no
-               panel to hide text in, so they carry an icon instead. */
-            .editor-section-label ha-icon {
-                --mdc-icon-size: 16px;
-                color: var(--secondary-text-color);
-                cursor: help;
             }
             .style-picker {
                 display: flex;
@@ -1182,31 +1171,20 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 --control-select-border-radius: 14px;
                 --control-select-padding: 6px;
             }
-            .source-picker-helper {
-                font-size: 12px;
-                color: var(--secondary-text-color);
-            }
             .date-fields-section {
                 display: flex;
                 flex-direction: column;
                 gap: 16px;
                 padding: 16px 0;
             }
-        `}setConfig(e){this._config={...e};const t=ht(this._config);this._pendingSource&&"date"!==t&&t!==this._pendingSource&&(this._pendingSource=null);const i=e.target_date||"",s=e.creation_date||"",r=e.count_up_goal_date||"";this._targetDateTemplateMode=this._isTemplate(i),this._creationDateTemplateMode=this._isTemplate(s),this._countUpGoalDateTemplateMode=this._isTemplate(r)}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_convertToDatetimeLocal(e){if(!e||this._isTemplate(e))return"";try{const t=new Date(e);if(isNaN(t.getTime()))return"";const i=t.getFullYear(),s=String(t.getMonth()+1).padStart(2,"0"),r=String(t.getDate()).padStart(2,"0"),o=String(t.getHours()).padStart(2,"0");return`${i}-${s}-${r}T${o}:${String(t.getMinutes()).padStart(2,"0")}`}catch{return""}}_convertFromDatetimeLocal(e){return e?e+":00":""}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
+        `}setConfig(e){this._config={...e};const t=ht(this._config);this._pendingSource&&"date"!==t&&t!==this._pendingSource&&(this._pendingSource=null);const i=e.target_date||"",s=e.creation_date||"",r=e.count_up_goal_date||"";this._targetDateTemplateMode=this._isTemplate(i),this._creationDateTemplateMode=this._isTemplate(s),this._countUpGoalDateTemplateMode=this._isTemplate(r)}_isTemplate(e){return e.includes("{{")||e.includes("{%")}_convertToDatetimeLocal(e){if(!e||this._isTemplate(e))return"";try{const t=new Date(e);if(isNaN(t.getTime()))return"";const i=t.getFullYear(),s=String(t.getMonth()+1).padStart(2,"0"),r=String(t.getDate()).padStart(2,"0"),o=String(t.getHours()).padStart(2,"0");return`${i}-${s}-${r}T${o}:${String(t.getMinutes()).padStart(2,"0")}`}catch{return""}}_convertFromDatetimeLocal(e){return e?e+":00":""}_fireConfigChanged(e){this.dispatchEvent(new CustomEvent("config-changed",{detail:{config:e},bubbles:!0,composed:!0}))}_formChanged(e){var t,i,s;const r=(null===(t=e.detail)||void 0===t?void 0:t.value)||{},o=void 0!==(null===(i=this._config)||void 0===i?void 0:i.compact_format),a=this._getEffectiveCompactFormat(),n={...this._config||{},...r,type:(null===(s=this._config)||void 0===s?void 0:s.type)||"custom:timeflow-card-beta"};o||r.compact_format!==a||delete n.compact_format,this._config=n,this._fireConfigChanged(n)}_renderSourcePicker(e,t){const i={date:{label:"Date",icon:"mdi:calendar"},timer:{label:"Entity",icon:"mdi:timer-outline"},auto:{label:"Smart Timers",icon:"mdi:creation-outline"},countdowns:{label:"Pinned",icon:"mdi:format-list-bulleted"}},s=function(e){const t=["date","timer","auto"];return"listy"===ut(e)&&Array.isArray(null==e?void 0:e.countdowns)&&e.countdowns.length>0&&t.push("countdowns"),t}(e).map(e=>({value:e,label:i[e].label,ariaLabel:Rt[e],icon:G`<ha-icon .icon=${i[e].icon}></ha-icon>`}));return G`
             <div class="source-picker">
-                <span class="editor-section-label">
-                    Countdown Source
-                    <ha-icon
-                        icon="mdi:help-circle-outline"
-                        title="Only the fields for the chosen source are shown. Switching sources keeps any dates you have already typed."
-                    ></ha-icon>
-                </span>
+                <span class="editor-section-label">Countdown Source</span>
                 <ha-control-select
                     .options=${s}
                     .value=${t}
                     @value-changed=${this._sourceChanged}
                 ></ha-control-select>
-                <span class="source-picker-helper">${Rt[t]}</span>
             </div>
         `}_sourceChanged(e){var t;e.stopPropagation();const i=null===(t=e.detail)||void 0===t?void 0:t.value;if(!i||i===gt(this._config,this._pendingSource))return;const s=function(e,t){const i={...e};for(const s of Object.keys(pt))if(s!==t)for(const e of pt[s])delete i[e];return"auto"!==t||i.auto_discover_alexa||i.auto_discover_google||(i.auto_discover_alexa=!0,i.auto_discover_google=!0),i}(this._config,i);this._config=s,this._pendingSource=ht(s)===i?null:i,this._fireConfigChanged(s)}_renderDateField(e,t,i,s,r){const o=this._config[e]||"";return G`
             <div class="date-field-container">
@@ -1247,13 +1225,7 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
         `:j;return G`
             ${this._renderSourcePicker(i,s)}
             <div class="style-picker">
-                <span class="editor-section-label">
-                    Style
-                    <ha-icon
-                        icon="mdi:help-circle-outline"
-                        title="The style decides which options this editor shows: each one renders a different set of them."
-                    ></ha-icon>
-                </span>
+                <span class="editor-section-label">Style</span>
                 <ha-form
                     .hass=${this.hass}
                     .data=${i}

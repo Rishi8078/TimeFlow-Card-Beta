@@ -36,19 +36,38 @@ function check(name, pass, detail) {
 /**
  * Every config key a schema writes, flattened through grids and expandables.
  *
- * Only items carrying a selector count: containers have names too now (an
- * expandable needs one to get a description), but they write nothing.
+ * A key is written by an item carrying a selector, or by a tf_template item
+ * (whose selector lives under plainSelector so ha-form does not claim it).
+ * Containers have names too - an expandable needs one to get a description -
+ * but write nothing.
  */
+function isField(item) {
+  return !!item.name && (!!item.selector || item.type === 'tf_template');
+}
+
 function fieldNames(schema) {
   const names = [];
   const walk = (items) => {
     for (const item of items || []) {
-      if (item.name && item.selector) names.push(item.name);
+      if (isField(item)) names.push(item.name);
       if (Array.isArray(item.schema)) walk(item.schema);
     }
   };
   walk(schema);
   return names;
+}
+
+/** Every field in a schema, as {name, item} pairs. */
+function fields(schema) {
+  const out = [];
+  const walk = (items) => {
+    for (const item of items || []) {
+      if (isField(item)) out.push(item);
+      if (Array.isArray(item.schema)) walk(item.schema);
+    }
+  };
+  walk(schema);
+  return out;
 }
 
 function sectionTitles(schema) {
@@ -481,6 +500,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const collect = (schema, acc = {}) => {
     for (const item of schema || []) {
       if (item.name && item.selector) acc[item.name] = Object.keys(item.selector)[0];
+      // A tf_template field always accepts a template by construction, whatever
+      // its plain half looks like.
+      if (item.type === 'tf_template') acc[item.name] = 'text';
       if (Array.isArray(item.schema)) collect(item.schema, acc);
     }
     return acc;
@@ -504,6 +526,46 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     .filter(([, sel]) => sel === 'color_rgb' || sel === 'ui_color')
     .map(([name]) => name);
   check('Template rule: no colour pickers anywhere', colourPickers.length === 0, colourPickers.join(', ') || 'none');
+}
+
+// ── Every template-enabled key can actually take a template ─────────────────
+
+{
+  // The card's templateKeys, minus the four the editor renders itself.
+  const TEMPLATE_KEYS = [
+    'count_up_cycle', 'timer_entity', 'text_color', 'background_color',
+    'progress_color', 'header_icon', 'header_icon_color', 'header_icon_background',
+  ];
+
+  const missing = [];
+  for (const style of STYLES) {
+    for (const cfg of [
+      { style, target_date: 'x', mode: 'count_up' },
+      { style, timer_entity: 'timer.x' },
+      { style, auto_discover_alexa: true },
+    ]) {
+      for (const item of fields(computeSchema(cfg))) {
+        if (!TEMPLATE_KEYS.includes(item.name)) continue;
+        if (item.type !== 'tf_template') missing.push(`${style}.${item.name}`);
+      }
+    }
+  }
+  check('Templates: every template-enabled key in the form has a toggle',
+    missing.length === 0, [...new Set(missing)].join(', ') || 'all covered');
+
+  // ha-form checks for a top-level `selector` before it looks at `type`, so a
+  // tf_template item carrying one would silently render as a plain field.
+  const shadowed = [];
+  for (const style of STYLES) {
+    for (const item of fields(computeSchema({ style, target_date: 'x', mode: 'count_up' }))) {
+      if (item.type === 'tf_template') {
+        if (item.selector) shadowed.push(`${item.name} has a selector`);
+        if (!item.plainSelector) shadowed.push(`${item.name} has no plainSelector`);
+      }
+    }
+  }
+  check('Templates: no tf_template item is shadowed by a selector',
+    shadowed.length === 0, [...new Set(shadowed)].join(', ') || 'all correct');
 }
 
 // ── Labels ──────────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
+import '../editor/ha-form-tf-template';
 import { computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
@@ -390,7 +391,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'title',
             'Title',
             'Falls back to the timer or entity name',
-            this._renderPlainTextField('title')
+            this._renderPlainTextField('title'),
+            { label: 'Text', icon: 'mdi:format-text' }
         );
     }
 
@@ -399,7 +401,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'expired_text',
             'Expired Text',
             'Replaces the countdown once it reaches zero',
-            this._renderPlainTextField('expired_text')
+            this._renderPlainTextField('expired_text'),
+            { label: 'Text', icon: 'mdi:format-text' }
         );
     }
 
@@ -408,7 +411,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'subtitle',
             'Subtitle',
             'Shows time remaining by default; only set for custom text',
-            this._renderPlainTextField('subtitle')
+            this._renderPlainTextField('subtitle'),
+            { label: 'Text', icon: 'mdi:format-text' }
         );
     }
 
@@ -470,7 +474,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
         configKey: string,
         label: string,
         helper: string,
-        plain: TemplateResult
+        plain: TemplateResult,
+        // What the field is when it is not a template. A date offers a picker;
+        // the title, subtitle and expired text are just text, and offering to
+        // switch them to a "date picker" was simply wrong.
+        plainMode: { label: string; icon: string } = { label: 'Picker', icon: 'mdi:calendar' }
     ): TemplateResult {
         const value = String(this._config[configKey] ?? '');
         const templateMode = !!this._templateMode[configKey];
@@ -483,10 +491,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         type="button"
                         class="mode-toggle"
                         @click=${() => this._toggleTemplateMode(configKey)}
-                        title=${templateMode ? 'Switch to date picker' : 'Switch to template/Jinja mode'}
+                        title=${templateMode
+                            ? `Switch back to ${plainMode.label.toLowerCase()}`
+                            : 'Switch to template/Jinja mode'}
                     >
-                        <ha-icon icon=${templateMode ? 'mdi:calendar' : 'mdi:code-braces'}></ha-icon>
-                        ${templateMode ? 'Picker' : 'Template'}
+                        <ha-icon icon=${templateMode ? plainMode.icon : 'mdi:code-braces'}></ha-icon>
+                        ${templateMode ? plainMode.label : 'Template'}
                     </button>
                 </div>
 

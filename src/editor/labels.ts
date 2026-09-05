@@ -44,7 +44,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'progress_bg_opacity': 'Background Opacity',
   'invert_progress': 'Invert Progress',
   'aspect_ratio': 'Aspect Ratio',
-  'header_icon': 'Header Icon',
+  'header_icon': 'Icon',
   'header_icon_color': 'Icon Color',
   'header_icon_background': 'Icon Background',
   'style': 'Card Style',
@@ -53,7 +53,7 @@ export const FIELD_LABELS: Record<string, string> = {
 export const FIELD_HELPERS: Record<string, string> = {
   // Section descriptions. ha-form-expandable renders these inside the panel,
   // so they cost nothing while it is collapsed.
-  'section_header_icon': 'Icon shown beside the title. On the list style it is the fallback icon for pinned countdowns.',
+  'section_header_icon': 'Shown beside the title, or as the fallback icon for pinned countdowns on the list style. Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
   'section_appearance': 'Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown, and the track behind it.',
@@ -91,9 +91,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   'invert_progress': 'Start the progress circle full and subtract from it instead of filling it up',
 
   // Header Icon
-  'header_icon': 'Material Design icon name (e.g., "mdi:cake-variant")',
-  'header_icon_color': 'Icon color (hex, name, or template)',
-  'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
+  'header_icon': 'Any icon you have installed, e.g. mdi:cake-variant',
 
   // Dot grid (gridy)
   'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',

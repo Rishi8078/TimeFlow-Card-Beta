@@ -32,6 +32,26 @@ import {
 
 export type FormSchema = Record<string, any>;
 
+/**
+ * A field with a picker/template toggle, rendered by ha-form-tf_template.
+ *
+ * `plainSelector` rather than `selector`: ha-form checks for a top-level
+ * `selector` before it looks at `type`, so an item carrying one would render as
+ * an ordinary field and the toggle would never appear.
+ */
+function templatable(
+  name: string,
+  plainSelector: Record<string, any>,
+  plain?: { label: string; icon: string }
+): FormSchema {
+  return {
+    type: 'tf_template',
+    name,
+    plainSelector,
+    ...(plain ? { plainLabel: plain.label, plainIcon: plain.icon } : {}),
+  };
+}
+
 const STYLE_OPTIONS = [
   { value: 'classic', label: 'Classic' },
   { value: 'eventy', label: 'Eventy' },
@@ -77,7 +97,8 @@ export function styleSchema(): FormSchema[] {
  */
 function sourceSection(source: SourceType): FormSchema[] {
   if (source === 'timer') {
-    return [{ name: 'timer_entity', selector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } } }];
+    return [templatable('timer_entity', { entity: { domain: ['timer', 'sensor', 'input_datetime'] } },
+      { label: 'Entity', icon: 'mdi:shape-outline' })];
   }
 
   if (source === 'auto') {
@@ -121,7 +142,7 @@ function sourceSection(source: SourceType): FormSchema[] {
  */
 function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema[] {
   if (!usesDateFields(source) || config.mode !== 'count_up') return [];
-  return [{ name: 'count_up_cycle', selector: { text: {} } }];
+  return [templatable('count_up_cycle', { text: {} })];
 }
 
 /**
@@ -154,14 +175,9 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
     title: 'Icon',
     icon: 'mdi:image-filter-vintage',
     schema: [
-      { name: 'header_icon', selector: { icon: {} } },
-      {
-        type: 'grid',
-        schema: [
-          { name: 'header_icon_color', selector: { text: {} } },
-          { name: 'header_icon_background', selector: { text: {} } },
-        ],
-      },
+      templatable('header_icon', { icon: {} }, { label: 'Icon', icon: 'mdi:emoticon-outline' }),
+      templatable('header_icon_color', { text: {} }),
+      templatable('header_icon_background', { text: {} }),
     ],
   }];
 }
@@ -220,10 +236,10 @@ function timerListSection(caps: StyleCapabilities): FormSchema[] {
 function appearanceSection(caps: StyleCapabilities): FormSchema[] {
   const schema: FormSchema[] = [];
 
-  if (caps.progressColor) schema.push({ name: 'progress_color', selector: { text: {} } });
+  if (caps.progressColor) schema.push(templatable('progress_color', { text: {} }));
   schema.push(
-    { name: 'background_color', selector: { text: {} } },
-    { name: 'text_color', selector: { text: {} } },
+    templatable('background_color', { text: {} }),
+    templatable('text_color', { text: {} }),
     { name: 'expired_animation', selector: { boolean: {} } },
   );
 

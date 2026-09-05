@@ -250,10 +250,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   // Field -> the capability flag that must be true for it to appear.
   const gated = {
-    // `title` is not here: like `style`, the editor renders it itself so it can
-    // carry a picker/template toggle. Its capability gate lives in the
-    // component, checked separately below.
-    subtitle: 'subtitle',
+    // `title` and `subtitle` are not here: like `style`, the editor renders
+    // them itself so they can carry a picker/template toggle. Their capability
+    // gates live in the component, checked separately below.
     expired_text: 'expiredText',
     compact_format: 'compactFormat',
     show_years: 'timeUnits',
@@ -308,10 +307,19 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Style: it is not duplicated inside the form',
     !fieldNames(computeSchema({ style: 'classic' })).includes('style'));
 
-  // Same for the title: rendered by the editor with its own template toggle.
-  const titleInForm = STYLES.filter((style) =>
-    fieldNames(computeSchema({ style, target_date: 'x' })).includes('title'));
-  check('Title: never appears inside the form', titleInForm.length === 0, titleInForm.join(', ') || 'none');
+  // Same for the title and subtitle: rendered by the editor with their own
+  // template toggles.
+  for (const key of ['title', 'subtitle']) {
+    const inForm = STYLES.filter((style) =>
+      fieldNames(computeSchema({ style, target_date: 'x' })).includes(key));
+    check(`Text: ${key} never appears inside the form`, inForm.length === 0, inForm.join(', ') || 'none');
+  }
+
+  // The prefix/suffix pair is still gated on the subtitle capability even
+  // though the subtitle field itself has moved out.
+  const noSubtitle = fieldNames(computeSchema({ style: 'minimal-square', target_date: 'x' }));
+  check('Text: prefix/suffix follow the subtitle capability',
+    !noSubtitle.includes('subtitle_prefix') && !noSubtitle.includes('subtitle_suffix'));
 
   for (const style of STYLES) {
     for (const cfg of [
@@ -382,9 +390,11 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Split: the source half carries mode and the cycle',
     top.includes('mode') && top.includes('count_up_cycle'), top.join(', '));
   const bottom = fieldNames(computeRestSchema(dateCfg()));
-  check('Split: the rest carries the text fields', bottom.includes('subtitle') && bottom.includes('expired_text'));
-  check('Split: neither half contains the title',
-    !top.includes('title') && !bottom.includes('title'));
+  check('Split: the rest carries the remaining text fields',
+    bottom.includes('subtitle_prefix') && bottom.includes('expired_text'));
+  check('Split: neither half contains the title or subtitle',
+    !top.includes('title') && !bottom.includes('title')
+    && !top.includes('subtitle') && !bottom.includes('subtitle'));
 }
 
 // ── Section order ───────────────────────────────────────────────────────────

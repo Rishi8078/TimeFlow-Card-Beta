@@ -121,16 +121,14 @@ function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema
 }
 
 /**
- * Everything in the text group except the title.
+ * Everything in the text group except the title and subtitle.
  *
- * The title is rendered by the editor instead, so it can carry the same
- * picker/template toggle the dates have - it is one of the keys people most
- * often want a template in.
+ * Those two are rendered by the editor instead, so they can carry the same
+ * picker/template toggle the dates have - they are the keys people most often
+ * want a template in.
  */
 function textSection(caps: StyleCapabilities, source: SourceType): FormSchema[] {
   const schema: FormSchema[] = [];
-
-  if (caps.subtitle) schema.push({ name: 'subtitle', selector: { text: {} } });
 
   // Prefix and suffix are applied in getSubtitle()'s standard-countdown branch;
   // the timer branches return before reaching them.

@@ -7,10 +7,10 @@ import { computeLabel, computeHelper } from '../editor/labels';
 
 /**
  * Keys the editor renders itself, with a picker/template toggle: the three
- * dates, plus the title. Everything else that accepts a template is a plain
+ * dates, plus the title and subtitle. Everything else that takes a template is a plain
  * text field, where a template can simply be typed.
  */
-const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title'] as const;
+const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title', 'subtitle'] as const;
 
 const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
@@ -64,12 +64,17 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: block;
             }
             
-            /* Date field with mode toggle */
+            /* Matches the 24px ha-form puts between its own fields, so a field
+               we render sits on the same grid as one ha-form renders. */
+            .editor-root {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
             .date-field-container {
                 display: flex;
                 flex-direction: column;
-                gap: 4px;
-                margin-bottom: 16px;
+                gap: 6px;
             }
             .date-field-header {
                 display: flex;
@@ -137,7 +142,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             .date-helper {
                 font-size: 12px;
                 color: var(--secondary-text-color);
-                margin-top: 4px;
             }
             /* The date and time inputs come from Home Assistant, so they carry
                the theme's own styling. This only has to stop them huddling on
@@ -158,13 +162,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
-                padding: 8px 0 0 0;
             }
             .source-picker {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
-                padding: 8px 0 4px 0;
             }
             .source-picker ha-control-select {
                 /* ha-control-select defaults to 40px, which assumes an icon or
@@ -178,8 +180,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             .date-fields-section {
                 display: flex;
                 flex-direction: column;
-                gap: 16px;
-                padding: 16px 0;
+                gap: 24px;
             }
         `;
     }
@@ -351,18 +352,37 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
     /** The title, with the same toggle - plain text on one side, Jinja on the other. */
     private _renderTitleField(): TemplateResult {
-        return this._renderTemplatableField('title', 'Title', 'Falls back to the timer or entity name', html`
+        return this._renderTemplatableField(
+            'title',
+            'Title',
+            'Falls back to the timer or entity name',
+            this._renderPlainTextField('title')
+        );
+    }
+
+    private _renderSubtitleField(): TemplateResult {
+        return this._renderTemplatableField(
+            'subtitle',
+            'Subtitle',
+            'Shows time remaining by default; only set for custom text',
+            this._renderPlainTextField('subtitle')
+        );
+    }
+
+    /** The ordinary, non-template half of a text field. */
+    private _renderPlainTextField(configKey: string): TemplateResult {
+        return html`
             <div class="date-picker">
                 <ha-form
                     .hass=${this.hass}
-                    .data=${{ title: this._config.title ?? '' }}
-                    .schema=${[{ name: 'title', selector: { text: {} } }]}
+                    .data=${{ [configKey]: this._config[configKey] ?? '' }}
+                    .schema=${[{ name: configKey, selector: { text: {} } }]}
                     .computeLabel=${() => ''}
                     @value-changed=${(e: CustomEvent) =>
-                        this._updateDateField('title', e.detail?.value?.title ?? '')}
+                        this._updateDateField(configKey, e.detail?.value?.[configKey] ?? '')}
                 ></ha-form>
             </div>
-        `);
+        `;
     }
 
     /**
@@ -475,7 +495,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
         const restSchema = computeRestSchema(displayCfg as CardConfig, source);
-        const showsTitle = getCapabilities(displayCfg as CardConfig).title;
+        const caps = getCapabilities(displayCfg as CardConfig);
+        const showsTitle = caps.title;
+        const showsSubtitle = caps.subtitle;
 
         // The date pickers live outside ha-form because each carries a
         // picker/template toggle, and the template rule says a date field must
@@ -505,6 +527,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ` : nothing;
 
         return html`
+            <div class="editor-root">
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             <div class="style-picker">
                 <span class="editor-section-label">Style</span>
@@ -527,6 +550,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 .computeHelper=${computeHelper}
             ></ha-form>
             ${showsTitle ? this._renderTitleField() : nothing}
+            ${showsSubtitle ? this._renderSubtitleField() : nothing}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}
@@ -535,6 +559,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 .computeLabel=${computeLabel}
                 .computeHelper=${computeHelper}
             ></ha-form>
+            </div>
         `;
     }
 

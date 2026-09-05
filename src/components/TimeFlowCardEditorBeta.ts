@@ -32,6 +32,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
     // Which date fields are showing a template box rather than a picker.
     @state() private _templateMode: Record<string, boolean> = {};
 
+    // Whether ha-code-editor has been registered by the frontend yet. It is
+    // lazy-loaded, and an unregistered custom element renders as an empty box,
+    // so the textarea stands in until it appears.
+    @state() private _codeEditorReady: boolean = !!customElements.get('ha-code-editor');
+
     // Fields the user has switched by hand. Auto-detection stops applying to
     // them: an empty template box is not a template, so re-detecting on the
     // next setConfig would silently throw the user back to the picker the
@@ -90,6 +95,22 @@ export class TimeFlowCardEditorBeta extends LitElement {
             }
             .mode-toggle ha-icon {
                 --mdc-icon-size: 16px;
+            }
+            /* ha-code-editor brings its own CodeMirror styling; the wrapper
+               only has to give it the same frame as the date picker beside it
+               and stop a long template widening the panel. */
+            .template-editor {
+                border: 1px solid var(--divider-color);
+                border-radius: 4px;
+                background: var(--card-background-color);
+                padding: 4px 8px;
+                overflow: auto;
+            }
+            .template-editor:focus-within {
+                border-color: var(--primary-color);
+            }
+            .template-editor ha-code-editor {
+                --code-mirror-max-height: 120px;
             }
             .template-input {
                 width: 100%;
@@ -164,6 +185,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 padding: 16px 0;
             }
         `;
+    }
+
+    connectedCallback(): void {
+        super.connectedCallback();
+        if (!this._codeEditorReady) {
+            customElements.whenDefined('ha-code-editor').then(() => {
+                this._codeEditorReady = true;
+            });
+        }
     }
 
     setConfig(config: CardConfig) {
@@ -320,14 +350,32 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
                 ${templateMode
                 ? html`
-                        <textarea
-                            class="template-input"
-                            rows="2"
-                            spellcheck="false"
-                            .value=${value}
-                            placeholder=${'{{ states(\'input_datetime.my_date\') }}'}
-                            @input=${(e: Event) => this._updateDateField(configKey, (e.target as HTMLTextAreaElement).value)}
-                        ></textarea>
+                        ${this._codeEditorReady
+                            ? html`
+                                <div class="template-editor">
+                                    <ha-code-editor
+                                        mode="jinja2"
+                                        linewrap
+                                        autocomplete-entities
+                                        .hass=${this.hass}
+                                        .value=${value}
+                                        .hasToolbar=${false}
+                                        @value-changed=${(e: CustomEvent) =>
+                                            this._updateDateField(configKey, e.detail?.value ?? '')}
+                                    ></ha-code-editor>
+                                </div>
+                            `
+                            : html`
+                                <textarea
+                                    class="template-input"
+                                    rows="2"
+                                    spellcheck="false"
+                                    .value=${value}
+                                    placeholder=${'{{ states(\'input_datetime.my_date\') }}'}
+                                    @input=${(e: Event) =>
+                                        this._updateDateField(configKey, (e.target as HTMLTextAreaElement).value)}
+                                ></textarea>
+                            `}
                         <div class="date-helper">Jinja template, entity id, or ISO date string</div>
                     `
                 : html`

@@ -1,7 +1,7 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
-import { computeSectionsSchema, computeSourceSchema, computeTextSchema, styleSchema } from '../editor/schema';
+import { computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -174,6 +174,21 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 flex-direction: column;
                 gap: 6px;
             }
+            /* ha-form-grid takes its row gap from --ha-space-6 and its column
+               count from --form-grid-column-count, both of which inherit
+               through the shadow boundary. A row of toggles does not need the
+               24px ha-form puts between full-height fields, and this form holds
+               nothing but the grid, so narrowing the token here reaches only
+               these toggles. */
+            .units-section {
+                --form-grid-column-count: 2;
+                --ha-space-6: 10px;
+            }
+            .units-section ha-form {
+                display: block;
+                width: 100%;
+            }
+
             /* The same, tinted: for a section holding several fields that need
                to read as one group. The tint is mixed from the text colour so
                it lands correctly on a light theme and a dark one alike; the
@@ -557,7 +572,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
         const textSchema = computeTextSchema(displayCfg as CardConfig, source);
-        const sectionsSchema = computeSectionsSchema(displayCfg as CardConfig, source);
+        const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
+        const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
         const caps = getCapabilities(displayCfg as CardConfig);
         const showsTitle = caps.title;
         const showsSubtitle = caps.subtitle;
@@ -624,10 +640,23 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 </div>
             ` : nothing}
             ${showsExpiredText ? this._renderExpiredTextField() : nothing}
+            ${unitsSchema.length > 0 ? html`
+                <div class="editor-section units-section">
+                    <span class="editor-section-label">Time Units</span>
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${displayCfg}
+                        .schema=${unitsSchema}
+                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                        .computeLabel=${computeLabel}
+                        .computeHelper=${computeHelper}
+                    ></ha-form>
+                </div>
+            ` : nothing}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}
-                .schema=${sectionsSchema}
+                .schema=${panelsSchema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${computeLabel}
                 .computeHelper=${computeHelper}

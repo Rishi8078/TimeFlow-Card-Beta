@@ -166,6 +166,13 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
   }];
 }
 
+/**
+ * The unit toggles, plus the compact-format switch below them.
+ *
+ * compact_format sits outside the grid on purpose: it is not a unit, and its
+ * helper text is the only one here, so inside a two-column grid it made its own
+ * row taller than the rest and threw the toggles out of alignment.
+ */
 function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
   const units: FormSchema[] = [];
 
@@ -180,9 +187,12 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
     );
   }
   if (caps.showSeconds) units.push({ name: 'show_seconds', selector: { boolean: {} } });
-  if (caps.compactFormat) units.push({ name: 'compact_format', selector: { boolean: {} } });
 
-  return units.length > 0 ? [{ type: 'grid', schema: units }] : [];
+  const schema: FormSchema[] = [];
+  if (units.length > 0) schema.push({ type: 'grid', schema: units });
+  if (caps.compactFormat) schema.push({ name: 'compact_format', selector: { boolean: {} } });
+
+  return schema;
 }
 
 function timerListSection(caps: StyleCapabilities): FormSchema[] {
@@ -338,7 +348,8 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
   return [
     ...computeSourceSchema(config, source),
     ...computeTextSchema(config, source),
-    ...computeSectionsSchema(config, source),
+    ...computeUnitsSchema(config),
+    ...computePanelsSchema(config),
   ];
 }
 
@@ -362,12 +373,16 @@ export function computeTextSchema(config: CardConfig, source?: SourceType): Form
   return textSection(getCapabilities(config), source ?? getSourceType(config));
 }
 
-/** Everything below the text group: the unit toggles and the panels. */
-export function computeSectionsSchema(config: CardConfig, _source?: SourceType): FormSchema[] {
+/** The time-unit toggles, which the editor puts in a section of their own. */
+export function computeUnitsSchema(config: CardConfig): FormSchema[] {
+  return timeUnitsSection(getCapabilities(config));
+}
+
+/** The collapsible panels at the foot of the form. */
+export function computePanelsSchema(config: CardConfig): FormSchema[] {
   const caps = getCapabilities(config);
 
   return [
-    ...timeUnitsSection(caps),
     ...timerListSection(caps),
     // Icon sits with the styling panels rather than the text fields: it
     // is chrome, not content, and it reads as the first of the appearance group.

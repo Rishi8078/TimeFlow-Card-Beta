@@ -366,7 +366,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── The split around the title ──────────────────────────────────────────────
 
 {
-  const { computeSourceSchema, computeTextSchema, computeSectionsSchema } =
+  const { computeSourceSchema, computeTextSchema, computeUnitsSchema, computePanelsSchema } =
     require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
@@ -378,14 +378,15 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
       const parts = JSON.stringify([
-        ...computeSourceSchema(cfg), ...computeTextSchema(cfg), ...computeSectionsSchema(cfg),
+        ...computeSourceSchema(cfg), ...computeTextSchema(cfg),
+        ...computeUnitsSchema(cfg), ...computePanelsSchema(cfg),
       ]);
       if (whole !== parts) {
         check(`Split: parts reassemble on ${style}`, false, JSON.stringify(cfg));
       }
     }
   }
-  check('Split: the three parts always reassemble into computeSchema', true);
+  check('Split: the four parts always reassemble into computeSchema', true);
 
   // Mode belongs above the title, the text fields below it.
   const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));
@@ -394,10 +395,22 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const middle = fieldNames(computeTextSchema(dateCfg()));
   check('Split: the text part carries only the prefix/suffix pair',
     middle.join(',') === 'subtitle_prefix,subtitle_suffix', middle.join(','));
-  const bottom = fieldNames(computeSectionsSchema(dateCfg()));
-  check('Split: the sections part starts at the unit toggles', bottom.includes('show_days'));
+  const units = fieldNames(computeUnitsSchema(dateCfg()));
+  check('Split: the units part carries the toggles', units.includes('show_days') && units.includes('show_seconds'));
+  check('Split: compact_format rides with the units', units.includes('compact_format'));
 
-  const everywhere = [...top, ...middle, ...bottom];
+  const bottom = fieldNames(computePanelsSchema(dateCfg()));
+  check('Split: the panels part holds no unit toggles', !bottom.some((n) => n.startsWith('show_')));
+
+  // compact_format must sit beside the grid, not inside it: its helper is the
+  // only one here, and in a grid cell it made that row taller than the others.
+  const unitsSchema = computeUnitsSchema(dateCfg());
+  const grid = unitsSchema.find((i) => i.type === 'grid');
+  check('Units: compact_format is outside the grid',
+    grid && !grid.schema.some((i) => i.name === 'compact_format')
+    && unitsSchema.some((i) => i.name === 'compact_format'));
+
+  const everywhere = [...top, ...middle, ...units, ...bottom];
   for (const key of ['title', 'subtitle', 'expired_text']) {
     check(`Split: ${key} is in no part of the form`, !everywhere.includes(key));
   }

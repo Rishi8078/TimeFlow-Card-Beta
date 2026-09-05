@@ -253,9 +253,12 @@ function appearanceSection(caps: StyleCapabilities): FormSchema[] {
 }
 
 function layoutSection(caps: StyleCapabilities): FormSchema[] {
+  // The examples live in the placeholder rather than a helper line: they are
+  // only useful while the field is empty, which is exactly when a placeholder
+  // shows. ha-selector-text reads `placeholder` straight off the selector.
   const dimensions: FormSchema[] = [];
-  if (caps.width) dimensions.push({ name: 'width', selector: { text: {} } });
-  if (caps.height) dimensions.push({ name: 'height', selector: { text: {} } });
+  if (caps.width) dimensions.push({ name: 'width', selector: { text: { placeholder: '300px, 100%, 20em' } } });
+  if (caps.height) dimensions.push({ name: 'height', selector: { text: { placeholder: '200px, auto' } } });
 
   const schema: FormSchema[] = [];
   if (dimensions.length === 2) {
@@ -263,7 +266,7 @@ function layoutSection(caps: StyleCapabilities): FormSchema[] {
   } else {
     schema.push(...dimensions);
   }
-  if (caps.aspectRatio) schema.push({ name: 'aspect_ratio', selector: { text: {} } });
+  if (caps.aspectRatio) schema.push({ name: 'aspect_ratio', selector: { text: { placeholder: '16/9, 4/3, 1/1' } } });
 
   if (schema.length === 0) return [];
   return [{

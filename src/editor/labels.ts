@@ -76,9 +76,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Colors
 
   // Layout
-  'width': 'Card width (e.g., "300px", "100%", "20em")',
-  'height': 'Card height (e.g., "200px", "auto")',
-  'aspect_ratio': 'Width:height ratio (e.g., "16/9", "4/3", "1/1")',
 
   // Progress Circle
   'stroke_width': 'Thickness of the progress circle ring',

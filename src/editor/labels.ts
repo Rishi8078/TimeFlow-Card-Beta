@@ -83,10 +83,10 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Header Icon
 
   // Dot grid (gridy)
-  'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',
-  'grid_dot_unit': 'What one dot represents when dots is "auto". Auto picks the unit that keeps the grid readable',
-  'grid_rows': 'Rows to wrap the dots into. Auto fits as many per row as the card width allows',
-  'grid_dot_size': 'Preferred dot diameter in pixels. Dots still grow past this to fill the card width',
+  'grid_dots': 'Leave empty for the fixed 5 × 20 grid.',
+  'grid_dot_unit': 'What one dot means when Dots is Auto.',
+  'grid_rows': 'Auto fits as many per row as the width allows.',
+  'grid_dot_size': 'Dots grow past this to fill the width.',
 };
 
 /** ha-form's computeLabel: an explicit schema label wins, then the table. */

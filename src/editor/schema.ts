@@ -347,7 +347,9 @@ function dotGridSection(caps: StyleCapabilities): FormSchema[] {
       },
       { name: 'grid_dot_unit', selector: { select: { options: GRID_DOT_UNIT_OPTIONS, mode: 'dropdown' } } },
       { name: 'grid_rows', selector: { select: { custom_value: true, options: GRID_ROW_OPTIONS, mode: 'dropdown' } } },
-      { name: 'grid_dot_size', selector: { number: { min: 4, max: 40, step: 1, mode: 'box' } } },
+      // A slider, like the ring dimensions: same kind of value, and mode 'box'
+      // was the only thing making it look different.
+      { name: 'grid_dot_size', selector: { number: { min: 4, max: 40, step: 1, unit_of_measurement: 'px' } } },
     ],
   }];
 }

@@ -57,7 +57,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   'section_appearance': 'Colours accept #4caf50, rgb(), a CSS name, var(--…), or an entity id.',
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown.',
-  'section_dot_grid': 'How many dots the grid draws, and what one dot represents.',
+  'section_dot_grid': 'Leave Dots empty for the fixed 5 × 20 grid. Auto picks a unit and row count that keep it readable, and dots grow past Size to fill the width.',
   'section_timer_list': 'How many timer rows to draw, and the icon for each source. The defaults are mdi: icons so they work on a stock install.',
   'section_actions': 'What happens when the card is tapped, held, or double-tapped.',
 
@@ -83,10 +83,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Header Icon
 
   // Dot grid (gridy)
-  'grid_dots': 'Leave empty for the fixed 5 × 20 grid.',
-  'grid_dot_unit': 'What one dot means when Dots is Auto.',
-  'grid_rows': 'Auto fits as many per row as the width allows.',
-  'grid_dot_size': 'Dots grow past this to fill the width.',
 };
 
 /** ha-form's computeLabel: an explicit schema label wins, then the table. */

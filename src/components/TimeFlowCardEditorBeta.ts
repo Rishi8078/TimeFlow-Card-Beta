@@ -4,7 +4,7 @@ import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
 import '../editor/ha-form-tf-countdowns';
-import { computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
+import { computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeTimerListSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -620,6 +620,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
         const textSchema = computeTextSchema(displayCfg as CardConfig, source);
+        const timerListSchema = computeTimerListSchema(displayCfg as CardConfig);
         const expiredSchema = computeExpiredSchema(displayCfg as CardConfig);
         const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
         const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
@@ -671,6 +672,20 @@ export class TimeFlowCardEditorBeta extends LitElement {
             </div>
             ${dateFields}
             ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
+            ${timerListSchema.length > 0 ? html`
+                <div class="editor-section">
+                    <span class="editor-section-label">Timers</span>
+                    <div class="date-helper">Discovered timers, plus any countdowns you pin below.</div>
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${displayCfg}
+                        .schema=${timerListSchema}
+                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                        .computeLabel=${computeLabel}
+                        .computeHelper=${this._computeHelper}
+                    ></ha-form>
+                </div>
+            ` : nothing}
             ${showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
             ${textSchema.length > 0 ? html`

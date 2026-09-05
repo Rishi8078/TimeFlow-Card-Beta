@@ -216,30 +216,28 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
   return schema;
 }
 
+/**
+ * Not a collapsible panel: on the list style this *is* the card, so the editor
+ * renders it as a section near the top rather than tucking it away at the foot
+ * of the form with the styling panels.
+ */
 function timerListSection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.timerList) return [];
-  return [{
-    type: 'expandable',
-    name: 'section_timer_list',
-    flatten: true,
-    title: 'Timer List',
-    icon: 'mdi:format-list-bulleted',
-    schema: [
-      { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
-      {
-        type: 'grid',
-        schema: [
-          { name: 'alexa_icon', selector: { icon: {} } },
-          { name: 'google_icon', selector: { icon: {} } },
-        ],
-      },
-      { name: 'timer_icon', selector: { icon: {} } },
-      // Not flattened: ha-form then scopes the value to data.countdowns and
-      // wraps what comes back as { countdowns: [...] }, which is the shape an
-      // array field needs.
-      { type: 'tf_countdowns', name: 'countdowns' },
-    ],
-  }];
+  return [
+    { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
+    {
+      type: 'grid',
+      schema: [
+        { name: 'alexa_icon', selector: { icon: {} } },
+        { name: 'google_icon', selector: { icon: {} } },
+      ],
+    },
+    { name: 'timer_icon', selector: { icon: {} } },
+    // Not flattened: ha-form then scopes the value to data.countdowns and
+    // wraps what comes back as { countdowns: [...] }, which is the shape an
+    // array field needs.
+    { type: 'tf_countdowns', name: 'countdowns' },
+  ];
 }
 
 function appearanceSection(caps: StyleCapabilities): FormSchema[] {
@@ -389,6 +387,7 @@ function actionsSection(): FormSchema[] {
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   return [
     ...computeSourceSchema(config, source),
+    ...computeTimerListSchema(config),
     ...computeTextSchema(config, source),
     ...computeExpiredSchema(config),
     ...computeUnitsSchema(config),
@@ -409,6 +408,11 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
     ...sourceSection(activeSource),
     ...countUpCycleSection(config, activeSource),
   ];
+}
+
+/** The list configuration, which the editor gives a section of its own. */
+export function computeTimerListSchema(config: CardConfig): FormSchema[] {
+  return timerListSection(getCapabilities(config));
 }
 
 /** The text fields the editor does not render itself. */
@@ -435,7 +439,6 @@ export function computePanelsSchema(config: CardConfig): FormSchema[] {
   const caps = getCapabilities(config);
 
   return [
-    ...timerListSection(caps),
     // Icon sits with the styling panels rather than the text fields: it
     // is chrome, not content, and it reads as the first of the appearance group.
     ...headerIconSection(caps),

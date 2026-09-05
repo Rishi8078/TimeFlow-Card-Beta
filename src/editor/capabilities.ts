@@ -106,7 +106,10 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
   listy: {
     // Each row draws its own small ring; the card-level ring options do nothing.
     // header_icon survives only as the fallback icon for pinned countdowns.
-    title: true, subtitle: false, expiredText: true, compactFormat: true,
+    // expiredText is unreachable here: _getTitleText() returns at the
+    // auto-discovery or timer_entity branch long before the line that uses it,
+    // and the rows report completion themselves.
+    title: true, subtitle: false, expiredText: false, compactFormat: true,
     timeUnits: false, showSeconds: true, headerIcon: true,
     progressColor: true, ringGeometry: false, invertProgress: false, progressTrack: false,
     dotGrid: false, timerList: true,

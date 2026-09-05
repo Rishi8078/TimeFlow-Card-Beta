@@ -59,7 +59,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown.',
   'section_dot_grid': 'Leave Dots empty for the fixed 5 × 20 grid. Auto picks a unit and row count that keep it readable, and dots grow past Size to fill the width.',
-  'section_timer_list': 'Discovered timers, plus any countdowns you pin below.',
   'countdowns': 'Shown alongside the discovered timers, in the order listed.',
   'section_actions': 'What happens when the card is tapped, held, or double-tapped.',
 

@@ -367,7 +367,11 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 
   const listy = sectionTitles(computeSchema({ style: 'listy' }));
   check('Listy: no Progress Circle panel', !listy.includes('Progress Circle'), listy.join(', '));
-  check('Listy: has the Timer List panel', listy.includes('Timer List'));
+  // The list is the card on this style, so it is a section near the top rather
+  // than a panel at the foot of the form.
+  check('Listy: the timer list is not a panel', !listy.includes('Timer List'), listy.join(', '));
+  check('Listy: the timer list fields are still reachable',
+    fieldNames(computeSchema({ style: 'listy' })).includes('max_timers'));
 
   const minimal = computeSchema({ style: 'minimal-square' });
   check('Minimal square: no time unit grid',
@@ -386,7 +390,8 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── The split around the title ──────────────────────────────────────────────
 
 {
-  const { computeSourceSchema, computeTextSchema, computeExpiredSchema, computeUnitsSchema, computePanelsSchema } =
+  const { computeSourceSchema, computeTimerListSchema, computeTextSchema,
+          computeExpiredSchema, computeUnitsSchema, computePanelsSchema } =
     require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
@@ -398,15 +403,15 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
       const parts = JSON.stringify([
-        ...computeSourceSchema(cfg), ...computeTextSchema(cfg), ...computeExpiredSchema(cfg),
-        ...computeUnitsSchema(cfg), ...computePanelsSchema(cfg),
+        ...computeSourceSchema(cfg), ...computeTimerListSchema(cfg), ...computeTextSchema(cfg),
+        ...computeExpiredSchema(cfg), ...computeUnitsSchema(cfg), ...computePanelsSchema(cfg),
       ]);
       if (whole !== parts) {
         check(`Split: parts reassemble on ${style}`, false, JSON.stringify(cfg));
       }
     }
   }
-  check('Split: the five parts always reassemble into computeSchema', true);
+  check('Split: the six parts always reassemble into computeSchema', true);
 
   // Mode belongs above the title, the text fields below it.
   const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));

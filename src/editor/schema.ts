@@ -234,6 +234,10 @@ function timerListSection(caps: StyleCapabilities): FormSchema[] {
         ],
       },
       { name: 'timer_icon', selector: { icon: {} } },
+      // Not flattened: ha-form then scopes the value to data.countdowns and
+      // wraps what comes back as { countdowns: [...] }, which is the shape an
+      // array field needs.
+      { type: 'tf_countdowns', name: 'countdowns' },
     ],
   }];
 }

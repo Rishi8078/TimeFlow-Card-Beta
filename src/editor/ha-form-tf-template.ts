@@ -21,6 +21,34 @@ export interface TemplateFieldSchema {
   /** What the toggle offers to switch back to. Defaults to "Text". */
   plainLabel?: string;
   plainIcon?: string;
+  /**
+   * 'datetime' converts between the ISO the card stores and the
+   * "YYYY-MM-DD HH:MM:SS" ha-selector-datetime expects.
+   */
+  format?: 'datetime';
+}
+
+/**
+ * ISO -> the form ha-selector-datetime wants. Local components throughout,
+ * never toISOString(): a date the user typed must stay on the day they typed
+ * it. Seconds are carried through rather than zeroed.
+ */
+export function toDateTimeSelector(iso: string): string | undefined {
+  if (!iso || iso.includes('{{') || iso.includes('{%')) return undefined;
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return undefined;
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return `${day} ${time}`;
+}
+
+/** ...and back to the ISO form the card stores. */
+export function fromDateTimeSelector(value: string): string {
+  if (!value) return '';
+  const iso = value.trim().replace(' ', 'T');
+  return iso.length === 16 ? `${iso}:00` : iso;
 }
 
 const TEMPLATE_PLACEHOLDER = "{{ states('sensor.example') }}";
@@ -83,7 +111,8 @@ export class HaFormTfTemplate extends LitElement {
 
   private _plainChanged(ev: CustomEvent): void {
     ev.stopPropagation();
-    this._emit(ev.detail?.value?.[this.schema.name] ?? '');
+    const raw = ev.detail?.value?.[this.schema.name] ?? '';
+    this._emit(this.schema.format === 'datetime' ? fromDateTimeSelector(raw) : raw);
   }
 
   private _templateChanged(ev: CustomEvent): void {
@@ -121,10 +150,14 @@ export class HaFormTfTemplate extends LitElement {
   }
 
   private _renderPlain(value: unknown): TemplateResult {
+    const plainValue = this.schema.format === 'datetime'
+      ? toDateTimeSelector(String(value ?? ''))
+      : value;
+
     return html`
       <ha-form
         .hass=${this.hass}
-        .data=${{ [this.schema.name]: value }}
+        .data=${{ [this.schema.name]: plainValue }}
         .schema=${[{ name: this.schema.name, selector: this.schema.plainSelector }]}
         .disabled=${this.disabled}
         .computeLabel=${() => ''}

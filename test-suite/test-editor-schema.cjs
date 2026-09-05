@@ -42,7 +42,8 @@ function check(name, pass, detail) {
  * but write nothing.
  */
 function isField(item) {
-  return !!item.name && (!!item.selector || item.type === 'tf_template');
+  return !!item.name
+    && (!!item.selector || item.type === 'tf_template' || item.type === 'tf_countdowns');
 }
 
 function fieldNames(schema) {
@@ -455,7 +456,6 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   // Keys the config form is not responsible for.
   const NOT_IN_FORM = [
     'type',        // the card type, set by Home Assistant
-    'countdowns',  // the listy list, pending its own editor
     'grid_options' // Home Assistant's own Layout tab owns this
   ];
 
@@ -463,6 +463,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   for (const style of STYLES) {
     for (const cfg of [
       { style, target_date: 'x', mode: 'count_up' },
+      { style, countdowns: [{ target_date: 'x' }] },
       { style, target_date: 'x', mode: 'count_down' },
       { style, timer_entity: 'timer.x' },
       { style, auto_discover_alexa: true },
@@ -482,6 +483,37 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const undeclared = [...reachable].filter((k) => !declared.includes(k));
   check('Coverage: the editor writes no key CardConfig does not declare',
     undeclared.length === 0, undeclared.join(', ') || 'none');
+}
+
+// ── The countdowns repeater ─────────────────────────────────────────────────
+
+{
+  const findRepeater = (cfg) => {
+    let found = null;
+    const walk = (items) => {
+      for (const i of items || []) {
+        if (i.type === 'tf_countdowns') found = i;
+        if (Array.isArray(i.schema)) walk(i.schema);
+      }
+    };
+    walk(computeSchema(cfg));
+    return found;
+  };
+
+  const onListy = findRepeater({ style: 'listy', auto_discover_alexa: true });
+  check('Repeater: present on listy', !!onListy);
+  check('Repeater: writes the countdowns key', onListy && onListy.name === 'countdowns');
+
+  // The opposite of every other container here: flattening would spread the
+  // array's contents over the config instead of writing it to one key.
+  check('Repeater: is NOT flattened', onListy && onListy.flatten === undefined);
+
+  const elsewhere = STYLES.filter((style) => style !== 'listy' && findRepeater({ style, target_date: 'x' }));
+  check('Repeater: absent from every other style', elsewhere.length === 0, elsewhere.join(', ') || 'none');
+
+  // Pinning entries is what makes the source selectable, so the two have to agree.
+  check('Repeater: pinning entries makes the Pinned source available',
+    availableSources({ style: 'listy', countdowns: [{ target_date: 'x' }] }).includes('countdowns'));
 }
 
 // ── Tinted groups ───────────────────────────────────────────────────────────

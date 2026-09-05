@@ -3,6 +3,7 @@ import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
+import '../editor/ha-form-tf-countdowns';
 import { computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';

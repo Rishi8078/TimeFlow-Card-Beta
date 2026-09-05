@@ -16,6 +16,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'auto_discover_alexa': 'Alexa Timers',
   'auto_discover_google': 'Google Home Timers',
   'max_timers': 'Maximum Timers Shown',
+  'countdowns': 'Pinned Countdowns',
   'alexa_icon': 'Alexa Row Icon',
   'google_icon': 'Google Row Icon',
   'timer_icon': 'Timer Row Icon',
@@ -58,7 +59,8 @@ export const FIELD_HELPERS: Record<string, string> = {
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown.',
   'section_dot_grid': 'Leave Dots empty for the fixed 5 × 20 grid. Auto picks a unit and row count that keep it readable, and dots grow past Size to fill the width.',
-  'section_timer_list': 'How many timer rows to draw, and the icon for each source. The defaults are mdi: icons so they work on a stock install.',
+  'section_timer_list': 'Discovered timers, plus any countdowns you pin below.',
+  'countdowns': 'Shown alongside the discovered timers, in the order listed.',
   'section_actions': 'What happens when the card is tapped, held, or double-tapped.',
 
   // Timer Source

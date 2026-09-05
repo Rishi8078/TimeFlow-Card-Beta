@@ -110,6 +110,9 @@ export type GridDotUnit = 'auto' | 'minute' | 'hour' | 'day' | 'week' | 'month';
  * One countdown pinned into a 'listy' card. A trimmed CardConfig: the fields
  * that make sense for a single row, with the card-level ones (style, actions,
  * dimensions) left to the card that hosts it.
+ *
+ * Named `countdowns` rather than `cards` in config: these are rows, not nested
+ * Lovelace cards, and `cards:` invites people to put `type: custom:...` in it.
  */
 export interface ListEntryConfig {
   target_date?: string;
@@ -170,12 +173,10 @@ export interface CardConfig {
   timer_entity?: string;
   auto_discover_alexa?: boolean; // NEW: Automatically find and use Alexa timers
   auto_discover_google?: boolean; // NEW: Automatically find and use Google Home timers
-  alexa_device_filter?: string[];  // NEW: Only use timers from specific Alexa devices
-  prefer_labeled_timers?: boolean; // NEW: Prefer timers with labels over unnamed ones
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
-  cards?: ListEntryConfig[];      // Countdown entries pinned to the list, alongside any discovered timers
+  countdowns?: ListEntryConfig[]; // Countdown entries pinned to the list, alongside any discovered timers
   alexa_icon?: string;            // Icon for Alexa rows (default mdi:amazon-alexa)
   google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
@@ -212,8 +213,6 @@ export interface CardConfig {
   text_color?: string;
   background_color?: string;
   progress_color?: string;
-  primary_color?: string;
-  secondary_color?: string;
   stroke_width?: number;
   icon_size?: number;
 
@@ -245,13 +244,8 @@ export interface CardConfig {
   expired_animation?: boolean;
   expired_text?: string;
 
-  // Alexa-specific styling (NEW)
-  alexa_color?: string;           // Custom color for Alexa timers
-  show_alexa_device?: boolean;    // Show device name in subtitle
-
-  // Debug options
-  debug?: boolean;
-  show_timer_info?: boolean;     // NEW: Show debug info about discovered timers
+  // Alexa-specific styling
+  alexa_color?: string;           // Custom colour for the Alexa chip in the listy style
 
   // Allow any additional string properties to fix template key indexing
   [key: string]: any;

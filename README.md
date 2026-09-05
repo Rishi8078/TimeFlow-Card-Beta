@@ -59,7 +59,7 @@ the timer lives, what it is counting, and a progress ring.
 
 ### Pinning your own countdowns
 
-Set `cards` to pin countdowns into the same list. With auto-discovery on, the
+Set `countdowns` to pin countdowns into the same list. With auto-discovery on, the
 discovered smart timers are pulled in alongside them; with it off, the card is
 just your list.
 
@@ -68,7 +68,7 @@ type: custom:timeflow-card-beta
 style: listy
 title: Smart Timers
 auto_discover_alexa: true
-cards:
+countdowns:
   - title: Trip To Poland
     target_date: '2026-11-01'
     header_icon: mdi:bag-suitcase
@@ -90,7 +90,7 @@ discovered timers.
 | Option                 | Type    | Default   | Description                                                            |
 |------------------------|---------|-----------|------------------------------------------------------------------------|
 | `max_timers`           | number  | `5`       | Timer rows before the list is truncated (1–20)                          |
-| `cards`                | list    | `[]`      | Countdowns pinned into the list                                         |
+| `countdowns`           | list    | `[]`      | Countdowns pinned into the list                                         |
 | `alexa_icon`           | string  | `mdi:amazon-alexa` | Icon for Alexa rows                                            |
 | `google_icon`          | string  | `mdi:google-home`  | Icon for Google Home rows                                      |
 | `timer_icon`           | string  | `mdi:timer-outline` | Icon for standard `timer.*` rows                              |

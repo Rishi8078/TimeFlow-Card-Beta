@@ -172,8 +172,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
             'auto_discover_alexa': 'Automatically find active Alexa timers',
             'auto_discover_google': 'Automatically find active Google Home timers',
-            'alexa_device_filter': 'Comma-separated list of Alexa device names or IDs to filter timers (e.g., "Kitchen, Living Room")',
-            'prefer_labeled_timers': 'Prefer timers with labels over unnamed ones',
 
             // Display
             'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
@@ -230,13 +228,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
             'count_up_cycle': 'Count-up Cycle',
             'auto_discover_alexa': 'Auto-discover Alexa Timers',
             'auto_discover_google': 'Auto-discover Google Timers',
-            'alexa_device_filter': 'Alexa Device Filter',
-            'prefer_labeled_timers': 'Prefer Labeled Timers',
             'max_timers': 'Maximum Timers Shown',
             'alexa_icon': 'Alexa Row Icon',
             'google_icon': 'Google Row Icon',
             'timer_icon': 'Timer Row Icon',
-            'show_alexa_device': 'Show Alexa Device Name',
             'show_days': 'Days',
             'show_hours': 'Hours',
             'show_minutes': 'Minutes',
@@ -611,20 +606,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     ]
                 }
             ] : []),
-
-            // ═══════════════════════════════════════════════════════════
-            // ALEXA/GOOGLE OPTIONS - Expandable
-            // ═══════════════════════════════════════════════════════════
-            {
-                type: "expandable",
-                title: "Smart Assistant Options",
-                icon: "mdi:home-assistant",
-                schema: [
-                    { name: 'alexa_device_filter', selector: { text: {} } },
-                    { name: 'prefer_labeled_timers', selector: { boolean: {} } },
-                    { name: 'show_alexa_device', selector: { boolean: {} } },
-                ]
-            },
 
             // ═══════════════════════════════════════════════════════════
             // ACTIONS - Expandable

@@ -81,7 +81,7 @@ export class TimeFlowCardBeta extends LitElement {
   @state() private _displaySignature: string = '';
 
   // Rows for the 'listy' style: every live timer the card can see plus any
-  // countdowns pinned through `cards`, already sorted, capped and resolved to
+  // countdowns pinned through `countdowns`, already sorted, capped and resolved
   // display strings. Left empty for every other style, which never asks for
   // more than one timer and should not pay to enumerate the rest.
   @state() private _listRows: ListRow[] = [];
@@ -1130,8 +1130,6 @@ export class TimeFlowCardBeta extends LitElement {
       'text_color',
       'background_color',
       'progress_color',
-      'primary_color',
-      'secondary_color',
       'expired_text',
       'header_icon',
       'header_icon_color',
@@ -1266,9 +1264,9 @@ export class TimeFlowCardBeta extends LitElement {
    * Assembles the 'listy' rows for this pass.
    *
    * Two sources, in the order they are drawn: live timers from auto-discovery
-   * or an explicit timer_entity, then whatever the user pinned through `cards`.
-   * A card with neither is simply empty; a card with only `cards` is a list of
-   * countdowns and never touches discovery.
+   * or an explicit timer_entity, then whatever the user pinned through
+   * `countdowns`. A card with neither is simply empty; a card with only
+   * `countdowns` is a list of dates and never touches discovery.
    */
   private async _buildListRows(config: CardConfig): Promise<void> {
     const timers = this.countdownService.listAllTimers(config, this.hass);
@@ -1324,14 +1322,14 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
-   * Rows for the countdowns pinned through `cards`.
+   * Rows for the countdowns pinned through `countdowns`.
    *
    * Each entry is evaluated by its own CountdownService rather than the card's:
    * the card's instance carries the state the rest of the styles render from,
    * and running someone else's target_date through it would overwrite that.
    */
   private async _buildEntryRows(config: CardConfig): Promise<ListRow[]> {
-    const entries = Array.isArray(config.cards) ? config.cards : [];
+    const entries = Array.isArray(config.countdowns) ? config.countdowns : [];
     if (entries.length === 0) return [];
 
     const compact = config.compact_format !== false;
@@ -1488,7 +1486,7 @@ export class TimeFlowCardBeta extends LitElement {
    * Every other style answers "what is the one timer on this device doing".
    * This one answers "what is running right now", across as many Alexa and
    * Google devices as auto-discovery turns up, plus any countdowns pinned
-   * through `cards`.
+   * through `countdowns`.
    */
   private _renderListyCard(): TemplateResult {
     const {

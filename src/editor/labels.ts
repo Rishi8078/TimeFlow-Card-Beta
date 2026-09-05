@@ -53,7 +53,7 @@ export const FIELD_LABELS: Record<string, string> = {
 export const FIELD_HELPERS: Record<string, string> = {
   // Section descriptions. ha-form-expandable renders these inside the panel,
   // so they cost nothing while it is collapsed.
-  'section_header_icon': 'Shown beside the title, or as the fallback icon for pinned countdowns on the list style. Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
+  'section_header_icon': 'Shown beside the card title.',
   'section_appearance': 'Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown, and the track behind it.',
@@ -74,9 +74,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'compact_format': 'Short form: "2d 5h 30m"',
 
   // Colors
-  'progress_color': 'Progress circle color (hex, name, rgb, or template)',
-  'background_color': 'Card background color',
-  'text_color': 'Text color for title and countdown',
 
   // Layout
   'width': 'Card width (e.g., "300px", "100%", "20em")',
@@ -91,7 +88,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'invert_progress': 'Start the progress circle full and subtract from it instead of filling it up',
 
   // Header Icon
-  'header_icon': 'Any icon you have installed, e.g. mdi:cake-variant',
 
   // Dot grid (gridy)
   'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',

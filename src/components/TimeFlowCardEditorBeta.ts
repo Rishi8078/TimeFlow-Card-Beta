@@ -17,6 +17,33 @@ import { computeLabel, computeHelper } from '../editor/labels';
  */
 const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title', 'subtitle', 'expired_text'] as const;
 
+/**
+ * An inline code chip. Styled inline rather than in our stylesheet because
+ * these land inside ha-form-expandable's shadow root, which our CSS cannot
+ * reach.
+ */
+const code = (text: string) => html`<code
+    style="background: var(--secondary-background-color);
+           padding: 1px 5px;
+           border-radius: 3px;
+           font-family: var(--ha-font-family-code, monospace);
+           font-size: 0.92em;"
+>${text}</code>`;
+
+/**
+ * Section descriptions that read better with markup.
+ *
+ * ha-form-expandable renders its description through a lit interpolation, so a
+ * TemplateResult works there. Ordinary field helpers do not get this treatment:
+ * those are handed to an input's `hint` property, which expects a string.
+ */
+const RICH_SECTION_HELPERS: Record<string, () => TemplateResult> = {
+    section_appearance: () => html`
+        Colours accept ${code('#4caf50')}, ${code('rgb()')}, a CSS name,
+        ${code('var(--…)')}, or an entity id.
+    `,
+};
+
 const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
     timer: 'Follow one timer, sensor or input_datetime entity',
@@ -316,6 +343,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
      * named `source_type` would be echoed straight back into the config on
      * every change - the source is inferred from real keys, never stored.
      */
+    /**
+     * ha-form's computeHelper, with markup for the few section descriptions
+     * that benefit from it and the plain table for everything else.
+     */
+    private _computeHelper = (schema: any): string | TemplateResult => {
+        const rich = RICH_SECTION_HELPERS[schema?.name];
+        return rich ? rich() : computeHelper(schema);
+    };
+
     private _renderSourcePicker(config: CardConfig, source: SourceType): TemplateResult {
         const labels: Record<SourceType, { label: string; icon: string }> = {
             date: { label: 'Date', icon: 'mdi:calendar' },
@@ -433,7 +469,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 .schema=${schema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${computeLabel}
-                .computeHelper=${computeHelper}
+                .computeHelper=${this._computeHelper}
             ></ha-form>
         `;
 
@@ -627,7 +663,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     .schema=${styleSchema()}
                     @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                     .computeLabel=${computeLabel}
-                    .computeHelper=${computeHelper}
+                    .computeHelper=${this._computeHelper}
                 ></ha-form>
             </div>
             ${dateFields}
@@ -642,7 +678,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         .schema=${textSchema}
                         @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                         .computeLabel=${computeLabel}
-                        .computeHelper=${computeHelper}
+                        .computeHelper=${this._computeHelper}
                     ></ha-form>
                     <div class="date-helper">
                         Wrap the automatic countdown, e.g. "in" 3 days "left". Ignored when you set a Subtitle.
@@ -659,7 +695,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         .schema=${unitsSchema}
                         @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                         .computeLabel=${computeLabel}
-                        .computeHelper=${computeHelper}
+                        .computeHelper=${this._computeHelper}
                     ></ha-form>
                 </div>
             ` : nothing}
@@ -669,7 +705,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 .schema=${panelsSchema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${computeLabel}
-                .computeHelper=${computeHelper}
+                .computeHelper=${this._computeHelper}
             ></ha-form>
             </div>
         `;

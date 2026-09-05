@@ -54,7 +54,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Section descriptions. ha-form-expandable renders these inside the panel,
   // so they cost nothing while it is collapsed.
   'section_header_icon': 'Shown beside the card title.',
-  'section_appearance': 'Colours accept hex, rgb(), a CSS name, var(--…), an entity id, or a template.',
+  'section_appearance': 'Colours accept #4caf50, rgb(), a CSS name, var(--…), or an entity id.',
   'section_layout': 'Leave a field empty to let the card size itself.',
   'section_progress': 'The ring drawn around the countdown, and the track behind it.',
   'section_dot_grid': 'How many dots the grid draws, and what one dot represents.',

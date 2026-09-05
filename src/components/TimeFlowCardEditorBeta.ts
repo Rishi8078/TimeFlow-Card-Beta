@@ -5,6 +5,9 @@ import { computeSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
+/** The three date keys the editor renders with a picker/template toggle. */
+const DATE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date'] as const;
+
 const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
     timer: 'Follow one timer, sensor or input_datetime entity',
@@ -26,10 +29,14 @@ export class TimeFlowCardEditorBeta extends LitElement {
     // rather than written to the config so no synthetic key reaches their YAML.
     @state() private _pendingSource: SourceType | null = null;
 
-    // Track which date fields are in "template mode"
-    @state() private _targetDateTemplateMode: boolean = false;
-    @state() private _creationDateTemplateMode: boolean = false;
-    @state() private _countUpGoalDateTemplateMode: boolean = false;
+    // Which date fields are showing a template box rather than a picker.
+    @state() private _templateMode: Record<string, boolean> = {};
+
+    // Fields the user has switched by hand. Auto-detection stops applying to
+    // them: an empty template box is not a template, so re-detecting on the
+    // next setConfig would silently throw the user back to the picker the
+    // moment anything else on the form changed.
+    private _templateModeTouched: Set<string> = new Set();
 
     static get styles(): CSSResult {
         return css`
@@ -84,15 +91,35 @@ export class TimeFlowCardEditorBeta extends LitElement {
             .mode-toggle ha-icon {
                 --mdc-icon-size: 16px;
             }
+            .template-input {
+                width: 100%;
+                box-sizing: border-box;
+                min-height: 48px;
+                padding: 12px;
+                border: 1px solid var(--divider-color);
+                border-radius: 4px;
+                background: var(--card-background-color);
+                color: var(--primary-text-color);
+                font-family: var(--ha-font-family-code, monospace);
+                font-size: 13px;
+                line-height: 1.4;
+                resize: vertical;
+            }
+            .template-input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+            }
             .date-helper {
                 font-size: 12px;
                 color: var(--secondary-text-color);
                 margin-top: 4px;
             }
-            ha-textfield, input[type="datetime-local"] {
-                width: 100%;
-            }
             input[type="datetime-local"] {
+                width: 100%;
+                /* Without this the padding and border are added *to* the 100%,
+                   so the field runs past the panel edge. */
+                box-sizing: border-box;
+                min-height: 48px;
                 padding: 12px;
                 border: 1px solid var(--divider-color);
                 border-radius: 4px;
@@ -152,13 +179,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
             this._pendingSource = null;
         }
 
-        // Auto-detect if existing values are templates
-        const targetDate = config.target_date || '';
-        const creationDate = config.creation_date || '';
-        const countUpGoalDate = config.count_up_goal_date || '';
-        this._targetDateTemplateMode = this._isTemplate(targetDate);
-        this._creationDateTemplateMode = this._isTemplate(creationDate);
-        this._countUpGoalDateTemplateMode = this._isTemplate(countUpGoalDate);
+        // Open in template mode for values that already are templates, unless
+        // the user has said otherwise for that field.
+        for (const key of DATE_FIELDS) {
+            if (this._templateModeTouched.has(key)) continue;
+            this._templateMode = {
+                ...this._templateMode,
+                [key]: this._isTemplate(String(config[key] ?? '')),
+            };
+        }
     }
 
     private _isTemplate(value: string): boolean {
@@ -269,37 +298,40 @@ export class TimeFlowCardEditorBeta extends LitElement {
     private _renderDateField(
         configKey: 'target_date' | 'creation_date' | 'count_up_goal_date',
         label: string,
-        helper: string,
-        templateMode: boolean,
-        toggleCallback: () => void
+        helper: string
     ): TemplateResult {
-        const value = this._config[configKey] || '';
+        const value = String(this._config[configKey] ?? '');
+        const templateMode = !!this._templateMode[configKey];
 
         return html`
             <div class="date-field-container">
                 <div class="date-field-header">
                     <span class="date-field-label">${label}</span>
-                    <button 
-                        class="mode-toggle" 
-                        @click=${toggleCallback}
+                    <button
+                        type="button"
+                        class="mode-toggle"
+                        @click=${() => this._toggleTemplateMode(configKey)}
                         title=${templateMode ? 'Switch to date picker' : 'Switch to template/Jinja mode'}
                     >
                         <ha-icon icon=${templateMode ? 'mdi:calendar' : 'mdi:code-braces'}></ha-icon>
                         ${templateMode ? 'Picker' : 'Template'}
                     </button>
                 </div>
-                
+
                 ${templateMode
                 ? html`
-                        <ha-textfield
+                        <textarea
+                            class="template-input"
+                            rows="2"
+                            spellcheck="false"
                             .value=${value}
-                            .placeholder=${'{{ states(\'input_datetime.my_date\') }}'}
-                            @input=${(e: Event) => this._updateDateField(configKey, (e.target as HTMLInputElement).value)}
-                        ></ha-textfield>
-                        <div class="date-helper">Enter Jinja template, entity, or ISO date string</div>
+                            placeholder=${'{{ states(\'input_datetime.my_date\') }}'}
+                            @input=${(e: Event) => this._updateDateField(configKey, (e.target as HTMLTextAreaElement).value)}
+                        ></textarea>
+                        <div class="date-helper">Jinja template, entity id, or ISO date string</div>
                     `
                 : html`
-                        <input 
+                        <input
                             type="datetime-local"
                             .value=${this._convertToDatetimeLocal(value)}
                             @input=${(e: Event) => this._updateDateField(configKey, this._convertFromDatetimeLocal((e.target as HTMLInputElement).value))}
@@ -317,16 +349,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
         this._fireConfigChanged(newConfig as CardConfig);
     }
 
-    private _toggleTargetDateMode(): void {
-        this._targetDateTemplateMode = !this._targetDateTemplateMode;
-    }
-
-    private _toggleCreationDateMode(): void {
-        this._creationDateTemplateMode = !this._creationDateTemplateMode;
-    }
-
-    private _toggleCountUpGoalDateMode(): void {
-        this._countUpGoalDateTemplateMode = !this._countUpGoalDateTemplateMode;
+    private _toggleTemplateMode(configKey: string): void {
+        this._templateModeTouched.add(configKey);
+        this._templateMode = { ...this._templateMode, [configKey]: !this._templateMode[configKey] };
     }
 
     /**
@@ -371,25 +396,19 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 ${this._renderDateField(
             'target_date',
             mode === 'count_up' ? 'Start Date' : 'Target Date',
-            mode === 'count_up' ? 'Date/time the elapsed count begins' : 'Date/time when countdown ends',
-            this._targetDateTemplateMode,
-            () => this._toggleTargetDateMode()
+            mode === 'count_up' ? 'Date/time the elapsed count begins' : 'Date/time when countdown ends'
         )}
-                
+
                 ${mode === 'count_up'
                 ? this._renderDateField(
                     'count_up_goal_date',
                     'Goal Date',
-                    'Optional end date for count-up progress',
-                    this._countUpGoalDateTemplateMode,
-                    () => this._toggleCountUpGoalDateMode()
+                    'Optional end date for count-up progress'
                 )
                 : this._renderDateField(
                     'creation_date',
                     'Creation Date',
-                    'Optional start date for countdown progress',
-                    this._creationDateTemplateMode,
-                    () => this._toggleCreationDateMode()
+                    'Optional start date for countdown progress'
                 )}
             </div>
         ` : nothing;

@@ -250,10 +250,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   // Field -> the capability flag that must be true for it to appear.
   const gated = {
-    // `title` and `subtitle` are not here: like `style`, the editor renders
-    // them itself so they can carry a picker/template toggle. Their capability
-    // gates live in the component, checked separately below.
-    expired_text: 'expiredText',
+    // `title`, `subtitle` and `expired_text` are not here: like `style`, the
+    // editor renders them itself so they can carry a picker/template toggle.
+    // Their capability gates live in the component, checked separately below.
     compact_format: 'compactFormat',
     show_years: 'timeUnits',
     show_minutes: 'timeUnits',
@@ -309,7 +308,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 
   // Same for the title and subtitle: rendered by the editor with their own
   // template toggles.
-  for (const key of ['title', 'subtitle']) {
+  for (const key of ['title', 'subtitle', 'expired_text']) {
     const inForm = STYLES.filter((style) =>
       fieldNames(computeSchema({ style, target_date: 'x' })).includes(key));
     check(`Text: ${key} never appears inside the form`, inForm.length === 0, inForm.join(', ') || 'none');
@@ -367,7 +366,8 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── The split around the title ──────────────────────────────────────────────
 
 {
-  const { computeSourceSchema, computeRestSchema } = require(path.join(outDir, 'editor', 'schema.js'));
+  const { computeSourceSchema, computeTextSchema, computeSectionsSchema } =
+    require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
     for (const cfg of [
@@ -377,24 +377,30 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       { style, auto_discover_alexa: true },
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
-      const halves = JSON.stringify([...computeSourceSchema(cfg), ...computeRestSchema(cfg)]);
-      if (whole !== halves) {
-        check(`Split: halves reassemble on ${style}`, false, JSON.stringify(cfg));
+      const parts = JSON.stringify([
+        ...computeSourceSchema(cfg), ...computeTextSchema(cfg), ...computeSectionsSchema(cfg),
+      ]);
+      if (whole !== parts) {
+        check(`Split: parts reassemble on ${style}`, false, JSON.stringify(cfg));
       }
     }
   }
-  check('Split: the two halves always reassemble into computeSchema', true);
+  check('Split: the three parts always reassemble into computeSchema', true);
 
   // Mode belongs above the title, the text fields below it.
   const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));
   check('Split: the source half carries mode and the cycle',
     top.includes('mode') && top.includes('count_up_cycle'), top.join(', '));
-  const bottom = fieldNames(computeRestSchema(dateCfg()));
-  check('Split: the rest carries the remaining text fields',
-    bottom.includes('subtitle_prefix') && bottom.includes('expired_text'));
-  check('Split: neither half contains the title or subtitle',
-    !top.includes('title') && !bottom.includes('title')
-    && !top.includes('subtitle') && !bottom.includes('subtitle'));
+  const middle = fieldNames(computeTextSchema(dateCfg()));
+  check('Split: the text part carries only the prefix/suffix pair',
+    middle.join(',') === 'subtitle_prefix,subtitle_suffix', middle.join(','));
+  const bottom = fieldNames(computeSectionsSchema(dateCfg()));
+  check('Split: the sections part starts at the unit toggles', bottom.includes('show_days'));
+
+  const everywhere = [...top, ...middle, ...bottom];
+  for (const key of ['title', 'subtitle', 'expired_text']) {
+    check(`Split: ${key} is in no part of the form`, !everywhere.includes(key));
+  }
 }
 
 // ── Section order ───────────────────────────────────────────────────────────

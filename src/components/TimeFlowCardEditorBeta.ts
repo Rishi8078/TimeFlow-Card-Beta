@@ -1,16 +1,20 @@
 import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { CardConfig } from '../types/index';
-import { computeRestSchema, computeSourceSchema, styleSchema } from '../editor/schema';
+import { computeSectionsSchema, computeSourceSchema, computeTextSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
 /**
  * Keys the editor renders itself, with a picker/template toggle: the three
- * dates, plus the title and subtitle. Everything else that takes a template is a plain
- * text field, where a template can simply be typed.
+ * dates, plus the title, subtitle and expired text. Everything else that takes
+ * a template is a plain text field, where a template can simply be typed.
+ *
+ * subtitle_prefix and subtitle_suffix are deliberately absent: they are not in
+ * the card's templateKeys, so a template typed into them would be rendered
+ * literally.
  */
-const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title', 'subtitle'] as const;
+const TEMPLATABLE_FIELDS = ['target_date', 'creation_date', 'count_up_goal_date', 'title', 'subtitle', 'expired_text'] as const;
 
 const SOURCE_HELPERS: Record<string, string> = {
     date: 'Count to a date or entity you choose',
@@ -360,6 +364,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
         );
     }
 
+    private _renderExpiredTextField(): TemplateResult {
+        return this._renderTemplatableField(
+            'expired_text',
+            'Expired Text',
+            'Replaces the countdown once it reaches zero',
+            this._renderPlainTextField('expired_text')
+        );
+    }
+
     private _renderSubtitleField(): TemplateResult {
         return this._renderTemplatableField(
             'subtitle',
@@ -494,10 +507,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
-        const restSchema = computeRestSchema(displayCfg as CardConfig, source);
+        const textSchema = computeTextSchema(displayCfg as CardConfig, source);
+        const sectionsSchema = computeSectionsSchema(displayCfg as CardConfig, source);
         const caps = getCapabilities(displayCfg as CardConfig);
         const showsTitle = caps.title;
         const showsSubtitle = caps.subtitle;
+        const showsExpiredText = caps.expiredText;
 
         // The date pickers live outside ha-form because each carries a
         // picker/template toggle, and the template rule says a date field must
@@ -551,10 +566,21 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ></ha-form>
             ${showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
+            ${textSchema.length > 0 ? html`
+                <ha-form
+                    .hass=${this.hass}
+                    .data=${displayCfg}
+                    .schema=${textSchema}
+                    @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                    .computeLabel=${computeLabel}
+                    .computeHelper=${computeHelper}
+                ></ha-form>
+            ` : nothing}
+            ${showsExpiredText ? this._renderExpiredTextField() : nothing}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}
-                .schema=${restSchema}
+                .schema=${sectionsSchema}
                 @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                 .computeLabel=${computeLabel}
                 .computeHelper=${computeHelper}

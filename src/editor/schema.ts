@@ -121,30 +121,24 @@ function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema
 }
 
 /**
- * Everything in the text group except the title and subtitle.
+ * The only text fields left in the form: the subtitle prefix and suffix.
  *
- * Those two are rendered by the editor instead, so they can carry the same
- * picker/template toggle the dates have - they are the keys people most often
- * want a template in.
+ * Title, subtitle and expired text are rendered by the editor instead, so they
+ * can carry the picker/template toggle - all three are template-enabled, and
+ * these two are not.
  */
 function textSection(caps: StyleCapabilities, source: SourceType): FormSchema[] {
-  const schema: FormSchema[] = [];
-
   // Prefix and suffix are applied in getSubtitle()'s standard-countdown branch;
   // the timer branches return before reaching them.
-  if (caps.subtitle && usesDateFields(source)) {
-    schema.push({
-      type: 'grid',
-      schema: [
-        { name: 'subtitle_prefix', selector: { text: {} } },
-        { name: 'subtitle_suffix', selector: { text: {} } },
-      ],
-    });
-  }
+  if (!caps.subtitle || !usesDateFields(source)) return [];
 
-  if (caps.expiredText) schema.push({ name: 'expired_text', selector: { text: {} } });
-
-  return schema;
+  return [{
+    type: 'grid',
+    schema: [
+      { name: 'subtitle_prefix', selector: { text: {} } },
+      { name: 'subtitle_suffix', selector: { text: {} } },
+    ],
+  }];
 }
 
 function headerIconSection(caps: StyleCapabilities): FormSchema[] {
@@ -337,7 +331,11 @@ function actionsSection(): FormSchema[] {
  * the config says.
  */
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
-  return [...computeSourceSchema(config, source), ...computeRestSchema(config, source)];
+  return [
+    ...computeSourceSchema(config, source),
+    ...computeTextSchema(config, source),
+    ...computeSectionsSchema(config, source),
+  ];
 }
 
 /**
@@ -355,13 +353,16 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
   ];
 }
 
-/** The part of the form below the title. */
-export function computeRestSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+/** The text fields the editor does not render itself. */
+export function computeTextSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+  return textSection(getCapabilities(config), source ?? getSourceType(config));
+}
+
+/** Everything below the text group: the unit toggles and the panels. */
+export function computeSectionsSchema(config: CardConfig, _source?: SourceType): FormSchema[] {
   const caps = getCapabilities(config);
-  const activeSource = source ?? getSourceType(config);
 
   return [
-    ...textSection(caps, activeSource),
     ...timeUnitsSection(caps),
     ...timerListSection(caps),
     // Icon sits with the styling panels rather than the text fields: it

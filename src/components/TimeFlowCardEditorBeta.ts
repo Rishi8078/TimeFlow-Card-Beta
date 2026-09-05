@@ -4,7 +4,7 @@ import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
 import '../editor/ha-form-tf-countdowns';
-import { computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeTimerListSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
+import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeTimerListSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -73,6 +73,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
     // lazy-loaded, and an unregistered custom element renders as an empty box,
     // so the textarea stands in until it appears.
     @state() private _codeEditorReady: boolean = !!customElements.get('ha-code-editor');
+
+    // ha-control-select-menu keeps the style picker in the same visual family
+    // as the source picker and stays one line however many styles there are.
+    // It is newer than the rest of what we use, so the ha-form dropdown stands
+    // in when it is not registered.
+    @state() private _menuReady: boolean = !!customElements.get('ha-control-select-menu');
 
     // Fields the user has switched by hand. Auto-detection stops applying to
     // them: an empty template box is not a template, so re-detecting on the
@@ -255,6 +261,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 this._codeEditorReady = true;
             });
         }
+        if (!this._menuReady) {
+            customElements.whenDefined('ha-control-select-menu').then(() => {
+                this._menuReady = true;
+            });
+        }
     }
 
     setConfig(config: CardConfig) {
@@ -352,6 +363,66 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const rich = RICH_SECTION_HELPERS[schema?.name];
         return rich ? rich() : computeHelper(schema);
     };
+
+    /**
+     * The style, as a menu rather than a grid of boxes: the boxes did not sit
+     * well beside the segmented source picker, and they grow a row taller with
+     * every style added.
+     */
+    private _renderStylePicker(displayCfg: CardConfig): TemplateResult {
+        const style = displayCfg.style || 'classic';
+
+        return html`
+            <div class="editor-block">
+                <span class="editor-section-label">Style</span>
+                ${this._menuReady
+                    ? html`
+                        <ha-control-select-menu
+                            show-arrow
+                            hide-label
+                            .label=${'Card Style'}
+                            .value=${style}
+                            .options=${STYLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                            .renderIcon=${(value: string) => {
+                                const option = STYLE_OPTIONS.find((o) => o.value === value);
+                                return option ? html`<ha-icon .icon=${option.icon}></ha-icon>` : nothing;
+                            }}
+                            @wa-select=${this._styleSelected}
+                            @selected=${this._styleSelectedLegacy}
+                        ></ha-control-select-menu>
+                    `
+                    : html`
+                        <ha-form
+                            .hass=${this.hass}
+                            .data=${displayCfg}
+                            .schema=${styleSchema()}
+                            @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                            .computeLabel=${() => ''}
+                            .computeHelper=${this._computeHelper}
+                        ></ha-form>
+                    `}
+            </div>
+        `;
+    }
+
+    private _setStyle(next: string | undefined): void {
+        if (!next || next === (this._config.style || 'classic')) return;
+        const updated = { ...this._config, style: next } as CardConfig;
+        this._config = updated;
+        this._fireConfigChanged(updated);
+    }
+
+    private _styleSelected(ev: CustomEvent): void {
+        ev.stopPropagation();
+        this._setStyle((ev.detail as any)?.item?.value);
+    }
+
+    /** Older frontends fire `selected` with an index instead of `wa-select`. */
+    private _styleSelectedLegacy(ev: CustomEvent): void {
+        ev.stopPropagation();
+        const index = (ev.detail as any)?.index;
+        if (typeof index === 'number') this._setStyle(STYLE_OPTIONS[index]?.value);
+    }
 
     private _renderSourcePicker(config: CardConfig, source: SourceType): TemplateResult {
         const labels: Record<SourceType, { label: string; icon: string }> = {
@@ -656,17 +727,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         return html`
             <div class="editor-root">
-            <div class="editor-block">
-                <span class="editor-section-label">Style</span>
-                <ha-form
-                    .hass=${this.hass}
-                    .data=${displayCfg}
-                    .schema=${styleSchema()}
-                    @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                    .computeLabel=${computeLabel}
-                    .computeHelper=${this._computeHelper}
-                ></ha-form>
-            </div>
+            ${this._renderStylePicker(displayCfg as CardConfig)}
             ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
             ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}

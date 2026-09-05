@@ -58,17 +58,16 @@ function templatable(
 }
 
 /**
- * Rendered by ha-select-box, which takes a description per option - so the
- * picker can say what each style actually looks like instead of leaving the
- * name to carry it.
+ * The styles, in the order the picker lists them. The icon is used by the
+ * editor's menu picker; the description only by the ha-form fallback.
  */
-const STYLE_OPTIONS = [
-  { value: 'classic', label: 'Classic', description: 'Progress ring with the countdown inside' },
-  { value: 'classic-compact', label: 'Classic Compact', description: 'A row, with a small ring' },
-  { value: 'eventy', label: 'Eventy', description: 'A row, with one big number' },
-  { value: 'gridy', label: 'Gridy', description: 'A row, with a dot grid for progress' },
-  { value: 'minimal-square', label: 'Minimal Square', description: 'One number in a thick ring' },
-  { value: 'listy', label: 'Listy', description: 'One row per running timer' },
+export const STYLE_OPTIONS = [
+  { value: 'classic', label: 'Classic', icon: 'mdi:circle-slice-3', description: 'Progress ring with the countdown inside' },
+  { value: 'classic-compact', label: 'Classic Compact', icon: 'mdi:card-account-details-outline', description: 'A row, with a small ring' },
+  { value: 'eventy', label: 'Eventy', icon: 'mdi:numeric', description: 'A row, with one big number' },
+  { value: 'gridy', label: 'Gridy', icon: 'mdi:dots-grid', description: 'A row, with a dot grid for progress' },
+  { value: 'minimal-square', label: 'Minimal Square', icon: 'mdi:square-rounded-outline', description: 'One number in a thick ring' },
+  { value: 'listy', label: 'Listy', icon: 'mdi:format-list-bulleted', description: 'One row per running timer' },
 ];
 
 const GRID_DOT_UNIT_OPTIONS = [
@@ -93,10 +92,15 @@ const GRID_ROW_OPTIONS = [
  * schema put it first for a timer card but third for a date one. It decides the
  * shape of the whole form, so it leads in every mode.
  */
+/**
+ * Fallback only. The editor prefers ha-control-select-menu, which matches the
+ * source picker and stays one line however many styles there are; this is what
+ * renders if that component is not registered.
+ */
 export function styleSchema(): FormSchema[] {
   return [{
     name: 'style',
-    selector: { select: { options: STYLE_OPTIONS, mode: 'box', box_max_columns: 2 } },
+    selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } },
   }];
 }
 

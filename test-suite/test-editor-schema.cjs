@@ -338,7 +338,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   const minimal = computeSchema({ style: 'minimal-square' });
   check('Minimal square: no time unit grid',
     !fieldNames(minimal).some((n) => n.startsWith('show_')));
-  check('Minimal square: no Header Icon panel', !sectionTitles(minimal).includes('Header Icon'));
+  check('Minimal square: no Icon panel', !sectionTitles(minimal).includes('Icon'));
 
   // An expandable with an empty schema renders as a panel that opens onto nothing.
   for (const style of STYLES) {
@@ -347,6 +347,24 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       .map((i) => i.title);
     check(`No empty panels on ${style}`, empties.length === 0, empties.join(', ') || 'none');
   }
+}
+
+// ── Section order ───────────────────────────────────────────────────────────
+
+{
+  // Panel order is a deliberate reading order, so pin the parts that matter.
+  for (const style of STYLES) {
+    const titles = sectionTitles(computeSchema({ style, target_date: 'x' }));
+    if (!titles.includes('Icon')) continue;
+
+    const icon = titles.indexOf('Icon');
+    const appearance = titles.indexOf('Appearance');
+    check(`Order: Icon sits directly above Appearance on ${style}`,
+      appearance === icon + 1, titles.join(' → '));
+  }
+
+  const classic = sectionTitles(computeSchema({ style: 'classic', target_date: 'x' }));
+  check('Order: Tap Actions is last', classic[classic.length - 1] === 'Tap Actions', classic.join(' → '));
 }
 
 // ── Section descriptions ────────────────────────────────────────────────────

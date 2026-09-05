@@ -149,7 +149,7 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
     type: 'expandable',
     name: 'section_header_icon',
     flatten: true,
-    title: 'Header Icon',
+    title: 'Icon',
     icon: 'mdi:image-filter-vintage',
     schema: [
       { name: 'header_icon', selector: { icon: {} } },
@@ -340,9 +340,11 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
     ...sourceSection(activeSource),
     ...countUpCycleSection(config, activeSource),
     ...textSection(caps, activeSource),
-    ...headerIconSection(caps),
     ...timeUnitsSection(caps),
     ...timerListSection(caps),
+    // Icon sits with the styling panels rather than the text fields: it
+    // is chrome, not content, and it reads as the first of the appearance group.
+    ...headerIconSection(caps),
     ...appearanceSection(caps),
     ...layoutSection(caps),
     ...progressSection(caps),

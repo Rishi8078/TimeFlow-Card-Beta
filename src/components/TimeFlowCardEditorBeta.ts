@@ -397,6 +397,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         ` : nothing;
 
         return html`
+            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             <div class="style-picker">
                 <span class="editor-section-label">Style</span>
                 <ha-form
@@ -408,7 +409,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     .computeHelper=${computeHelper}
                 ></ha-form>
             </div>
-            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
             <ha-form
                 .hass=${this.hass}

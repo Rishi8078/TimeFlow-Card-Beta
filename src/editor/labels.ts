@@ -91,9 +91,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'header_icon_color': 'Icon color (hex, name, or template)',
   'header_icon_background': 'Icon background (e.g., "rgba(59, 130, 246, 0.2)")',
 
-  // Style
-  'style': 'Card style: Classic, Eventy, Classic Compact, Gridy, or Minimal Square',
-
   // Dot grid (gridy)
   'grid_dots': 'Number of dots, or "auto" to use one dot per unit of the timeframe. Leave empty for the fixed 5 x 20 grid',
   'grid_dot_unit': 'What one dot represents when dots is "auto". Auto picks the unit that keeps the grid readable',

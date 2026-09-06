@@ -58,11 +58,21 @@ export class HaFormTfCountdowns extends LitElement {
   // open onto an empty box, so it is only offered once the element exists.
   @state() private _yamlReady: boolean = !!customElements.get('ha-yaml-editor');
 
+  // ha-sortable is lazy-loaded too. Until it exists the move buttons stand in;
+  // once it does, the drag handle replaces them rather than sitting beside
+  // them, so there is only one way to reorder at a time.
+  @state() private _sortableReady: boolean = !!customElements.get('ha-sortable');
+
   connectedCallback(): void {
     super.connectedCallback();
     if (!this._yamlReady) {
       customElements.whenDefined('ha-yaml-editor').then(() => {
         this._yamlReady = true;
+      });
+    }
+    if (!this._sortableReady) {
+      customElements.whenDefined('ha-sortable').then(() => {
+        this._sortableReady = true;
       });
     }
   }
@@ -91,6 +101,39 @@ export class HaFormTfCountdowns extends LitElement {
   private _remove(index: number): void {
     const entries = this._entries.filter((_, i) => i !== index);
     this._reindex(index, null);
+    this._emit(entries);
+  }
+
+  /**
+   * A drag reports where an entry started and ended, which is a splice rather
+   * than the neighbour swap the buttons do - so the panel state is remapped by
+   * the same walk, not by _reindex's two-item exchange.
+   */
+  private _itemMoved(ev: CustomEvent): void {
+    ev.stopPropagation();
+    const { oldIndex, newIndex } = ev.detail as { oldIndex: number; newIndex: number };
+    if (oldIndex === newIndex) return;
+
+    const entries = [...this._entries];
+    const [moved] = entries.splice(oldIndex, 1);
+    entries.splice(newIndex, 0, moved);
+
+    const shift = (record: Record<number, any>) => {
+      const next: Record<number, any> = {};
+      for (const [key, value] of Object.entries(record)) {
+        const i = Number(key);
+        if (i === oldIndex) { next[newIndex] = value; continue; }
+        if (oldIndex < newIndex && i > oldIndex && i <= newIndex) { next[i - 1] = value; continue; }
+        if (oldIndex > newIndex && i >= newIndex && i < oldIndex) { next[i + 1] = value; continue; }
+        next[i] = value;
+      }
+      return next;
+    };
+    this._expanded = shift(this._expanded);
+    this._loaded = shift(this._loaded);
+    this._pendingSource = shift(this._pendingSource);
+    this._yamlMode = shift(this._yamlMode);
+
     this._emit(entries);
   }
 
@@ -252,16 +295,29 @@ export class HaFormTfCountdowns extends LitElement {
 
     return html`
       <div class="list">
-        ${entries.map((entry, index) => this._renderEntry(entry, index, entries.length))}
+        ${this._sortableReady
+          ? html`
+            <ha-sortable
+              handle-selector=".drag-handle"
+              draggable-selector=".entry"
+              .disabled=${this.disabled}
+              @item-moved=${this._itemMoved}
+            >
+              <div class="entries">
+                ${entries.map((entry, index) => this._renderEntry(entry, index, entries.length))}
+              </div>
+            </ha-sortable>
+          `
+          : entries.map((entry, index) => this._renderEntry(entry, index, entries.length))}
 
         ${entries.length === 0
           ? html`<div class="empty">No countdowns pinned yet.</div>`
           : nothing}
 
-        <button type="button" class="add" ?disabled=${this.disabled} @click=${this._add}>
-          <ha-icon icon="mdi:plus"></ha-icon>
+        <ha-button appearance="filled" ?disabled=${this.disabled} @click=${this._add}>
+          <ha-icon slot="start" icon="mdi:plus"></ha-icon>
           Add countdown
-        </button>
+        </ha-button>
       </div>
     `;
   }
@@ -288,6 +344,7 @@ export class HaFormTfCountdowns extends LitElement {
 
     return html`
       <ha-expansion-panel
+        class="entry"
         outlined
         .expanded=${!!this._expanded[index]}
         @expanded-changed=${(e: CustomEvent) => this._toggle(index, (e.target as any).expanded)}
@@ -298,18 +355,28 @@ export class HaFormTfCountdowns extends LitElement {
             <span class="entry-summary">${summary}</span>
           </span>
           <span class="entry-actions">
-            <ha-icon-button
-              .path=${'M7,15L12,10L17,15H7Z'}
-              label="Move up"
-              ?disabled=${index === 0 || this.disabled}
-              @click=${(e: Event) => { e.stopPropagation(); this._move(index, -1); }}
-            ></ha-icon-button>
-            <ha-icon-button
-              .path=${'M7,10L12,15L17,10H7Z'}
-              label="Move down"
-              ?disabled=${index === total - 1 || this.disabled}
-              @click=${(e: Event) => { e.stopPropagation(); this._move(index, 1); }}
-            ></ha-icon-button>
+            ${this._sortableReady
+              ? html`
+                <ha-svg-icon
+                  class="drag-handle"
+                  .path=${'M7,19V17H9V19H7M11,19V17H13V19H11M15,19V17H17V19H15M7,15V13H9V15H7M11,15V13H13V15H11M15,15V13H17V15H15M7,11V9H9V11H7M11,11V9H13V11H11M15,11V9H17V11H15M7,7V5H9V7H7M11,7V5H13V7H11M15,7V5H17V7H15Z'}
+                  @click=${(e: Event) => e.stopPropagation()}
+                ></ha-svg-icon>
+              `
+              : html`
+                <ha-icon-button
+                  .path=${'M7,15L12,10L17,15H7Z'}
+                  label="Move up"
+                  ?disabled=${index === 0 || this.disabled}
+                  @click=${(e: Event) => { e.stopPropagation(); this._move(index, -1); }}
+                ></ha-icon-button>
+                <ha-icon-button
+                  .path=${'M7,10L12,15L17,10H7Z'}
+                  label="Move down"
+                  ?disabled=${index === total - 1 || this.disabled}
+                  @click=${(e: Event) => { e.stopPropagation(); this._move(index, 1); }}
+                ></ha-icon-button>
+              `}
             <ha-icon-button
               .path=${'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'}
               label="Remove"
@@ -360,10 +427,18 @@ export class HaFormTfCountdowns extends LitElement {
 
           ${this._loaded[index] && this._yamlReady
             ? html`
-              <button type="button" class="yaml-toggle" @click=${() => this._toggleYaml(index)}>
-                <ha-icon icon=${this._yamlMode[index] ? 'mdi:form-select' : 'mdi:code-braces'}></ha-icon>
+              <ha-button
+                appearance="plain"
+                size="small"
+                class="yaml-toggle"
+                @click=${() => this._toggleYaml(index)}
+              >
+                <ha-icon
+                  slot="start"
+                  icon=${this._yamlMode[index] ? 'mdi:form-select' : 'mdi:code-braces'}
+                ></ha-icon>
                 ${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
-              </button>
+              </ha-button>
             `
             : nothing}
         </div>
@@ -418,6 +493,25 @@ export class HaFormTfCountdowns extends LitElement {
         --mdc-icon-size: 18px;
         color: var(--secondary-text-color);
       }
+      .entries {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      /* Unknown elements are inline; this keeps the layout intact even on a
+         frontend where ha-sortable never registers. */
+      ha-sortable {
+        display: block;
+      }
+      .drag-handle {
+        cursor: grab;
+        padding: 0 4px;
+        color: var(--secondary-text-color);
+        --mdc-icon-size: 18px;
+      }
+      .drag-handle:active {
+        cursor: grabbing;
+      }
       .entry-body {
         display: flex;
         flex-direction: column;
@@ -440,51 +534,10 @@ export class HaFormTfCountdowns extends LitElement {
       }
       .yaml-toggle {
         align-self: flex-start;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
-        border: none;
-        border-radius: 4px;
-        background: none;
-        color: var(--primary-color);
-        font-size: 12px;
-        cursor: pointer;
-      }
-      .yaml-toggle:hover {
-        background: rgba(127, 127, 127, 0.08);
-        background: color-mix(in srgb, currentColor 10%, transparent);
-      }
-      .yaml-toggle ha-icon {
-        --mdc-icon-size: 16px;
       }
       .empty {
         font-size: 12px;
         color: var(--secondary-text-color);
-      }
-      .add {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border: 1px dashed var(--divider-color);
-        border-radius: 8px;
-        background: none;
-        color: var(--primary-color);
-        font-size: 14px;
-        cursor: pointer;
-      }
-      .add:hover:not([disabled]) {
-        background: rgba(127, 127, 127, 0.08);
-        background: color-mix(in srgb, currentColor 8%, transparent);
-      }
-      .add[disabled] {
-        color: var(--disabled-text-color);
-        cursor: default;
-      }
-      .add ha-icon {
-        --mdc-icon-size: 18px;
       }
     `;
   }

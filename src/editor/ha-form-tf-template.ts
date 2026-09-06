@@ -129,18 +129,18 @@ export class HaFormTfTemplate extends LitElement {
       <div class="field">
         <div class="header">
           <span class="label">${this.label}</span>
-          <button
-            type="button"
-            class="mode-toggle"
+          <ha-button
+            appearance="plain"
+            size="small"
             ?disabled=${this.disabled}
             @click=${this._toggle}
             title=${this._templateMode
               ? `Switch back to ${plainLabel.toLowerCase()}`
               : 'Switch to template/Jinja mode'}
           >
-            <ha-icon icon=${this._templateMode ? plainIcon : 'mdi:code-braces'}></ha-icon>
+            <ha-icon slot="start" icon=${this._templateMode ? plainIcon : 'mdi:code-braces'}></ha-icon>
             ${this._templateMode ? plainLabel : 'Template'}
-          </button>
+          </ha-button>
         </div>
 
         ${this._templateMode ? this._renderTemplate(value) : this._renderPlain(value)}
@@ -218,25 +218,6 @@ export class HaFormTfTemplate extends LitElement {
         font-weight: 500;
         font-size: 14px;
         color: var(--primary-text-color);
-      }
-      .mode-toggle {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--secondary-text-color);
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        background: var(--secondary-background-color);
-        border: none;
-      }
-      .mode-toggle:hover {
-        background: var(--primary-color);
-        color: var(--text-primary-color);
-      }
-      .mode-toggle ha-icon {
-        --mdc-icon-size: 16px;
       }
       .helper {
         font-size: 12px;

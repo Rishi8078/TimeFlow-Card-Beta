@@ -125,25 +125,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 font-size: 14px;
                 color: var(--primary-text-color);
             }
-            .mode-toggle {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 12px;
-                color: var(--secondary-text-color);
-                cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 4px;
-                background: var(--secondary-background-color);
-                border: none;
-            }
-            .mode-toggle:hover {
-                background: var(--primary-color);
-                color: var(--text-primary-color);
-            }
-            .mode-toggle ha-icon {
-                --mdc-icon-size: 16px;
-            }
             /* ha-code-editor brings its own CodeMirror styling; the wrapper
                only has to give it the same frame as the date picker beside it
                and stop a long template widening the panel. */
@@ -605,17 +586,20 @@ export class TimeFlowCardEditorBeta extends LitElement {
             <div class="date-field-container">
                 <div class="date-field-header">
                     <span class="date-field-label">${label}</span>
-                    <button
-                        type="button"
-                        class="mode-toggle"
+                    <ha-button
+                        appearance="plain"
+                        size="small"
                         @click=${() => this._toggleTemplateMode(configKey)}
                         title=${templateMode
                             ? `Switch back to ${plainMode.label.toLowerCase()}`
                             : 'Switch to template/Jinja mode'}
                     >
-                        <ha-icon icon=${templateMode ? plainMode.icon : 'mdi:code-braces'}></ha-icon>
+                        <ha-icon
+                            slot="start"
+                            icon=${templateMode ? plainMode.icon : 'mdi:code-braces'}
+                        ></ha-icon>
                         ${templateMode ? plainMode.label : 'Template'}
-                    </button>
+                    </ha-button>
                 </div>
 
                 ${templateMode

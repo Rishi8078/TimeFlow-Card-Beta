@@ -110,7 +110,12 @@ export function styleSchema(): FormSchema[] {
  * form: it is a control ha-form has no selector for, and keeping it out means
  * no synthetic key can reach the config.
  */
-function sourceSection(source: SourceType): FormSchema[] {
+function sourceSection(source: SourceType, style: StyleName): FormSchema[] {
+  // The list style has no card-level source: discovery lives in the Timers
+  // section, which is what it populates, and a row that should follow one
+  // specific entity says so on the row.
+  if (style === 'listy') return [];
+
   if (source === 'timer') {
     return [templatable('timer_entity', { entity: { domain: ['timer', 'sensor', 'input_datetime'] } },
       { label: 'Entity', icon: 'mdi:shape-outline' })];
@@ -229,6 +234,15 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
 function timerListSection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.timerList) return [];
   return [
+    // The discovery toggles decide which timers the list finds, so they sit
+    // with the list rather than in a source block of their own.
+    {
+      type: 'grid',
+      schema: [
+        { name: 'auto_discover_alexa', selector: { boolean: {} } },
+        { name: 'auto_discover_google', selector: { boolean: {} } },
+      ],
+    },
     { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
     {
       type: 'grid',
@@ -410,7 +424,7 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
   const activeSource = source ?? getSourceType(config);
 
   return [
-    ...sourceSection(activeSource),
+    ...sourceSection(activeSource, getStyle(config)),
     ...countUpCycleSection(config, activeSource),
   ];
 }

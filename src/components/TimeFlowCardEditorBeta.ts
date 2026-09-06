@@ -5,7 +5,7 @@ import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
 import '../editor/ha-form-tf-countdowns';
 import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeTimerListSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
-import { SourceType, applySource, availableSources, getCapabilities, getSourceType, resolveSource, usesDateFields } from '../editor/capabilities';
+import { SourceType, applySource, availableSources, getCapabilities, getSourceType, getStyle, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
 /**
@@ -506,7 +506,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return this._renderTemplatableField(
             'title',
             'Title',
-            'Falls back to the timer or entity name',
+            getStyle(this._config) === 'listy'
+                ? 'Heading shown above the list'
+                : 'Falls back to the timer or entity name',
             this._renderPlainTextField('title'),
             { label: 'Text', icon: 'mdi:format-text' }
         );
@@ -706,6 +708,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const showsTitle = caps.title;
         const showsSubtitle = caps.subtitle;
         const showsExpiredText = caps.expiredText;
+        const isList = getStyle(displayCfg as CardConfig) === 'listy';
 
         // The date pickers live outside ha-form because each carries a
         // picker/template toggle, and the template rule says a date field must
@@ -737,9 +740,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return html`
             <div class="editor-root">
             ${this._renderStylePicker(displayCfg as CardConfig)}
-            ${this._renderSourcePicker(displayCfg as CardConfig, source)}
+            ${isList ? nothing : this._renderSourcePicker(displayCfg as CardConfig, source)}
             ${dateFields}
-            ${this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
+            ${isList ? nothing : this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
+            ${isList && showsTitle ? this._renderTitleField() : nothing}
             ${timerListSchema.length > 0 ? html`
                 <div class="editor-section">
                     <span class="editor-section-label">Timers</span>
@@ -754,7 +758,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     ></ha-form>
                 </div>
             ` : nothing}
-            ${showsTitle ? this._renderTitleField() : nothing}
+            ${!isList && showsTitle ? this._renderTitleField() : nothing}
             ${showsSubtitle ? this._renderSubtitleField() : nothing}
             ${textSchema.length > 0 ? html`
                 <div class="date-field-container">

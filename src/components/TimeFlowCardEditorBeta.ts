@@ -4,7 +4,7 @@ import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
 import '../editor/ha-form-tf-countdowns';
-import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeTimerListSchema, computeUnitsSchema, styleSchema } from '../editor/schema';
+import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeTextSchema, computeCountdownsSchema, computeDiscoverySchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, getStyle, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -700,7 +700,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
         const sourceSchema = computeSourceSchema(displayCfg as CardConfig, source);
         const textSchema = computeTextSchema(displayCfg as CardConfig, source);
-        const timerListSchema = computeTimerListSchema(displayCfg as CardConfig);
+        const discoverySchema = computeDiscoverySchema(displayCfg as CardConfig);
+        const countdownsSchema = computeCountdownsSchema(displayCfg as CardConfig);
         const expiredSchema = computeExpiredSchema(displayCfg as CardConfig);
         const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
         const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
@@ -744,16 +745,30 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${dateFields}
             ${isList ? nothing : this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${isList && showsTitle ? this._renderTitleField() : nothing}
-            ${timerListSchema.length > 0 ? html`
+            ${discoverySchema.length > 0 ? html`
                 <div class="editor-section">
-                    <span class="editor-section-label">Timers</span>
-                    <div class="date-helper">Discovered timers, plus any countdowns you pin below.</div>
+                    <span class="editor-section-label">Auto Discovery</span>
+                    <div class="date-helper">Finds running Alexa and Google Home timers on their own.</div>
                     <ha-form
                         .hass=${this.hass}
                         .data=${displayCfg}
-                        .schema=${timerListSchema}
+                        .schema=${discoverySchema}
                         @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                         .computeLabel=${computeLabel}
+                        .computeHelper=${this._computeHelper}
+                    ></ha-form>
+                </div>
+            ` : nothing}
+            ${countdownsSchema.length > 0 ? html`
+                <div class="editor-section">
+                    <span class="editor-section-label">Pinned Countdowns</span>
+                    <div class="date-helper">Always shown, alongside anything discovery finds.</div>
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${displayCfg}
+                        .schema=${countdownsSchema}
+                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                        .computeLabel=${() => ''}
                         .computeHelper=${this._computeHelper}
                     ></ha-form>
                 </div>

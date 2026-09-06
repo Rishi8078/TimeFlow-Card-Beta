@@ -22,7 +22,9 @@ execFileSync(
    '--outDir', outDir, '--module', 'commonjs', '--target', 'es2020', '--skipLibCheck'],
   { cwd: repoRoot, stdio: 'pipe' }
 );
-const { computeSchema, styleSchema } = require(path.join(outDir, 'editor', 'schema.js'));
+const { computeSchema, styleSchema,
+        computeDiscoverySchema: computeDiscoverySchemaRef } =
+  require(path.join(outDir, 'editor', 'schema.js'));
 const { getSourceType, getStyle, STYLE_CAPABILITIES, availableSources, applySource, resolveSource } =
   require(path.join(outDir, 'editor', 'capabilities.js'));
 const { computeLabel, computeHelper } = require(path.join(outDir, 'editor', 'labels.js'));
@@ -374,6 +376,10 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   check('Listy: the timer list is not a panel', !listy.includes('Timer List'), listy.join(', '));
   check('Listy: the timer list fields are still reachable',
     fieldNames(computeSchema({ style: 'listy' })).includes('max_timers'));
+  // Discovery settings and the pinned list are separate sections now.
+  check('Listy: discovery and the pinned list are separate parts',
+    fieldNames(computeDiscoverySchemaRef({ style: 'listy' })).includes('auto_discover_alexa')
+    && !fieldNames(computeDiscoverySchemaRef({ style: 'listy' })).includes('countdowns'));
 
   const minimal = computeSchema({ style: 'minimal-square' });
   check('Minimal square: no time unit grid',
@@ -392,8 +398,8 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 // ── The split around the title ──────────────────────────────────────────────
 
 {
-  const { computeSourceSchema, computeTimerListSchema, computeTextSchema,
-          computeExpiredSchema, computeUnitsSchema, computePanelsSchema } =
+  const { computeSourceSchema, computeDiscoverySchema, computeCountdownsSchema,
+          computeTextSchema, computeExpiredSchema, computeUnitsSchema, computePanelsSchema } =
     require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
@@ -405,15 +411,16 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
       const parts = JSON.stringify([
-        ...computeSourceSchema(cfg), ...computeTimerListSchema(cfg), ...computeTextSchema(cfg),
-        ...computeExpiredSchema(cfg), ...computeUnitsSchema(cfg), ...computePanelsSchema(cfg),
+        ...computeSourceSchema(cfg), ...computeDiscoverySchema(cfg), ...computeCountdownsSchema(cfg),
+        ...computeTextSchema(cfg), ...computeExpiredSchema(cfg), ...computeUnitsSchema(cfg),
+        ...computePanelsSchema(cfg),
       ]);
       if (whole !== parts) {
         check(`Split: parts reassemble on ${style}`, false, JSON.stringify(cfg));
       }
     }
   }
-  check('Split: the six parts always reassemble into computeSchema', true);
+  check('Split: the seven parts always reassemble into computeSchema', true);
 
   // Mode belongs above the title, the text fields below it.
   const top = fieldNames(computeSourceSchema(dateCfg({ mode: 'count_up' })));
@@ -462,8 +469,11 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 
   // Keys the config form is not responsible for.
   const NOT_IN_FORM = [
-    'type',        // the card type, set by Home Assistant
-    'grid_options' // Home Assistant's own Layout tab owns this
+    'type',         // the card type, set by Home Assistant
+    'grid_options', // Home Assistant's own Layout tab owns this
+    // Only pinned timer.* rows use it, and each of those sets its own
+    // header_icon, which wins. Still honoured from YAML.
+    'timer_icon',
   ];
 
   const reachable = new Set();

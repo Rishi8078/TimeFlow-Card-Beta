@@ -231,11 +231,18 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
  * renders it as a section near the top rather than tucking it away at the foot
  * of the form with the styling panels.
  */
-function timerListSection(caps: StyleCapabilities): FormSchema[] {
+/**
+ * What the list finds on its own: the two integrations it can discover, how
+ * many of their rows to draw, and the chip each one wears.
+ *
+ * timer_icon is deliberately absent. Discovery only finds Alexa and Google, so
+ * the only rows that use it are pinned entries naming a timer.* entity - and
+ * each of those can set its own header_icon, which overrides it anyway. The
+ * key still works from YAML.
+ */
+function discoverySection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.timerList) return [];
   return [
-    // The discovery toggles decide which timers the list finds, so they sit
-    // with the list rather than in a source block of their own.
     {
       type: 'grid',
       schema: [
@@ -251,12 +258,16 @@ function timerListSection(caps: StyleCapabilities): FormSchema[] {
         { name: 'google_icon', selector: { icon: {} } },
       ],
     },
-    { name: 'timer_icon', selector: { icon: {} } },
-    // Not flattened: ha-form then scopes the value to data.countdowns and
-    // wraps what comes back as { countdowns: [...] }, which is the shape an
-    // array field needs.
-    { type: 'tf_countdowns', name: 'countdowns' },
   ];
+}
+
+/** The rows the user pins by hand, which always render. */
+function countdownsSection(caps: StyleCapabilities): FormSchema[] {
+  if (!caps.timerList) return [];
+  // Not flattened: ha-form then scopes the value to data.countdowns and wraps
+  // what comes back as { countdowns: [...] }, which is the shape an array
+  // field needs.
+  return [{ type: 'tf_countdowns', name: 'countdowns' }];
 }
 
 function appearanceSection(caps: StyleCapabilities): FormSchema[] {
@@ -406,7 +417,8 @@ function actionsSection(): FormSchema[] {
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   return [
     ...computeSourceSchema(config, source),
-    ...computeTimerListSchema(config),
+    ...computeDiscoverySchema(config),
+    ...computeCountdownsSchema(config),
     ...computeTextSchema(config, source),
     ...computeExpiredSchema(config),
     ...computeUnitsSchema(config),
@@ -429,9 +441,14 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
   ];
 }
 
-/** The list configuration, which the editor gives a section of its own. */
-export function computeTimerListSchema(config: CardConfig): FormSchema[] {
-  return timerListSection(getCapabilities(config));
+/** Auto-discovery settings, which the editor gives a section of its own. */
+export function computeDiscoverySchema(config: CardConfig): FormSchema[] {
+  return discoverySection(getCapabilities(config));
+}
+
+/** The pinned list, in a section of its own below discovery. */
+export function computeCountdownsSchema(config: CardConfig): FormSchema[] {
+  return countdownsSection(getCapabilities(config));
 }
 
 /** The text fields the editor does not render itself. */

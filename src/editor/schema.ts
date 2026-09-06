@@ -258,6 +258,17 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         { name: 'google_icon', selector: { icon: {} } },
       ],
     },
+    // How those rows read their time. It lives here rather than in a section
+    // of its own because these are the rows it formats: a pinned date row
+    // formats itself from its own entry, and only a pinned *entity* row also
+    // follows these.
+    {
+      type: 'grid',
+      schema: [
+        { name: 'show_seconds', selector: { boolean: {} } },
+        { name: 'compact_format', selector: { boolean: {} } },
+      ],
+    },
   ];
 }
 
@@ -466,8 +477,14 @@ export function computeExpiredSchema(config: CardConfig): FormSchema[] {
   return [{ name: 'expired_animation', selector: { boolean: {} } }];
 }
 
-/** The time-unit toggles, which the editor puts in a section of their own. */
+/**
+ * The time-unit toggles, which the editor puts in a section of their own.
+ *
+ * Not on the list style: it has no units to toggle, and its two format
+ * switches sit with the discovery settings whose rows they format.
+ */
 export function computeUnitsSchema(config: CardConfig): FormSchema[] {
+  if (getStyle(config) === 'listy') return [];
   return timeUnitsSection(getCapabilities(config));
 }
 

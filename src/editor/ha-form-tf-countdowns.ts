@@ -51,6 +51,22 @@ export class HaFormTfCountdowns extends LitElement {
    */
   @state() private _pendingSource: Record<number, EntrySource> = {};
 
+  /** Entries currently being edited as YAML rather than through the form. */
+  @state() private _yamlMode: Record<number, boolean> = {};
+
+  // ha-yaml-editor is lazy-loaded like the rest; without it the toggle would
+  // open onto an empty box, so it is only offered once the element exists.
+  @state() private _yamlReady: boolean = !!customElements.get('ha-yaml-editor');
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    if (!this._yamlReady) {
+      customElements.whenDefined('ha-yaml-editor').then(() => {
+        this._yamlReady = true;
+      });
+    }
+  }
+
   private get _entries(): ListEntryConfig[] {
     return Array.isArray(this.data) ? this.data : [];
   }
@@ -133,6 +149,28 @@ export class HaFormTfCountdowns extends LitElement {
 
     this._pendingSource = { ...this._pendingSource, [index]: next };
     this._emit(entries);
+  }
+
+  /**
+   * YAML for one entry. Invalid YAML is left alone rather than written: the
+   * editor reports isValid, and half-typed input would otherwise wipe the
+   * entry on every keystroke.
+   */
+  private _entryYamlChanged(index: number, ev: CustomEvent): void {
+    ev.stopPropagation();
+    const detail = ev.detail as { value?: unknown; isValid?: boolean };
+    if (detail?.isValid === false) return;
+
+    const value = detail?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+
+    const entries = [...this._entries];
+    entries[index] = value as ListEntryConfig;
+    this._emit(entries);
+  }
+
+  private _toggleYaml(index: number): void {
+    this._yamlMode = { ...this._yamlMode, [index]: !this._yamlMode[index] };
   }
 
   private _entryChanged(index: number, ev: CustomEvent): void {
@@ -228,8 +266,25 @@ export class HaFormTfCountdowns extends LitElement {
     `;
   }
 
+  /**
+   * A one-line summary of what the row is set to, shown beside its name while
+   * the panel is closed. Home Assistant's own object selector does the same
+   * through label_field / description_field - without it a collapsed list is
+   * just a column of titles.
+   */
+  private _entrySummary(entry: ListEntryConfig): string {
+    if (entry.timer_entity) return entry.timer_entity;
+    if (!entry.target_date) return 'No date set';
+    if (entry.target_date.includes('{{') || entry.target_date.includes('{%')) return 'Template';
+
+    const date = new Date(entry.target_date);
+    if (isNaN(date.getTime())) return entry.target_date;
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
   private _renderEntry(entry: ListEntryConfig, index: number, total: number): TemplateResult {
     const name = entry.title?.trim() || 'Untitled';
+    const summary = this._entrySummary(entry);
 
     return html`
       <ha-expansion-panel
@@ -238,7 +293,10 @@ export class HaFormTfCountdowns extends LitElement {
         @expanded-changed=${(e: CustomEvent) => this._toggle(index, (e.target as any).expanded)}
       >
         <div slot="header" class="entry-header">
-          <span class="entry-title">${index + 1}. ${name}</span>
+          <span class="entry-text">
+            <span class="entry-title">${index + 1}. ${name}</span>
+            <span class="entry-summary">${summary}</span>
+          </span>
           <span class="entry-actions">
             <ha-icon-button
               .path=${'M7,15L12,10L17,15H7Z'}
@@ -262,7 +320,17 @@ export class HaFormTfCountdowns extends LitElement {
         </div>
 
         <div class="entry-body">
-          ${this._loaded[index]
+          ${this._loaded[index] && this._yamlMode[index]
+            ? html`
+              <ha-yaml-editor
+                .defaultValue=${entry}
+                .readOnly=${this.disabled}
+                @value-changed=${(e: CustomEvent) => this._entryYamlChanged(index, e)}
+              ></ha-yaml-editor>
+            `
+            : nothing}
+
+          ${this._loaded[index] && !this._yamlMode[index]
             ? html`
               <div class="entry-source">
                 <span class="entry-source-label">Source</span>
@@ -287,6 +355,15 @@ export class HaFormTfCountdowns extends LitElement {
                 .computeHelper=${this.computeHelper}
                 @value-changed=${(e: CustomEvent) => this._entryChanged(index, e)}
               ></ha-form>
+            `
+            : nothing}
+
+          ${this._loaded[index] && this._yamlReady
+            ? html`
+              <button type="button" class="yaml-toggle" @click=${() => this._toggleYaml(index)}>
+                <ha-icon icon=${this._yamlMode[index] ? 'mdi:form-select' : 'mdi:code-braces'}></ha-icon>
+                ${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
+              </button>
             `
             : nothing}
         </div>
@@ -316,8 +393,20 @@ export class HaFormTfCountdowns extends LitElement {
         width: 100%;
         min-width: 0;
       }
+      .entry-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
       .entry-title {
         font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .entry-summary {
+        font-size: 12px;
+        color: var(--secondary-text-color);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -348,6 +437,26 @@ export class HaFormTfCountdowns extends LitElement {
       .entry-source ha-control-select {
         --control-select-thickness: 40px;
         --control-select-border-radius: 10px;
+      }
+      .yaml-toggle {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        background: none;
+        color: var(--primary-color);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .yaml-toggle:hover {
+        background: rgba(127, 127, 127, 0.08);
+        background: color-mix(in srgb, currentColor 10%, transparent);
+      }
+      .yaml-toggle ha-icon {
+        --mdc-icon-size: 16px;
       }
       .empty {
         font-size: 12px;

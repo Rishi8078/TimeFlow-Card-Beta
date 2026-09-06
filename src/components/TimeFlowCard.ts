@@ -1369,21 +1369,48 @@ export class TimeFlowCardBeta extends LitElement {
       // Whatever the entry read is part of what this card reacts to.
       service.getWatchedEntities().forEach((id) => this.countdownService.noteWatchedEntity(id));
 
-      const palette = this._listRowPalette('event', config, entry);
+      // A row following a timer entity should look like the timer rows above
+      // it, not like a date countdown: the same chip, and its own paused and
+      // finished states rather than only "expired".
+      const timerEntity = typeof entry.timer_entity === 'string' ? entry.timer_entity.trim() : '';
+      const timerData = timerEntity && this.hass
+        ? TimerEntityService.getTimerData(timerEntity, this.hass)
+        : null;
+
+      const kind: ListRowKind = timerEntity
+        ? (TimerEntityService.isAlexaTimer(timerEntity)
+            ? 'alexa'
+            : TimerEntityService.isGoogleTimer(timerEntity) ? 'google' : 'timer')
+        : 'event';
+
+      // Anything the entry sets itself still wins over the kind's defaults.
+      const base = this._listRowPalette(kind, config, entry);
+      const icon = entry.header_icon || base.icon;
+      const iconColor = entry.header_icon_color || base.iconColor;
+      const iconBackground = entry.header_icon_background || base.iconBackground;
+      const ringColor = entry.progress_color || base.ringColor;
+
+      const state: ListRow['state'] = timerData
+        ? (timerData.finished ? 'finished' : (timerData.isPaused ? 'paused' : 'running'))
+        : (expired ? 'finished' : 'running');
+
+      const fallbackTitle = timerEntity && this.hass
+        ? TimerEntityService.getTimerTitle(timerEntity, this.hass)
+        : 'Countdown';
 
       rows.push({
         key: `entry-${index}`,
-        kind: 'event',
-        title: entry.title || 'Countdown',
+        kind,
+        title: entry.title || fallbackTitle,
         subtitle,
         progress: Math.min(100, Math.max(0, progress)),
-        state: expired ? 'finished' : 'running',
-        icon: palette.icon,
-        iconColor: palette.iconColor,
-        iconBackground: palette.iconBackground,
+        state,
+        icon,
+        iconColor,
+        iconBackground,
         background: entry.background_color,
         textColor: entry.text_color,
-        ringColor: palette.ringColor,
+        ringColor,
       });
     }
 

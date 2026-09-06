@@ -115,6 +115,12 @@ export type GridDotUnit = 'auto' | 'minute' | 'hour' | 'day' | 'week' | 'month';
  * Lovelace cards, and `cards:` invites people to put `type: custom:...` in it.
  */
 export interface ListEntryConfig {
+  /**
+   * A row can follow a timer entity instead of counting to a date. When set it
+   * wins, the same way it does at card level - CountdownService resolves the
+   * timer first and never looks at target_date.
+   */
+  timer_entity?: string;
   target_date?: string;
   creation_date?: string;
   count_up_goal_date?: string;

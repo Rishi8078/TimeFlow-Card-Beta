@@ -17,6 +17,9 @@ import './ha-form-tf-group';
  * follow Bubble Card's sub-button editor, which solves the same problem - see
  * EDITOR-CONFIG-MATRIX.md.
  */
+/** An entry counts to a date, or follows a timer entity. Never both. */
+type EntrySource = 'date' | 'timer';
+
 export interface CountdownsFieldSchema {
   type: 'tf_countdowns';
   name: string;
@@ -39,6 +42,14 @@ export class HaFormTfCountdowns extends LitElement {
    */
   @state() private _expanded: Record<number, boolean> = {};
   @state() private _loaded: Record<number, boolean> = {};
+
+  /**
+   * A source an entry has been switched to but cannot yet express - picking
+   * Entity before choosing one. Same problem the card-level picker has: with
+   * no timer_entity set the config still reads as a date, so without this the
+   * choice would spring back the moment it was made.
+   */
+  @state() private _pendingSource: Record<number, EntrySource> = {};
 
   private get _entries(): ListEntryConfig[] {
     return Array.isArray(this.data) ? this.data : [];
@@ -98,6 +109,30 @@ export class HaFormTfCountdowns extends LitElement {
     };
     this._expanded = remap(this._expanded);
     this._loaded = remap(this._loaded);
+    this._pendingSource = remap(this._pendingSource as any) as any;
+  }
+
+  private _sourceOf(index: number): EntrySource {
+    const entry = this._entries[index];
+    if (entry?.timer_entity) return 'timer';
+    return this._pendingSource[index] ?? 'date';
+  }
+
+  /**
+   * Switching clears the other source's selector, never the data: a target_date
+   * survives a trip through Entity and is still there on the way back. Exactly
+   * the rule the card-level picker follows.
+   */
+  private _setSource(index: number, next: EntrySource): void {
+    if (next === this._sourceOf(index)) return;
+
+    const entries = [...this._entries];
+    const entry = { ...entries[index] };
+    if (next === 'date') delete entry.timer_entity;
+    entries[index] = entry;
+
+    this._pendingSource = { ...this._pendingSource, [index]: next };
+    this._emit(entries);
   }
 
   private _entryChanged(index: number, ev: CustomEvent): void {
@@ -116,49 +151,46 @@ export class HaFormTfCountdowns extends LitElement {
     }
   }
 
-  /** The fields of one entry. Mirrors how the card resolves them. */
-  private _entrySchema(entry: ListEntryConfig): any[] {
+  /** The fields of one entry, for the source it is using. */
+  private _entrySchema(entry: ListEntryConfig, source: EntrySource): any[] {
     const countUp = entry.mode === 'count_up';
+    const dateField = (name: string) => ({
+      type: 'tf_template',
+      name,
+      plainSelector: { datetime: {} },
+      plainLabel: 'Picker',
+      plainIcon: 'mdi:calendar',
+      format: 'datetime',
+    });
 
     return [
       { type: 'tf_template', name: 'title', plainSelector: { text: {} } },
-      {
-        type: 'tf_template',
-        name: 'target_date',
-        plainSelector: { datetime: {} },
-        plainLabel: 'Picker',
-        plainIcon: 'mdi:calendar',
-        format: 'datetime',
-      },
-      {
-        name: 'mode',
-        selector: {
-          select: {
-            options: [
-              { value: 'count_down', label: 'Count Down' },
-              { value: 'count_up', label: 'Count Up' },
-            ],
-            mode: 'dropdown',
-          },
-        },
-      },
-      countUp
-        ? {
+
+      ...(source === 'timer'
+        ? [{
             type: 'tf_template',
-            name: 'count_up_goal_date',
-            plainSelector: { datetime: {} },
-            plainLabel: 'Picker',
-            plainIcon: 'mdi:calendar',
-            format: 'datetime',
-          }
-        : {
-            type: 'tf_template',
-            name: 'creation_date',
-            plainSelector: { datetime: {} },
-            plainLabel: 'Picker',
-            plainIcon: 'mdi:calendar',
-            format: 'datetime',
-          },
+            name: 'timer_entity',
+            plainSelector: { entity: { domain: ['timer', 'sensor', 'input_datetime'] } },
+            plainLabel: 'Entity',
+            plainIcon: 'mdi:shape-outline',
+          }]
+        : [
+            dateField('target_date'),
+            {
+              name: 'mode',
+              selector: {
+                select: {
+                  options: [
+                    { value: 'count_down', label: 'Count Down' },
+                    { value: 'count_up', label: 'Count Up' },
+                  ],
+                  mode: 'dropdown',
+                },
+              },
+            },
+            dateField(countUp ? 'count_up_goal_date' : 'creation_date'),
+          ]),
+
       { type: 'tf_template', name: 'subtitle', plainSelector: { text: {} } },
       {
         type: 'tf_group',
@@ -232,10 +264,24 @@ export class HaFormTfCountdowns extends LitElement {
         <div class="entry-body">
           ${this._loaded[index]
             ? html`
+              <div class="entry-source">
+                <span class="entry-source-label">Source</span>
+                <ha-control-select
+                  .options=${[
+                    { value: 'date', label: 'Date', ariaLabel: 'Count to a date you choose' },
+                    { value: 'timer', label: 'Entity', ariaLabel: 'Follow a timer entity' },
+                  ]}
+                  .value=${this._sourceOf(index)}
+                  @value-changed=${(e: CustomEvent) => {
+                    e.stopPropagation();
+                    this._setSource(index, e.detail?.value as EntrySource);
+                  }}
+                ></ha-control-select>
+              </div>
               <ha-form
                 .hass=${this.hass}
                 .data=${entry}
-                .schema=${this._entrySchema(entry)}
+                .schema=${this._entrySchema(entry, this._sourceOf(index))}
                 .disabled=${this.disabled}
                 .computeLabel=${this.computeLabel}
                 .computeHelper=${this.computeHelper}
@@ -284,7 +330,24 @@ export class HaFormTfCountdowns extends LitElement {
         color: var(--secondary-text-color);
       }
       .entry-body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
         padding: 12px;
+      }
+      .entry-source {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .entry-source-label {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--primary-text-color);
+      }
+      .entry-source ha-control-select {
+        --control-select-thickness: 40px;
+        --control-select-border-radius: 10px;
       }
       .empty {
         font-size: 12px;

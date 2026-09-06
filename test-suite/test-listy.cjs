@@ -293,6 +293,31 @@ function hassWith(states) {
   check('Cap: ignores nonsense', CountdownService.resolveMaxTimers({ max_timers: 'lots' }) === 5);
 }
 
+// ── A pinned entry that follows a timer entity ──────────────────────────────
+
+{
+  // An entry may name a timer_entity instead of a date. CountdownService
+  // already prefers a timer over a target_date, so the row builder only has to
+  // give it the right identity - the timer's chip, and its paused state.
+  const nowSec = Date.now() / 1000;
+  const states = {
+    [GOOGLE]: googleEntity([
+      { timer_id: 'g1', label: 'Laundry', status: 'paused', duration: 900, fire_time: nowSec + 300 },
+    ]),
+  };
+
+  const rows = TimerEntityService.listTimers(GOOGLE, hassWith(states));
+  check('Entry timers: the entity resolves through the same parser', rows.length === 1);
+  check('Entry timers: a paused entity reports paused', rows[0].isPaused === true);
+
+  // The card decides the row kind from the entity id, so those predicates are
+  // what a pinned entry's chip depends on.
+  check('Entry timers: a Google entity is recognised', TimerEntityService.isGoogleTimer(GOOGLE));
+  check('Entry timers: an Alexa entity is recognised', TimerEntityService.isAlexaTimer(ALEXA));
+  check('Entry timers: a standard timer is neither',
+    !TimerEntityService.isAlexaTimer('timer.sprinkler') && !TimerEntityService.isGoogleTimer('timer.sprinkler'));
+}
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 
 const failed = results.filter((r) => !r.pass);

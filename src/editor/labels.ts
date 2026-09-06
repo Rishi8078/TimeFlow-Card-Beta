@@ -70,14 +70,12 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
   'subtitle': 'Shows time remaining by default; only set for custom text',
-  'compact_format': 'Short form: "2d 5h 30m"',
 
   // Colors
 
   // Layout
 
   // Progress Circle
-  'invert_progress': 'Start full and empty out, instead of filling up.',
 
   // Header Icon
 

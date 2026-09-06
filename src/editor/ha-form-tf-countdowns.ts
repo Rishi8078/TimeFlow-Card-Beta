@@ -17,6 +17,9 @@ import './ha-form-tf-group';
  * follow Bubble Card's sub-button editor, which solves the same problem - see
  * EDITOR-CONFIG-MATRIX.md.
  */
+/** mdiDragHorizontalVariant - the glyph Home Assistant uses for a drag handle. */
+const DRAG_HANDLE_PATH = 'M21,11H3V9H21V11M21,13H3V15H21V13Z';
+
 /** An entry counts to a date, or follows a timer entity. Never both. */
 type EntrySource = 'date' | 'timer';
 
@@ -350,19 +353,22 @@ export class HaFormTfCountdowns extends LitElement {
         @expanded-changed=${(e: CustomEvent) => this._toggle(index, (e.target as any).expanded)}
       >
         <div slot="header" class="entry-header">
+          ${this._sortableReady
+            ? html`
+              <ha-svg-icon
+                class="drag-handle"
+                .path=${DRAG_HANDLE_PATH}
+                @click=${(e: Event) => e.stopPropagation()}
+              ></ha-svg-icon>
+            `
+            : nothing}
           <span class="entry-text">
-            <span class="entry-title">${index + 1}. ${name}</span>
+            <span class="entry-title">${name}</span>
             <span class="entry-summary">${summary}</span>
           </span>
           <span class="entry-actions">
             ${this._sortableReady
-              ? html`
-                <ha-svg-icon
-                  class="drag-handle"
-                  .path=${'M7,19V17H9V19H7M11,19V17H13V19H11M15,19V17H17V19H15M7,15V13H9V15H7M11,15V13H13V15H11M15,15V13H17V15H15M7,11V9H9V11H7M11,11V9H13V11H11M15,11V9H17V11H15M7,7V5H9V7H7M11,7V5H13V7H11M15,7V5H17V7H15Z'}
-                  @click=${(e: Event) => e.stopPropagation()}
-                ></ha-svg-icon>
-              `
+              ? nothing
               : html`
                 <ha-icon-button
                   .path=${'M7,15L12,10L17,15H7Z'}
@@ -454,7 +460,14 @@ export class HaFormTfCountdowns extends LitElement {
       .list {
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
         gap: 8px;
+      }
+      /* The rows still span the panel; only the Add button sizes to its own
+         label, the way ha-selector-object's does. */
+      .list > ha-sortable,
+      .list > ha-expansion-panel {
+        align-self: stretch;
       }
       ha-expansion-panel {
         --expansion-panel-content-padding: 0;
@@ -463,7 +476,6 @@ export class HaFormTfCountdowns extends LitElement {
       .entry-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 8px;
         width: 100%;
         min-width: 0;
@@ -472,6 +484,9 @@ export class HaFormTfCountdowns extends LitElement {
         display: flex;
         flex-direction: column;
         min-width: 0;
+        /* Takes the slack, so the actions sit against the chevron rather than
+           floating in the middle of the row. */
+        flex: 1 1 auto;
       }
       .entry-title {
         font-weight: 500;
@@ -503,14 +518,14 @@ export class HaFormTfCountdowns extends LitElement {
       ha-sortable {
         display: block;
       }
+      /* Matches ha-selector-object: padded for a comfortable grab target, then
+         pulled back so the row still starts on the panel's own edge. */
       .drag-handle {
-        cursor: grab;
-        padding: 0 4px;
+        cursor: move;
+        padding: 8px;
+        margin-inline-start: -8px;
+        flex-shrink: 0;
         color: var(--secondary-text-color);
-        --mdc-icon-size: 18px;
-      }
-      .drag-handle:active {
-        cursor: grabbing;
       }
       .entry-body {
         display: flex;

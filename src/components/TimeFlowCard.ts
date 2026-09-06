@@ -734,6 +734,10 @@ export class TimeFlowCardBeta extends LitElement {
         flex: 1 1 auto;
         min-width: 0;
         margin: 0 14px;
+        /* Centred between the chip and the ring. The mock inherits this from
+           its host card rather than declaring it, so it has to be explicit
+           here. */
+        text-align: center;
       }
 
       .listy-row-title {

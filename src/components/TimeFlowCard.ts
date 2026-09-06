@@ -125,7 +125,10 @@ export class TimeFlowCardBeta extends LitElement {
     return css`
       :host {
         display: block;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        /* Home Assistant's own body font, so the card reads as part of the
+           dashboard rather than in a stack of its own. The old hardcoded list
+           is kept as the fallback for frontends without the token. */
+        font-family: var(--ha-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif);
         color: var(--primary-text-color, #222);
         --progress-color: var(--progress-color, #4caf50);
       }
@@ -684,7 +687,7 @@ export class TimeFlowCardBeta extends LitElement {
       .listy-row {
         display: flex;
         align-items: center;
-        gap: 14px;
+        justify-content: space-between;
         padding: 9px 18px 9px 11px;
         box-sizing: border-box;
         width: 100%;
@@ -695,10 +698,10 @@ export class TimeFlowCardBeta extends LitElement {
         border: 1px solid var(--timeflow-listy-row-border);
       }
 
+      /* The same capsule as a real row, only quieter: nothing is pending, so a
+         dashed outline overstated it. */
       .listy-row.is-empty {
-        background: transparent;
-        border-style: dashed;
-        border-color: var(--timeflow-listy-ring-track);
+        opacity: 0.7;
       }
 
       .listy-row.is-empty .listy-row-title,
@@ -730,6 +733,7 @@ export class TimeFlowCardBeta extends LitElement {
         /* min-width:0 is what lets the ellipsis below actually engage. */
         flex: 1 1 auto;
         min-width: 0;
+        margin: 0 14px;
       }
 
       .listy-row-title {
@@ -1654,7 +1658,6 @@ export class TimeFlowCardBeta extends LitElement {
             r="16"
             fill="none"
             stroke-width="4.5"
-            stroke-dasharray="4 4"
           ></circle>
         </svg>
       </div>

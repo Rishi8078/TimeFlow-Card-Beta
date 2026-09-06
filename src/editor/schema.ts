@@ -461,7 +461,8 @@ export function computeTextSchema(config: CardConfig, source?: SourceType): Form
  * editor renders rather than off in Appearance - the two describe the same
  * moment, and separating them made the pair hard to find.
  */
-export function computeExpiredSchema(_config: CardConfig): FormSchema[] {
+export function computeExpiredSchema(config: CardConfig): FormSchema[] {
+  if (!getCapabilities(config).expiredAnimation) return [];
   return [{ name: 'expired_animation', selector: { boolean: {} } }];
 }
 

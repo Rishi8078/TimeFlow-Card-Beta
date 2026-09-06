@@ -46,6 +46,8 @@ export interface StyleCapabilities {
   ringGeometry: boolean;
   /** invert_progress. */
   invertProgress: boolean;
+  /** expired_animation: the whole card pulsing when the countdown ends. */
+  expiredAnimation: boolean;
   /** progress_bg_stroke + progress_bg_opacity. */
   progressTrack: boolean;
   /** The gridy dot grid. */
@@ -67,6 +69,7 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: true, subtitle: true, expiredText: true, compactFormat: true,
     timeUnits: true, showSeconds: true, headerIcon: true,
     progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    expiredAnimation: true,
     dotGrid: false, timerList: false,
     width: true, height: true, aspectRatio: true,
   },
@@ -75,6 +78,7 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: true, subtitle: true, expiredText: true, compactFormat: true,
     timeUnits: true, showSeconds: true, headerIcon: true,
     progressColor: false, ringGeometry: false, invertProgress: false, progressTrack: false,
+    expiredAnimation: true,
     dotGrid: false, timerList: false,
     width: false, height: false, aspectRatio: false,
   },
@@ -84,6 +88,7 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: true, subtitle: true, expiredText: true, compactFormat: true,
     timeUnits: true, showSeconds: true, headerIcon: true,
     progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    expiredAnimation: true,
     dotGrid: false, timerList: false,
     width: false, height: false, aspectRatio: false,
   },
@@ -92,6 +97,7 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: true, subtitle: true, expiredText: true, compactFormat: true,
     timeUnits: true, showSeconds: true, headerIcon: false,
     progressColor: true, ringGeometry: false, invertProgress: true, progressTrack: true,
+    expiredAnimation: true,
     dotGrid: true, timerList: false,
     width: true, height: true, aspectRatio: true,
   },
@@ -100,6 +106,7 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: false, subtitle: false, expiredText: false, compactFormat: false,
     timeUnits: false, showSeconds: false, headerIcon: false,
     progressColor: true, ringGeometry: true, invertProgress: true, progressTrack: true,
+    expiredAnimation: true,
     dotGrid: false, timerList: false,
     width: true, height: true, aspectRatio: true,
   },
@@ -112,6 +119,10 @@ export const STYLE_CAPABILITIES: Record<StyleName, StyleCapabilities> = {
     title: true, subtitle: false, expiredText: false, compactFormat: true,
     timeUnits: false, showSeconds: true, headerIcon: true,
     progressColor: true, ringGeometry: false, invertProgress: false, progressTrack: false,
+    // The card-level "expired" state is whichever single timer the countdown
+    // service singled out, so pulsing the whole card for it is arbitrary - and
+    // each row already reports its own completion.
+    expiredAnimation: false,
     dotGrid: false, timerList: true,
     width: true, height: true, aspectRatio: true,
   },

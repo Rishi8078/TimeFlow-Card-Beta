@@ -1517,7 +1517,6 @@ export class TimeFlowCardBeta extends LitElement {
    */
   private _renderListyCard(): TemplateResult {
     const {
-      expired_animation = true,
       progress_color,
       text_color,
       width,
@@ -1535,7 +1534,10 @@ export class TimeFlowCardBeta extends LitElement {
       ...dimensionStyles
     ].join('; ');
 
-    const cardClasses = this._getCardClasses(expired_animation);
+    // Never the expired pulse: on a list the card-level expired state is
+    // whichever single timer the countdown service picked, and each row already
+    // shows its own completion.
+    const cardClasses = this._getCardClasses(false);
     const { configWithDefaults, shouldEnableActions } = this._getActionConfig();
     const rows = this._listRows;
 

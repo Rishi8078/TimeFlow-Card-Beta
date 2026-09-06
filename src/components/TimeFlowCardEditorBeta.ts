@@ -801,7 +801,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ></ha-form>
             ${unitsSchema.length > 0 ? html`
                 <div class="editor-section units-section">
-                    <span class="editor-section-label">Time Units</span>
+                    <span class="editor-section-label">${caps.timeUnits ? 'Time Units' : 'Time Format'}</span>
                     <ha-form
                         .hass=${this.hass}
                         .data=${displayCfg}

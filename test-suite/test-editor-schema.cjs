@@ -315,7 +315,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   for (const style of STYLES) {
     const names = fieldNames(computeSchema({ style }));
-    const universal = ['background_color', 'text_color', 'expired_animation',
+    // expired_animation is no longer universal: the list style neither offers
+    // it nor applies it.
+    const universal = ['background_color', 'text_color',
       'tap_action', 'hold_action', 'double_tap_action'];
     const missing = universal.filter((n) => !names.includes(n));
     check(`Universal fields: present on ${style}`, missing.length === 0, missing.join(', ') || 'all present');
@@ -436,6 +438,8 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   // expired_animation belongs with the expired text, not with the colours.
   check('Split: expired_animation sits in its own part',
     fieldNames(computeExpiredSchema(dateCfg())).join(',') === 'expired_animation');
+  check('Split: the list style is not offered expired_animation',
+    computeExpiredSchema({ style: 'listy' }).length === 0);
   const appearance = computePanelsSchema(dateCfg()).find((i) => i.title === 'Appearance');
   check('Split: Appearance no longer holds expired_animation',
     !fieldNames([appearance]).includes('expired_animation'));
@@ -602,6 +606,13 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
   for (const [style, renderer] of Object.entries(RENDERERS)) {
     const body = rendererBody(renderer);
     if (!body) { wrong.push(`${renderer} not found`); continue; }
+    // _renderListyCard passes a literal false rather than the config value, so
+    // the flag is checked against that call rather than a bare mention.
+    const passesAnimation = /_getCardClasses\(expired_animation\)/.test(body);
+    if (passesAnimation !== STYLE_CAPABILITIES[style].expiredAnimation) {
+      wrong.push(`${style}.expiredAnimation=${STYLE_CAPABILITIES[style].expiredAnimation} but ${renderer} ${passesAnimation ? 'applies' : 'ignores'} it`);
+    }
+
     for (const [key, cap] of [['width', 'width'], ['height', 'height'], ['aspect_ratio', 'aspectRatio']]) {
       const readsIt = new RegExp(`\\b${key}\\b`).test(body);
       if (readsIt !== STYLE_CAPABILITIES[style][cap]) {
@@ -609,7 +620,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
       }
     }
   }
-  check('Capabilities: dimension flags match what each renderer reads',
+  check('Capabilities: flags match what each renderer reads',
     wrong.length === 0, wrong.join('; ') || 'all match');
 }
 

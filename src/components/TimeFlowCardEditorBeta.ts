@@ -769,23 +769,6 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${dateFields}
             ${isList ? nothing : this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${isList && showsTitle ? this._renderTitleField() : nothing}
-            ${discoverySchema.length > 0 ? html`
-                <div class="editor-section">
-                    ${this._sectionHeading(
-                        'sec-discovery',
-                        'Auto Discovery',
-                        'Finds running Alexa and Google Home timers on their own.'
-                    )}
-                    <ha-form
-                        .hass=${this.hass}
-                        .data=${displayCfg}
-                        .schema=${discoverySchema}
-                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                        .computeLabel=${computeLabel}
-                        .computeHelper=${this._computeHelper}
-                    ></ha-form>
-                </div>
-            ` : nothing}
             ${countdownsSchema.length > 0 ? html`
                 <div class="editor-section">
                     ${this._sectionHeading(
@@ -799,6 +782,23 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         .schema=${countdownsSchema}
                         @value-changed=${(e: CustomEvent) => this._formChanged(e)}
                         .computeLabel=${() => ''}
+                        .computeHelper=${this._computeHelper}
+                    ></ha-form>
+                </div>
+            ` : nothing}
+            ${discoverySchema.length > 0 ? html`
+                <div class="editor-section">
+                    ${this._sectionHeading(
+                        'sec-discovery',
+                        'Auto Discovery',
+                        'Finds running Alexa and Google Home timers on their own.'
+                    )}
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${displayCfg}
+                        .schema=${discoverySchema}
+                        @value-changed=${(e: CustomEvent) => this._formChanged(e)}
+                        .computeLabel=${computeLabel}
                         .computeHelper=${this._computeHelper}
                     ></ha-form>
                 </div>

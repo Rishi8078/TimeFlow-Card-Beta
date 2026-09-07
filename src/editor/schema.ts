@@ -428,8 +428,10 @@ function actionsSection(): FormSchema[] {
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   return [
     ...computeSourceSchema(config, source),
-    ...computeDiscoverySchema(config),
+    // The pinned list comes first: it is the part the user builds, while
+    // discovery just switches on.
     ...computeCountdownsSchema(config),
+    ...computeDiscoverySchema(config),
     ...computeTextSchema(config, source),
     ...computeExpiredSchema(config),
     ...computeUnitsSchema(config),

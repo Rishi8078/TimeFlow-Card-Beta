@@ -1741,19 +1741,6 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
             ${g}
             ${_?W:this._renderSourceFields(i,r,s)}
             ${_&&h?this._renderTitleField():W}
-            ${a.length>0?G`
-                <div class="editor-section">
-                    ${this._sectionHeading("sec-discovery","Auto Discovery","Finds running Alexa and Google Home timers on their own.")}
-                    <ha-form
-                        .hass=${this.hass}
-                        .data=${i}
-                        .schema=${a}
-                        @value-changed=${e=>this._formChanged(e)}
-                        .computeLabel=${zt}
-                        .computeHelper=${this._computeHelper}
-                    ></ha-form>
-                </div>
-            `:W}
             ${n.length>0?G`
                 <div class="editor-section">
                     ${this._sectionHeading("sec-pinned","Pinned Countdowns","Always shown, alongside anything discovery finds.")}
@@ -1763,6 +1750,19 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                         .schema=${n}
                         @value-changed=${e=>this._formChanged(e)}
                         .computeLabel=${()=>""}
+                        .computeHelper=${this._computeHelper}
+                    ></ha-form>
+                </div>
+            `:W}
+            ${a.length>0?G`
+                <div class="editor-section">
+                    ${this._sectionHeading("sec-discovery","Auto Discovery","Finds running Alexa and Google Home timers on their own.")}
+                    <ha-form
+                        .hass=${this.hass}
+                        .data=${i}
+                        .schema=${a}
+                        @value-changed=${e=>this._formChanged(e)}
+                        .computeLabel=${zt}
                         .computeHelper=${this._computeHelper}
                     ></ha-form>
                 </div>

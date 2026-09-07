@@ -413,7 +413,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     ]) {
       const whole = JSON.stringify(computeSchema(cfg));
       const parts = JSON.stringify([
-        ...computeSourceSchema(cfg), ...computeDiscoverySchema(cfg), ...computeCountdownsSchema(cfg),
+        ...computeSourceSchema(cfg), ...computeCountdownsSchema(cfg), ...computeDiscoverySchema(cfg),
         ...computeTextSchema(cfg), ...computeExpiredSchema(cfg), ...computeUnitsSchema(cfg),
         ...computePanelsSchema(cfg),
       ]);

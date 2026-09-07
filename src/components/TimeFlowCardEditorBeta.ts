@@ -525,9 +525,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
         return this._renderTemplatableField(
             'title',
             'Title',
-            getStyle(this._config) === 'listy'
-                ? 'Heading shown above the list'
-                : 'Falls back to the timer or entity name',
+            // The list style needs no explanation here: the field is the
+            // heading, and it sits directly above the list it names.
+            getStyle(this._config) === 'listy' ? '' : 'Falls back to the timer or entity name',
             this._renderPlainTextField('title'),
             { label: 'Text', icon: 'mdi:format-text' }
         );
@@ -673,7 +673,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     `
                 : html`
                         ${plain}
-                        <div class="date-helper">${helper}</div>
+                        ${helper ? html`<div class="date-helper">${helper}</div>` : nothing}
                     `
             }
             </div>

@@ -313,9 +313,6 @@ export class HaFormTfCountdowns extends LitElement {
           `
           : entries.map((entry, index) => this._renderEntry(entry, index, entries.length))}
 
-        ${entries.length === 0
-          ? html`<div class="empty">No countdowns pinned yet.</div>`
-          : nothing}
 
         <ha-button appearance="filled" ?disabled=${this.disabled} @click=${this._add}>
           <ha-icon slot="start" icon="mdi:plus"></ha-icon>
@@ -549,10 +546,6 @@ export class HaFormTfCountdowns extends LitElement {
       }
       .yaml-toggle {
         align-self: flex-start;
-      }
-      .empty {
-        font-size: 12px;
-        color: var(--secondary-text-color);
       }
     `;
   }

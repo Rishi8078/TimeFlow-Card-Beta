@@ -1309,16 +1309,25 @@ export class TimeFlowCardBeta extends LitElement {
 
       const palette = this._listRowPalette(kind, config);
 
+      // A timer someone named is called that. "Alexa Timer" is the fallback for
+      // the unnamed ones, not the headline for every row.
+      const label = (timer.userDefinedLabel || '').trim();
+      const title = label || ((useDeviceTitle && timer.deviceName) ? timer.deviceName : brand);
+
       return {
         key: timer.timerId ?? timer.entityId ?? `timer-${index}`,
         kind,
-        title: (useDeviceTitle && timer.deviceName) ? timer.deviceName : brand,
-        subtitle: TimerEntityService.getTimerSubtitle(
-          timer,
-          showSeconds,
-          this._localize || undefined,
-          compact
-        ),
+        title,
+        // Once the name is the title, the stock subtitle would say it twice -
+        // "1m remaining on Pizza timer" under a row already headed "Pizza".
+        subtitle: label
+          ? this._timerRowStatus(timer, showSeconds, compact, useDeviceTitle)
+          : TimerEntityService.getTimerSubtitle(
+              timer,
+              showSeconds,
+              this._localize || undefined,
+              compact
+            ),
         progress: Math.min(100, Math.max(0, timer.progress)),
         state: timer.finished ? 'finished' : (timer.isPaused ? 'paused' : 'running'),
         icon: palette.icon,
@@ -1327,6 +1336,37 @@ export class TimeFlowCardBeta extends LitElement {
         ringColor: palette.ringColor,
       };
     });
+  }
+
+  /**
+   * The label-free half of a timer row's subtitle, for rows whose title already
+   * carries the name. The device is appended only when the list spans more than
+   * one, since that is the one thing the title then no longer says.
+   */
+  private _timerRowStatus(
+    timer: TimerData,
+    showSeconds: boolean,
+    compact: boolean,
+    multiDevice: boolean
+  ): string {
+    const t = this._localize;
+    const time = TimerEntityService.formatRemainingTime(
+      timer.remaining,
+      showSeconds,
+      this._localize || undefined,
+      compact
+    );
+
+    let status: string;
+    if (timer.finished) {
+      status = t ? t('timer.complete') : 'Timer complete';
+    } else if (timer.isPaused) {
+      status = t ? t('timer.paused_without_label', { time }) : `Timer paused - ${time} left`;
+    } else {
+      status = t ? t('timer.remaining', { time }) : `${time} remaining`;
+    }
+
+    return multiDevice && timer.deviceName ? `${status} · ${timer.deviceName}` : status;
   }
 
   /**

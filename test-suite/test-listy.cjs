@@ -293,6 +293,32 @@ function hassWith(states) {
   check('Cap: ignores nonsense', CountdownService.resolveMaxTimers({ max_timers: 'lots' }) === 5);
 }
 
+// ── Row naming ──────────────────────────────────────────────────────────────
+
+{
+  const now = Date.now();
+  const entity = alexaEntity([
+    alexaTimer('a1', 'Pizza', 'ON', 60000, now + 60000, 600000),
+    alexaTimer('a2', undefined, 'ON', 90000, now + 90000, 600000),
+  ]);
+  const timers = TimerEntityService.listTimers(ALEXA, hassWith({ [ALEXA]: entity }));
+
+  const named = timers.find((t) => t.userDefinedLabel === 'Pizza');
+  check('Naming: a named timer carries its label', !!named);
+
+  // The card titles a row from userDefinedLabel when there is one, and falls
+  // back to the integration name otherwise - so the unnamed one must be
+  // distinguishable by that field being empty.
+  const unnamed = timers.find((t) => t.timerId === 'a2');
+  check('Naming: an unnamed timer has no label to use',
+    !!unnamed && !unnamed.userDefinedLabel, unnamed && String(unnamed.userDefinedLabel));
+
+  // The device is what the title falls back to before the brand, so it has to
+  // survive the parse either way.
+  check('Naming: both rows still know their device',
+    named.deviceName === 'Kitchen' && unnamed.deviceName === 'Kitchen');
+}
+
 // ── A pinned entry that follows a timer entity ──────────────────────────────
 
 {

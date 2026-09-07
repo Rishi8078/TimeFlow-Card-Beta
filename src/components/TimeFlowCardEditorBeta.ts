@@ -80,6 +80,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
     // in when it is not registered.
     @state() private _menuReady: boolean = !!customElements.get('ha-control-select-menu');
 
+    // ha-tooltip is newer again. Unregistered it would render its text inline,
+    // so the helper line stands in until the component exists.
+    @state() private _tooltipReady: boolean = !!customElements.get('ha-tooltip');
+
     // Fields the user has switched by hand. Auto-detection stops applying to
     // them: an empty template box is not a template, so re-detecting on the
     // next setConfig would silently throw the user back to the picker the
@@ -179,6 +183,14 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 font-size: 14px;
                 color: var(--primary-text-color);
             }
+            /* The only sign that a heading has something to say on hover. */
+            .editor-section-label.has-tooltip {
+                align-self: flex-start;
+                cursor: help;
+                text-decoration: underline dotted;
+                text-decoration-color: var(--secondary-text-color);
+                text-underline-offset: 3px;
+            }
 
             /* A section: heading plus its fields, grouped by a faint tint
                rather than a rule. The tint is mixed from the text colour, so it
@@ -254,6 +266,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
         if (!this._menuReady) {
             customElements.whenDefined('ha-control-select-menu').then(() => {
                 this._menuReady = true;
+            });
+        }
+        if (!this._tooltipReady) {
+            customElements.whenDefined('ha-tooltip').then(() => {
+                this._tooltipReady = true;
             });
         }
     }
@@ -359,6 +376,28 @@ export class TimeFlowCardEditorBeta extends LitElement {
      * well beside the segmented source picker, and they grow a row taller with
      * every style added.
      */
+    /**
+     * A section heading whose explanation lives on hover.
+     *
+     * ha-tooltip binds by id within one shadow root, which is why this works
+     * for headings the editor renders itself and not for anything inside
+     * ha-form. The dotted underline is the only cue that there is something to
+     * hover - without it the text would be undiscoverable.
+     */
+    private _sectionHeading(id: string, label: string, help: string): TemplateResult {
+        if (!this._tooltipReady) {
+            return html`
+                <span class="editor-section-label">${label}</span>
+                <div class="date-helper">${help}</div>
+            `;
+        }
+
+        return html`
+            <span id=${id} class="editor-section-label has-tooltip">${label}</span>
+            <ha-tooltip for=${id} placement="bottom-start">${help}</ha-tooltip>
+        `;
+    }
+
     private _renderStylePicker(displayCfg: CardConfig): TemplateResult {
         const style = displayCfg.style || 'classic';
 
@@ -540,11 +579,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
 
         return html`
             <div class="editor-section">
-                <span class="editor-section-label">Auto Discover</span>
+                ${this._sectionHeading(
+                    'sec-auto-discover',
+                    'Auto Discover',
+                    'Finds running timers on their own. Turn off whichever assistant you do not have.'
+                )}
                 ${form}
-                <div class="date-helper">
-                    Finds running timers on their own. Turn off whichever assistant you do not have.
-                </div>
             </div>
         `;
     }
@@ -731,8 +771,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${isList && showsTitle ? this._renderTitleField() : nothing}
             ${discoverySchema.length > 0 ? html`
                 <div class="editor-section">
-                    <span class="editor-section-label">Auto Discovery</span>
-                    <div class="date-helper">Finds running Alexa and Google Home timers on their own.</div>
+                    ${this._sectionHeading(
+                        'sec-discovery',
+                        'Auto Discovery',
+                        'Finds running Alexa and Google Home timers on their own.'
+                    )}
                     <ha-form
                         .hass=${this.hass}
                         .data=${displayCfg}
@@ -745,8 +788,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ` : nothing}
             ${countdownsSchema.length > 0 ? html`
                 <div class="editor-section">
-                    <span class="editor-section-label">Pinned Countdowns</span>
-                    <div class="date-helper">Always shown, alongside anything discovery finds.</div>
+                    ${this._sectionHeading(
+                        'sec-pinned',
+                        'Pinned Countdowns',
+                        'Always shown, alongside anything discovery finds.'
+                    )}
                     <ha-form
                         .hass=${this.hass}
                         .data=${displayCfg}

@@ -1537,13 +1537,12 @@ function e(e,t,i,s){var r,o=arguments.length,a=o<3?t:null===s?s=Object.getOwnPro
                 font-size: 14px;
                 color: var(--primary-text-color);
             }
-            /* The only sign that a heading has something to say on hover. */
+            /* The cursor is the only cue left that the heading has something to
+               say - the dotted underline read as a typo rather than an
+               affordance. */
             .editor-section-label.has-tooltip {
                 align-self: flex-start;
                 cursor: help;
-                text-decoration: underline dotted;
-                text-decoration-color: var(--secondary-text-color);
-                text-underline-offset: 3px;
             }
 
             /* A section: heading plus its fields, grouped by a faint tint

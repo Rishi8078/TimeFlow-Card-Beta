@@ -58,6 +58,8 @@ export const FIELD_LABELS: Record<string, string> = {
 export const FIELD_HELPERS: Record<string, string> = {
   // Section descriptions. ha-form-expandable renders these inside the panel,
   // so they cost nothing while it is collapsed.
+  'section_alexa_rows': 'Leave a field empty to keep the Alexa default.',
+  'section_google_rows': 'Leave a field empty to keep the Google Home default.',
   'section_header_icon': 'Shown beside the card title.',
   'section_appearance': 'Colours accept #4caf50, rgb(), a CSS name, var(--…), or an entity id.',
   'section_layout': 'Leave a field empty to let the card size itself.',

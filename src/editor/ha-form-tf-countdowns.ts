@@ -20,6 +20,8 @@ import './ha-form-tf-group';
 /** mdiDragHorizontalVariant - the glyph Home Assistant uses for a drag handle. */
 const DRAG_HANDLE_PATH = 'M21,11H3V9H21V11M21,13H3V15H21V13Z';
 
+const NO_HELPER = () => '';
+
 /** An entry counts to a date, or follows a timer entity. Never both. */
 type EntrySource = 'date' | 'timer';
 
@@ -402,7 +404,9 @@ export class HaFormTfCountdowns extends LitElement {
                 .schema=${this._entrySchema(entry, this._sourceOf(index))}
                 .disabled=${this.disabled}
                 .computeLabel=${this.computeLabel}
-                .computeHelper=${this.computeHelper}
+                // No helper text inside an entry: the panel is already a
+                // narrow column, and every field here is named plainly enough.
+                .computeHelper=${NO_HELPER}
                 @value-changed=${(e: CustomEvent) => this._entryChanged(index, e)}
               ></ha-form>
             `
@@ -433,10 +437,6 @@ export class HaFormTfCountdowns extends LitElement {
     return css`
       :host {
         display: block;
-        /* The section gap alone leaves the first pill tight against the
-           heading: a panel's border starts at its very edge, where a form
-           field's first row does not, so the same 8px reads smaller here. */
-        padding-top: 4px;
       }
       .list {
         display: flex;
@@ -450,8 +450,11 @@ export class HaFormTfCountdowns extends LitElement {
       .list > ha-expansion-panel {
         align-self: stretch;
       }
+      /* Not the theme's card radius: these are rows inside a section, and at a
+         theme radius of 24px they read as cards of their own. */
       ha-expansion-panel {
         --expansion-panel-content-padding: 0;
+        border-radius: 6px;
       }
       .entry-header {
         display: flex;

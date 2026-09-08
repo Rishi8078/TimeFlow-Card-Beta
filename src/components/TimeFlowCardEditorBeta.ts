@@ -774,6 +774,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${dateFields}
             ${isList ? nothing : this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${isList && showsTitle ? this._renderTitleField() : nothing}
+            <!-- computeLabel is deliberately not blanked here: ha-form hands it
+                 down to every field inside an entry, and blanking it left them
+                 all unlabelled. The repeater ignores its own label. -->
             ${countdownsSchema.length > 0 ? html`
                 <div class="editor-section">
                     ${this._sectionHeading(
@@ -786,7 +789,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         .data=${displayCfg}
                         .schema=${countdownsSchema}
                         @value-changed=${(e: CustomEvent) => this._formChanged(e)}
-                        .computeLabel=${() => ''}
+                        .computeLabel=${computeLabel}
                         .computeHelper=${this._computeHelper}
                     ></ha-form>
                 </div>

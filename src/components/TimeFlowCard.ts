@@ -46,6 +46,14 @@ const GRID_DOT_SIZE_MIN = 4;
 
 // Listy progress ring: 2 * pi * r for the r=16 circle drawn in _renderListyRing.
 const LISTY_RING_CIRCUMFERENCE = 100.53;
+
+/** The fields of a pinned countdown that accept a template or an entity id. */
+const ENTRY_TEMPLATE_KEYS = [
+  'target_date', 'creation_date', 'count_up_goal_date', 'count_up_cycle',
+  'timer_entity', 'title', 'subtitle', 'expired_text',
+  'header_icon', 'header_icon_color', 'header_icon_background',
+  'background_color', 'text_color', 'progress_color',
+] as const;
 const GRID_DOT_SIZE_MAX = 40;
 
 
@@ -1345,6 +1353,39 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   /**
+   * Resolves an entry's templates before its row is built.
+   *
+   * The card's own pass walks templateKeys over the top-level config only, so
+   * nothing inside `countdowns` was ever resolved - a template in an entry's
+   * title or colour rendered literally. Only its dates worked, and only because
+   * CountdownService resolves those itself on the way past.
+   */
+  private async _resolveEntryTemplates(entry: ListEntryConfig): Promise<CardConfig> {
+    const resolved = { ...entry } as CardConfig;
+    const pending: Array<Promise<void>> = [];
+
+    for (const key of ENTRY_TEMPLATE_KEYS) {
+      const value = resolved[key];
+      if (typeof value !== 'string') continue;
+
+      if (this.templateService.isTemplate(value)) {
+        pending.push(
+          this.templateService.resolveValue(value).then((result: string | undefined) => {
+            resolved[key] = result || undefined;
+          })
+        );
+      } else if (key !== 'timer_entity') {
+        // Same exception the card makes: an entity id here is the entity, not
+        // a value to read the state of.
+        resolved[key] = this.templateService.resolveStaticValue(value) || undefined;
+      }
+    }
+
+    if (pending.length > 0) await Promise.all(pending);
+    return resolved;
+  }
+
+  /**
    * The label-free half of a timer row's subtitle, for rows whose title already
    * carries the name. The device is appended only when the list spans more than
    * one, since that is the one thing the title then no longer says.
@@ -1393,7 +1434,7 @@ export class TimeFlowCardBeta extends LitElement {
       const entry = entries[index];
       if (!entry || typeof entry !== 'object') continue;
 
-      const entryConfig = { ...entry } as CardConfig;
+      const entryConfig = await this._resolveEntryTemplates(entry);
       const service = this._entryCountdown;
       service.beginPass();
 
@@ -1405,7 +1446,7 @@ export class TimeFlowCardBeta extends LitElement {
         await service.updateCountdown(entryConfig, this.hass);
         expired = service.isExpired();
         progress = await service.calculateProgress(entryConfig, this.hass);
-        subtitle = entry.subtitle || service.getSubtitle(
+        subtitle = entryConfig.subtitle || service.getSubtitle(
           entryConfig,
           this.hass,
           this._localize || undefined,
@@ -1413,11 +1454,11 @@ export class TimeFlowCardBeta extends LitElement {
         );
       } catch (err) {
         // A bad target_date on one entry must not take the whole list down.
-        subtitle = entry.subtitle || '';
+        subtitle = entryConfig.subtitle || '';
       }
 
-      if (expired && entry.expired_text) {
-        subtitle = entry.expired_text;
+      if (expired && entryConfig.expired_text) {
+        subtitle = entryConfig.expired_text;
       }
 
       // Whatever the entry read is part of what this card reacts to.
@@ -1426,7 +1467,7 @@ export class TimeFlowCardBeta extends LitElement {
       // A row following a timer entity should look like the timer rows above
       // it, not like a date countdown: the same chip, and its own paused and
       // finished states rather than only "expired".
-      const timerEntity = typeof entry.timer_entity === 'string' ? entry.timer_entity.trim() : '';
+      const timerEntity = typeof entryConfig.timer_entity === 'string' ? entryConfig.timer_entity.trim() : '';
       const timerData = timerEntity && this.hass
         ? TimerEntityService.getTimerData(timerEntity, this.hass)
         : null;
@@ -1438,11 +1479,11 @@ export class TimeFlowCardBeta extends LitElement {
         : 'event';
 
       // Anything the entry sets itself still wins over the kind's defaults.
-      const base = this._listRowPalette(kind, config, entry);
-      const icon = entry.header_icon || base.icon;
-      const iconColor = entry.header_icon_color || base.iconColor;
-      const iconBackground = entry.header_icon_background || base.iconBackground;
-      const ringColor = entry.progress_color || base.ringColor;
+      const base = this._listRowPalette(kind, config, entryConfig);
+      const icon = entryConfig.header_icon || base.icon;
+      const iconColor = entryConfig.header_icon_color || base.iconColor;
+      const iconBackground = entryConfig.header_icon_background || base.iconBackground;
+      const ringColor = entryConfig.progress_color || base.ringColor;
 
       const state: ListRow['state'] = timerData
         ? (timerData.finished ? 'finished' : (timerData.isPaused ? 'paused' : 'running'))
@@ -1455,15 +1496,15 @@ export class TimeFlowCardBeta extends LitElement {
       rows.push({
         key: `entry-${index}`,
         kind,
-        title: entry.title || fallbackTitle,
+        title: entryConfig.title || fallbackTitle,
         subtitle,
         progress: Math.min(100, Math.max(0, progress)),
         state,
         icon,
         iconColor,
         iconBackground,
-        background: entry.background_color,
-        textColor: entry.text_color,
+        background: entryConfig.background_color,
+        textColor: entryConfig.text_color,
         ringColor,
       });
     }

@@ -190,6 +190,12 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 align-self: flex-start;
                 cursor: help;
             }
+            /* The tooltip anchors to the heading by id and paints in an overlay,
+               but its host is an inline element - left alone it becomes a flex
+               item in the section column and takes a whole gap to itself. */
+            ha-tooltip {
+                display: contents;
+            }
 
             /* A section: heading plus its fields, grouped by a faint tint
                rather than a rule. The tint is mixed from the text colour, so it

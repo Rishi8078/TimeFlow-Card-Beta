@@ -322,25 +322,8 @@ export class HaFormTfCountdowns extends LitElement {
     `;
   }
 
-  /**
-   * A one-line summary of what the row is set to, shown beside its name while
-   * the panel is closed. Home Assistant's own object selector does the same
-   * through label_field / description_field - without it a collapsed list is
-   * just a column of titles.
-   */
-  private _entrySummary(entry: ListEntryConfig): string {
-    if (entry.timer_entity) return entry.timer_entity;
-    if (!entry.target_date) return 'No date set';
-    if (entry.target_date.includes('{{') || entry.target_date.includes('{%')) return 'Template';
-
-    const date = new Date(entry.target_date);
-    if (isNaN(date.getTime())) return entry.target_date;
-    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
   private _renderEntry(entry: ListEntryConfig, index: number, total: number): TemplateResult {
     const name = entry.title?.trim() || 'Untitled';
-    const summary = this._entrySummary(entry);
 
     return html`
       <ha-expansion-panel
@@ -359,10 +342,7 @@ export class HaFormTfCountdowns extends LitElement {
               ></ha-svg-icon>
             `
             : nothing}
-          <span class="entry-text">
-            <span class="entry-title">${name}</span>
-            <span class="entry-summary">${summary}</span>
-          </span>
+          <span class="entry-title">${name}</span>
           <span class="entry-actions">
             ${this._sortableReady
               ? nothing
@@ -453,6 +433,10 @@ export class HaFormTfCountdowns extends LitElement {
     return css`
       :host {
         display: block;
+        /* The section gap alone leaves the first pill tight against the
+           heading: a panel's border starts at its very edge, where a form
+           field's first row does not, so the same 8px reads smaller here. */
+        padding-top: 4px;
       }
       .list {
         display: flex;
@@ -468,7 +452,6 @@ export class HaFormTfCountdowns extends LitElement {
       }
       ha-expansion-panel {
         --expansion-panel-content-padding: 0;
-        border-radius: 6px;
       }
       .entry-header {
         display: flex;
@@ -477,26 +460,15 @@ export class HaFormTfCountdowns extends LitElement {
         width: 100%;
         min-width: 0;
       }
-      .entry-text {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        /* Takes the slack, so the actions sit against the chevron rather than
-           floating in the middle of the row. */
-        flex: 1 1 auto;
-      }
       .entry-title {
         font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-      .entry-summary {
-        font-size: 12px;
-        color: var(--secondary-text-color);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        /* Takes the slack, so the actions sit against the chevron rather than
+           floating in the middle of the row. */
+        flex: 1 1 auto;
+        min-width: 0;
       }
       .entry-actions {
         display: flex;

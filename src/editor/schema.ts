@@ -251,13 +251,20 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
       ],
     },
     { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
-    {
-      type: 'grid',
-      schema: [
-        { name: 'alexa_icon', selector: { icon: {} } },
-        { name: 'google_icon', selector: { icon: {} } },
-      ],
-    },
+    // One group per source: the icon and the three colours that make up a row
+    // belong together, and side by side the two groups make the pairing obvious.
+    group('alexa', 'Alexa Rows', [
+      { name: 'alexa_icon', selector: { icon: {} } },
+      templatable('alexa_color', { text: { placeholder: '#009bbd' } }),
+      templatable('alexa_background', { text: { placeholder: '#dff3f7' } }),
+      templatable('alexa_ring', { text: { placeholder: '#94809a' } }),
+    ]),
+    group('google', 'Google Home Rows', [
+      { name: 'google_icon', selector: { icon: {} } },
+      templatable('google_color', { text: { placeholder: '#34a853' } }),
+      templatable('google_background', { text: { placeholder: '#fef3c7' } }),
+      templatable('google_ring', { text: { placeholder: '#b2d4bd' } }),
+    ]),
     // How those rows read their time. It lives here rather than in a section
     // of its own because these are the rows it formats: a pinned date row
     // formats itself from its own entry, and only a pinned *entity* row also

@@ -183,8 +183,17 @@ export interface CardConfig {
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
   countdowns?: ListEntryConfig[]; // Countdown entries pinned to the list, alongside any discovered timers
+  // Per-source styling for the discovered rows. Colour and background are a
+  // pair: the glyph sits on the chip, so setting one without the other leaves
+  // a mismatched pill.
   alexa_icon?: string;            // Icon for Alexa rows (default mdi:amazon-alexa)
+  alexa_color?: string;           // Alexa glyph colour
+  alexa_background?: string;      // Alexa chip background
+  alexa_ring?: string;            // Alexa progress ring; falls back to progress_color
   google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
+  google_color?: string;          // Google glyph colour
+  google_background?: string;     // Google chip background
+  google_ring?: string;           // Google progress ring; falls back to progress_color
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
 
   // Display configuration

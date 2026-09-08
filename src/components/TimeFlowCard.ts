@@ -1141,7 +1141,13 @@ export class TimeFlowCardBeta extends LitElement {
       'expired_text',
       'header_icon',
       'header_icon_color',
-      'header_icon_background'
+      'header_icon_background',
+      'alexa_color',
+      'alexa_background',
+      'alexa_ring',
+      'google_color',
+      'google_background',
+      'google_ring'
     ] as const;
 
     // Resolve templates AND entity IDs where applicable.
@@ -1481,21 +1487,24 @@ export class TimeFlowCardBeta extends LitElement {
   ): { icon: string; iconColor: string; iconBackground: string; ringColor: string } {
     const accent = config.progress_color;
 
+    // The brand tints are defaults, not fixtures. Colour and background move
+    // together on purpose: setting a glyph colour alone leaves it on the stock
+    // pastel chip, which is what made the old alexa_color half a control.
     if (kind === 'alexa') {
       return {
         icon: config.alexa_icon || 'mdi:amazon-alexa',
-        iconColor: '#009bbd',
-        iconBackground: '#dff3f7',
-        ringColor: accent || '#94809a',
+        iconColor: config.alexa_color || '#009bbd',
+        iconBackground: config.alexa_background || '#dff3f7',
+        ringColor: config.alexa_ring || accent || '#94809a',
       };
     }
 
     if (kind === 'google') {
       return {
         icon: config.google_icon || 'mdi:google-home',
-        iconColor: '#34a853',
-        iconBackground: '#fef3c7',
-        ringColor: accent || '#b2d4bd',
+        iconColor: config.google_color || '#34a853',
+        iconBackground: config.google_background || '#fef3c7',
+        ringColor: config.google_ring || accent || '#b2d4bd',
       };
     }
 

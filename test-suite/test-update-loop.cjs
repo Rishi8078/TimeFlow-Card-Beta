@@ -719,10 +719,8 @@ async function testPassesDoNotOverlap() {
 // them there was no deadline at all, so a pinned timer could finish up to the
 // 60s backoff cap late.
 async function testPinnedRowsSetTheWakeDeadline() {
-  // Discovery on only to satisfy the validator, which still rejects a listy card
-  // with pinned rows and no other source; no Alexa entities exist here, so the
-  // pinned row is the only one.
-  const LISTY = { type: 'custom:timeflow-card-beta', style: 'listy', title: 'Pinned', auto_discover_alexa: true };
+  // No other source on purpose: the validator used to reject pinned-only listy.
+  const LISTY = { type: 'custom:timeflow-card-beta', style: 'listy', title: 'Pinned' };
 
   const counting = await mountCard({
     ...LISTY,

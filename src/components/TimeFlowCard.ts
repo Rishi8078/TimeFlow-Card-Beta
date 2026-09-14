@@ -686,10 +686,6 @@ export class TimeFlowCardBeta extends LitElement {
         border: 1px solid var(--timeflow-listy-row-border);
       }
 
-      .listy-count.is-empty {
-        opacity: 0.65;
-      }
-
       .listy-rows {
         display: flex;
         flex-direction: column;
@@ -711,16 +707,28 @@ export class TimeFlowCardBeta extends LitElement {
         border: 1px solid var(--timeflow-listy-row-border);
       }
 
-      /* The same capsule as a real row, only quieter: nothing is pending, so a
-         dashed outline overstated it. */
+      /* The same capsule as a real row, only quieter. Muted with theme colours,
+         never opacity: fading a translucent surface lands differently on every
+         theme. Same tokens HA's tile and badge use; fallbacks for older HA. */
       .listy-row.is-empty {
-        opacity: 0.7;
+        background: var(--ha-color-fill-neutral-quiet-resting, var(--secondary-background-color, var(--timeflow-listy-row-bg)));
+      }
+
+      .listy-row.is-empty .listy-row-chip {
+        background: var(--ha-card-background, var(--card-background-color, #fff));
       }
 
       .listy-row.is-empty .listy-row-title,
-      .listy-row.is-empty .listy-row-subtitle,
+      .listy-row.is-empty .listy-row-subtitle {
+        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+      }
+
       .listy-row.is-empty .listy-row-chip ha-icon {
-        opacity: 0.6;
+        color: var(--disabled-color, var(--secondary-text-color));
+      }
+
+      .listy-row.is-empty .listy-ring-track {
+        stroke: var(--disabled-color, var(--timeflow-listy-ring-track));
       }
 
       .listy-row-chip {
@@ -1780,8 +1788,7 @@ export class TimeFlowCardBeta extends LitElement {
   /**
    * The empty state gets a pill of its own rather than a line of grey text: a
    * card that keeps its shape when the last timer finishes does not make the
-   * dashboard jump, and the dashed outline reads as "waiting" rather than
-   * "broken".
+   * dashboard jump.
    */
   private _renderListyEmpty(): TemplateResult {
     const t = this._localize;

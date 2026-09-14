@@ -748,6 +748,23 @@ async function testPinnedRowsSetTheWakeDeadline() {
     many.card.getCardSize() === 4, `size ${many.card.getCardSize()}`);
 }
 
+// A listy card whose rows hold still must not repaint: the rows array is rebuilt
+// every pass, and it used to be reactive state, so each rebuild repainted.
+async function testStillListyCardDoesNotRepaint() {
+  const mount = await mountCard({
+    type: 'custom:timeflow-card-beta', style: 'listy', title: 'Pinned',
+    countdowns: [{ title: 'Done', target_date: '2026-01-01T00:00:00' }],
+  });
+  await mount.clock.advance(120_000);
+  mount.counters.renders = 0;
+  mount.counters.recomputes = 0;
+  await mount.clock.advance(120_000);
+  check('a listy card with still rows never repaints',
+    mount.counters.recomputes > 0 && mount.counters.renders === 0,
+    `${mount.counters.recomputes} wakes, ${mount.counters.renders} renders in 2 minutes`);
+  mount.card.disconnectedCallback();
+}
+
 // ---------------------------------------------------------------- main
 (async () => {
   console.log('\nUpdate-loop harness\n' + '='.repeat(62));
@@ -763,6 +780,7 @@ async function testPinnedRowsSetTheWakeDeadline() {
   await testNewTimerOnSecondDeviceIsFound();
   await testTemplatesSurviveAConfigChange();
   await testDaysOnlyCardDoesNotRepaint();
+  await testStillListyCardDoesNotRepaint();
   await testExpiryIsNotMissedByBackoff();
   await testLongCountdownDoesNotSpin();
   await testStoppedCardRestartsOnConfigChange();

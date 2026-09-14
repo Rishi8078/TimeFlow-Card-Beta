@@ -91,8 +91,9 @@ export class TimeFlowCardBeta extends LitElement {
   // Rows for the 'listy' style: every live timer the card can see plus any
   // countdowns pinned through `countdowns`, already sorted, capped and resolved
   // display strings. Left empty for every other style, which never asks for
-  // more than one timer and should not pay to enumerate the rest.
-  @state() private _listRows: ListRow[] = [];
+  // more than one timer and should not pay to enumerate the rest. Not @state:
+  // it is rebuilt every pass, and _displaySignature already repaints on change.
+  private _listRows: ListRow[] = [];
 
   // Timer rows only, kept alongside _listRows so the wake plan can find the
   // soonest deadline without re-parsing the display strings.
@@ -1313,7 +1314,10 @@ export class TimeFlowCardBeta extends LitElement {
    */
   private _computeListSignature(_compact: boolean): string {
     return this._listRows
-      .map((row) => [row.key, row.title, row.subtitle, Math.round(row.progress), row.state].join('\u0001'))
+      .map((row) => [
+        row.key, row.kind, row.title, row.subtitle, Math.round(row.progress), row.state, row.icon,
+        row.iconColor, row.iconBackground, row.background, row.textColor, row.ringColor,
+      ].join('\u0001'))
       .join('\u0002');
   }
 

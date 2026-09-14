@@ -1,7 +1,7 @@
 import { LitElement, html, css, CSSResult, TemplateResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
-import { ListEntryConfig } from '../types/index';
-import './ha-form-tf-template';
+import { ListEntryConfig, subscribeRenderTemplate, UnsubscribeFunc } from '../types/index';
+import { HaFormTfTemplate } from './ha-form-tf-template';
 import './ha-form-tf-group';
 
 /**
@@ -86,6 +86,58 @@ export class HaFormTfCountdowns extends LitElement {
         this._sortableReady = true;
       });
     }
+  }
+
+  /** Rendered text for each templated title in the list, one subscription apiece. */
+  private _titles = new Map<string, { text?: string; unsub: Promise<UnsubscribeFunc> }>();
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    for (const sub of this._titles.values()) sub.unsub.then((u) => u()).catch(() => {});
+    this._titles.clear();
+  }
+
+  /**
+   * Keeps one render_template subscription per templated title that is still in
+   * the list, and drops the rest - a title being typed changes on every key.
+   */
+  protected willUpdate(changed: Map<string, unknown>): void {
+    if (!changed.has('data') && !changed.has('hass')) return;
+
+    const wanted = new Set(
+      this._entries
+        .map((e) => e.title?.trim() ?? '')
+        .filter((t) => HaFormTfTemplate.isTemplate(t))
+    );
+    for (const [template, sub] of this._titles) {
+      if (wanted.has(template)) continue;
+      sub.unsub.then((u) => u()).catch(() => {});
+      this._titles.delete(template);
+    }
+
+    const connection = this.hass?.connection;
+    if (!connection) return;
+    for (const template of wanted) {
+      if (this._titles.has(template)) continue;
+      const sub: { text?: string; unsub: Promise<UnsubscribeFunc> } = {
+        unsub: subscribeRenderTemplate(connection, (r) => {
+          sub.text = r?.result == null ? '' : String(r.result).trim();
+          this.requestUpdate();
+        }, { template, strict: false }),
+      };
+      // A template HA refuses to render still needs a heading.
+      sub.unsub.catch(() => { sub.text = ''; this.requestUpdate(); });
+      this._titles.set(template, sub);
+    }
+  }
+
+  /** The row heading: the title, its rendered value if it is a template. */
+  private _displayTitle(raw?: string): string {
+    const title = raw?.trim();
+    if (!title) return 'Untitled';
+    if (!HaFormTfTemplate.isTemplate(title)) return title;
+    const text = this._titles.get(title)?.text;
+    return text === undefined ? '…' : (text || 'Untitled');
   }
 
   private get _entries(): ListEntryConfig[] {
@@ -335,7 +387,7 @@ export class HaFormTfCountdowns extends LitElement {
   }
 
   private _renderEntry(entry: ListEntryConfig, index: number, total: number): TemplateResult {
-    const name = entry.title?.trim() || 'Untitled';
+    const name = this._displayTitle(entry.title);
 
     return html`
       <ha-expansion-panel
@@ -352,6 +404,15 @@ export class HaFormTfCountdowns extends LitElement {
                 .path=${DRAG_HANDLE_PATH}
                 @click=${(e: Event) => e.stopPropagation()}
               ></ha-svg-icon>
+            `
+            : nothing}
+          ${this._yamlReady
+            ? html`
+              <ha-icon-button
+                .path=${this._yamlMode[index] ? PENCIL_PATH : CODE_BRACES_PATH}
+                .label=${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
+                @click=${(e: Event) => { e.stopPropagation(); this._toggleYaml(index); }}
+              ></ha-icon-button>
             `
             : nothing}
           <span class="entry-title">${name}</span>
@@ -372,15 +433,6 @@ export class HaFormTfCountdowns extends LitElement {
                   @click=${(e: Event) => { e.stopPropagation(); this._move(index, 1); }}
                 ></ha-icon-button>
               `}
-            ${this._yamlReady
-              ? html`
-                <ha-icon-button
-                  .path=${this._yamlMode[index] ? PENCIL_PATH : CODE_BRACES_PATH}
-                  .label=${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
-                  @click=${(e: Event) => { e.stopPropagation(); this._toggleYaml(index); }}
-                ></ha-icon-button>
-              `
-              : nothing}
             <ha-icon-button
               .path=${'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'}
               label="Remove"

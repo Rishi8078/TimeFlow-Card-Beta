@@ -707,28 +707,29 @@ export class TimeFlowCardBeta extends LitElement {
         border: 1px solid var(--timeflow-listy-row-border);
       }
 
-      /* The same capsule as a real row, only quieter. Muted with theme colours,
-         never opacity: fading a translucent surface lands differently on every
-         theme. Same tokens HA's tile and badge use; fallbacks for older HA. */
+      /* The same capsule as a real row, only quieter. Every colour is the card's
+         own background tinted by its own text colour, never a theme token: themes
+         pair --secondary-background-color and --disabled-color with any card, so
+         those landed black on a light translucent card. */
       .listy-row.is-empty {
-        background: var(--ha-color-fill-neutral-quiet-resting, var(--secondary-background-color, var(--timeflow-listy-row-bg)));
+        --timeflow-listy-empty-base: var(--timeflow-card-background-color, var(--ha-card-background, var(--card-background-color, #fff)));
+        background: color-mix(in srgb, var(--timeflow-listy-empty-base), currentColor 6%);
       }
 
       .listy-row.is-empty .listy-row-chip {
-        background: var(--ha-card-background, var(--card-background-color, #fff));
+        background: color-mix(in srgb, var(--timeflow-listy-empty-base), currentColor 12%);
       }
 
-      .listy-row.is-empty .listy-row-title,
       .listy-row.is-empty .listy-row-subtitle {
-        color: var(--timeflow-card-text-color, var(--secondary-text-color));
+        color: color-mix(in srgb, currentColor 65%, transparent);
       }
 
       .listy-row.is-empty .listy-row-chip ha-icon {
-        color: var(--disabled-color, var(--secondary-text-color));
+        color: color-mix(in srgb, currentColor 45%, transparent);
       }
 
       .listy-row.is-empty .listy-ring-track {
-        stroke: var(--disabled-color, var(--timeflow-listy-ring-track));
+        stroke: color-mix(in srgb, currentColor 15%, transparent);
       }
 
       .listy-row-chip {

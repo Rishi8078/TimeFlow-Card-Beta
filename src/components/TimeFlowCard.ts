@@ -645,6 +645,9 @@ export class TimeFlowCardBeta extends LitElement {
         --timeflow-listy-ring-track: rgba(0, 0, 0, 0.08);
         --timeflow-listy-ring-track: color-mix(in srgb, currentColor 12%, transparent);
         --timeflow-listy-row-text: var(--timeflow-card-text-color, var(--primary-text-color, #141416));
+        /* The card's own background, for surfaces that must match whatever card
+           they sit on (see the empty row). */
+        --timeflow-listy-card-base: var(--timeflow-card-background-color, var(--ha-card-background, var(--card-background-color, #fff)));
       }
 
       .listy-header {
@@ -681,8 +684,8 @@ export class TimeFlowCardBeta extends LitElement {
         font-size: 0.75rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
-        color: var(--secondary-text-color, #52525b);
-        background: var(--timeflow-listy-row-bg);
+        color: color-mix(in srgb, currentColor 65%, transparent);
+        background: color-mix(in srgb, var(--timeflow-listy-card-base), currentColor 6%);
         border: 1px solid var(--timeflow-listy-row-border);
       }
 
@@ -712,12 +715,11 @@ export class TimeFlowCardBeta extends LitElement {
          pair --secondary-background-color and --disabled-color with any card, so
          those landed black on a light translucent card. */
       .listy-row.is-empty {
-        --timeflow-listy-empty-base: var(--timeflow-card-background-color, var(--ha-card-background, var(--card-background-color, #fff)));
-        background: color-mix(in srgb, var(--timeflow-listy-empty-base), currentColor 6%);
+        background: color-mix(in srgb, var(--timeflow-listy-card-base), currentColor 6%);
       }
 
       .listy-row.is-empty .listy-row-chip {
-        background: color-mix(in srgb, var(--timeflow-listy-empty-base), currentColor 12%);
+        background: color-mix(in srgb, var(--timeflow-listy-card-base), currentColor 12%);
       }
 
       .listy-row.is-empty .listy-row-subtitle {

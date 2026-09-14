@@ -2575,12 +2575,10 @@ export class TimeFlowCardBeta extends LitElement {
 
     // The list grows with the number of timers, so its height cannot be read off
     // the config the way every other style's can: one row for the header plus
-    // one per timer on screen, never more than the configured cap. Reporting
-    // the cap instead would have a card holding one timer claim six rows' worth
-    // of space in every masonry calculation.
+    // one per row on screen. listAllTimers already caps the timers; pinned rows
+    // are never capped, so capping here again undercounted them.
     if (style === 'listy') {
-      const cap = CountdownService.resolveMaxTimers(this.config);
-      return 1 + Math.min(cap, Math.max(1, this._listRows.length));
+      return 1 + Math.max(1, this._listRows.length);
     }
     
     if (height) {

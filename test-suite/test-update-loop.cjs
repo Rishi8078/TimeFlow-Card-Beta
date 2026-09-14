@@ -738,6 +738,14 @@ async function testPinnedRowsSetTheWakeDeadline() {
   });
   check('Pinned: a count-up row sets no deadline',
     up.card._buildWakePlan().deadlineMs === null);
+
+  const many = await mountCard({
+    ...LISTY,
+    max_timers: 1,
+    countdowns: ['A', 'B', 'C'].map((title) => ({ title, target_date: '2026-09-02T00:00:00' })),
+  });
+  check('Pinned: card size counts every pinned row past max_timers',
+    many.card.getCardSize() === 4, `size ${many.card.getCardSize()}`);
 }
 
 // ---------------------------------------------------------------- main

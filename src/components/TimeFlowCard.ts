@@ -98,6 +98,10 @@ export class TimeFlowCardBeta extends LitElement {
   // soonest deadline without re-parsing the display strings.
   private _listTimers: TimerData[] = [];
 
+  // Soonest moment a pinned row reaches zero, in ms from the last pass, or null.
+  // Pinned rows are not in _listTimers, so the wake plan needs this separately.
+  private _listEntryDeadlineMs: number | null = null;
+
   @state() private _expired: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
   @state() private _initialized: boolean = false; // Track initialization
@@ -991,20 +995,21 @@ export class TimeFlowCardBeta extends LitElement {
     // let a ten-second row tick at a five-minute row's cadence when the sort put
     // a finished timer on top.
     if (config.style === 'listy') {
-      let soonest = Number.POSITIVE_INFINITY;
+      // Discovered timers and pinned rows alike: whichever reaches zero first.
+      let soonestMs = this._listEntryDeadlineMs ?? Number.POSITIVE_INFINITY;
       for (const timer of this._listTimers) {
-        if (timer.isActive && timer.remaining > 0 && timer.remaining < soonest) {
-          soonest = timer.remaining;
+        if (timer.isActive && timer.remaining > 0 && timer.remaining * 1000 < soonestMs) {
+          soonestMs = timer.remaining * 1000;
         }
       }
-      const hasRunning = soonest !== Number.POSITIVE_INFINITY;
+      const hasRunning = Number.isFinite(soonestMs);
       return {
         // Rows that are all finished or paused have nothing left to count, but
         // the card must stay awake to notice a new timer starting on a device it
         // is already watching.
         idle: false,
         maxIntervalMs: IDLE_WAKE_CAP_MS,
-        deadlineMs: hasRunning ? soonest * 1000 : null,
+        deadlineMs: hasRunning ? soonestMs : null,
       };
     }
 
@@ -1455,7 +1460,9 @@ export class TimeFlowCardBeta extends LitElement {
    */
   private async _buildEntryRows(config: CardConfig): Promise<ListRow[]> {
     const entries = Array.isArray(config.countdowns) ? config.countdowns : [];
+    this._listEntryDeadlineMs = null;
     if (entries.length === 0) return [];
+    let soonestMs = Number.POSITIVE_INFINITY;
 
     const compact = config.compact_format !== false;
     const rows: ListRow[] = [];
@@ -1471,10 +1478,12 @@ export class TimeFlowCardBeta extends LitElement {
       let subtitle = '';
       let progress = 0;
       let expired = false;
+      let remainingMs = 0;
 
       try {
         await service.updateCountdown(entryConfig, this.hass);
         expired = service.isExpired();
+        remainingMs = service.getTimeRemaining().total;
         progress = await service.calculateProgress(entryConfig, this.hass);
         subtitle = entryConfig.subtitle || service.getSubtitle(
           entryConfig,
@@ -1519,6 +1528,13 @@ export class TimeFlowCardBeta extends LitElement {
         ? (timerData.finished ? 'finished' : (timerData.isPaused ? 'paused' : 'running'))
         : (expired ? 'finished' : 'running');
 
+      // Only something actually counting down has a zero to wake for: a paused
+      // timer's remaining time is frozen, and a count-up never arrives.
+      const counting = timerData
+        ? timerData.isActive && !timerData.finished
+        : !expired && entryConfig.mode !== 'count_up';
+      if (counting && remainingMs > 0 && remainingMs < soonestMs) soonestMs = remainingMs;
+
       const fallbackTitle = timerEntity && this.hass
         ? TimerEntityService.getTimerTitle(timerEntity, this.hass)
         : 'Countdown';
@@ -1539,6 +1555,7 @@ export class TimeFlowCardBeta extends LitElement {
       });
     }
 
+    this._listEntryDeadlineMs = Number.isFinite(soonestMs) ? soonestMs : null;
     return rows;
   }
 

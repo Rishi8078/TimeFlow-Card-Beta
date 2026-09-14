@@ -715,6 +715,33 @@ async function testPassesDoNotOverlap() {
   check('Passes: calls made during a pass collapse into one re-run', runs === 2, `${runs} runs`);
 }
 
+// A listy card whose only rows are pinned: before the wake plan knew about
+// them there was no deadline at all, so a pinned timer could finish up to the
+// 60s backoff cap late.
+async function testPinnedRowsSetTheWakeDeadline() {
+  // Discovery on only to satisfy the validator, which still rejects a listy card
+  // with pinned rows and no other source; no Alexa entities exist here, so the
+  // pinned row is the only one.
+  const LISTY = { type: 'custom:timeflow-card-beta', style: 'listy', title: 'Pinned', auto_discover_alexa: true };
+
+  const counting = await mountCard({
+    ...LISTY,
+    countdowns: [{ title: 'Soon', target_date: '2026-09-02T00:00:00' }],
+  });
+  const plan = counting.card._buildWakePlan();
+  const remaining = counting.card._entryCountdown.getTimeRemaining().total;
+  check('Pinned: a counting row sets the wake deadline',
+    plan.deadlineMs !== null && Math.abs(plan.deadlineMs - remaining) < 1000,
+    `deadline ${plan.deadlineMs}, remaining ${remaining}`);
+
+  const up = await mountCard({
+    ...LISTY,
+    countdowns: [{ title: 'Since', target_date: '2026-01-01T00:00:00', mode: 'count_up' }],
+  });
+  check('Pinned: a count-up row sets no deadline',
+    up.card._buildWakePlan().deadlineMs === null);
+}
+
 // ---------------------------------------------------------------- main
 (async () => {
   console.log('\nUpdate-loop harness\n' + '='.repeat(62));
@@ -736,6 +763,7 @@ async function testPassesDoNotOverlap() {
   await testSecondsCardStillRepaints();
   await testCountUpKeepsTicking();
   await testPassesDoNotOverlap();
+  await testPinnedRowsSetTheWakeDeadline();
 
   console.log('\nBaseline (60s of virtual time, one card)\n' + '-'.repeat(62));
   await baseline('days-only target_date', { ...DAYS_ONLY_CONFIG }, { entities: 1500 });

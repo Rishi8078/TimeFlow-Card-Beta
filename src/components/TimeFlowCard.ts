@@ -770,10 +770,9 @@ export class TimeFlowCardBeta extends LitElement {
         white-space: nowrap;
       }
 
-      /* A row with its own background sets the text colour for both lines: the
-         theme's secondary colour is picked for the theme's surface, not for an
-         arbitrary one the user chose. */
-      .listy-row.has-custom-bg .listy-row-subtitle {
+      /* A row's own text colour tints both lines, the subtitle dimmed. Keyed on
+         text_color, not background: a background alone leaves the text as it was. */
+      .listy-row.has-text-color .listy-row-subtitle {
         color: var(--timeflow-listy-row-text);
         opacity: 0.7;
       }
@@ -1672,12 +1671,12 @@ export class TimeFlowCardBeta extends LitElement {
    */
   private _renderListyRow(row: ListRow): TemplateResult {
     const rowStyles = [
-      ...(row.background ? [`background: ${row.background}`, 'border-color: transparent'] : []),
+      ...(row.background ? [`background: ${row.background}`] : []),
       ...(row.textColor ? [`--timeflow-listy-row-text: ${row.textColor}`] : []),
     ].join('; ');
 
     return html`
-      <div class="listy-row ${row.state} ${row.background ? 'has-custom-bg' : ''}" style="${rowStyles}">
+      <div class="listy-row ${row.state} ${row.textColor ? 'has-text-color' : ''}" style="${rowStyles}">
         <div
           class="listy-row-chip"
           style="${row.iconBackground ? `background: ${row.iconBackground}` : ''}"

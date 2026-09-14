@@ -20,7 +20,13 @@ import './ha-form-tf-group';
 /** mdiDragHorizontalVariant - the glyph Home Assistant uses for a drag handle. */
 const DRAG_HANDLE_PATH = 'M21,11H3V9H21V11M21,13H3V15H21V13Z';
 
+// No helper text inside an entry: the panel is a narrow column, and every
+// field in it is named plainly enough.
 const NO_HELPER = () => '';
+
+/** mdiCodeBraces / mdiPencil, for the header's YAML toggle. */
+const CODE_BRACES_PATH = 'M8,3A2,2 0 0,0 6,5V9A2,2 0 0,1 4,11H3V13H4A2,2 0 0,1 6,15V19A2,2 0 0,0 8,21H10V19H8V14A2,2 0 0,0 6,12A2,2 0 0,0 8,10V5H10V3M16,3A2,2 0 0,1 18,5V9A2,2 0 0,0 20,11H21V13H20A2,2 0 0,0 18,15V19A2,2 0 0,1 16,21H14V19H16V14A2,2 0 0,1 18,12A2,2 0 0,1 16,10V5H14V3H16Z';
+const PENCIL_PATH = 'M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z';
 
 /** An entry counts to a date, or follows a timer entity. Never both. */
 type EntrySource = 'date' | 'timer';
@@ -219,6 +225,10 @@ export class HaFormTfCountdowns extends LitElement {
 
   private _toggleYaml(index: number): void {
     this._yamlMode = { ...this._yamlMode, [index]: !this._yamlMode[index] };
+    // The button lives in the header now, so it can be pressed on a closed
+    // row - open it, or the switch would happen out of sight.
+    this._expanded = { ...this._expanded, [index]: true };
+    this._loaded = { ...this._loaded, [index]: true };
   }
 
   private _entryChanged(index: number, ev: CustomEvent): void {
@@ -362,6 +372,15 @@ export class HaFormTfCountdowns extends LitElement {
                   @click=${(e: Event) => { e.stopPropagation(); this._move(index, 1); }}
                 ></ha-icon-button>
               `}
+            ${this._yamlReady
+              ? html`
+                <ha-icon-button
+                  .path=${this._yamlMode[index] ? PENCIL_PATH : CODE_BRACES_PATH}
+                  .label=${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
+                  @click=${(e: Event) => { e.stopPropagation(); this._toggleYaml(index); }}
+                ></ha-icon-button>
+              `
+              : nothing}
             <ha-icon-button
               .path=${'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z'}
               label="Remove"
@@ -404,30 +423,12 @@ export class HaFormTfCountdowns extends LitElement {
                 .schema=${this._entrySchema(entry, this._sourceOf(index))}
                 .disabled=${this.disabled}
                 .computeLabel=${this.computeLabel}
-                // No helper text inside an entry: the panel is already a
-                // narrow column, and every field here is named plainly enough.
                 .computeHelper=${NO_HELPER}
                 @value-changed=${(e: CustomEvent) => this._entryChanged(index, e)}
               ></ha-form>
             `
             : nothing}
 
-          ${this._loaded[index] && this._yamlReady
-            ? html`
-              <ha-button
-                appearance="plain"
-                size="small"
-                class="yaml-toggle"
-                @click=${() => this._toggleYaml(index)}
-              >
-                <ha-icon
-                  slot="start"
-                  icon=${this._yamlMode[index] ? 'mdi:form-select' : 'mdi:code-braces'}
-                ></ha-icon>
-                ${this._yamlMode[index] ? 'Show visual editor' : 'Edit in YAML'}
-              </ha-button>
-            `
-            : nothing}
         </div>
       </ha-expansion-panel>
     `;
@@ -518,9 +519,6 @@ export class HaFormTfCountdowns extends LitElement {
       .entry-source ha-control-select {
         --control-select-thickness: 40px;
         --control-select-border-radius: 10px;
-      }
-      .yaml-toggle {
-        align-self: flex-start;
       }
     `;
   }

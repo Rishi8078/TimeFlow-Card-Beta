@@ -685,6 +685,36 @@ async function churn(label, config, hassOpts, { changesPerSecond = 20, seconds =
   mount.card.disconnectedCallback();
 }
 
+// Passes share CountdownService instances and await mid-way, so two running at
+// once corrupt each other. Fire three back-to-back and watch the pass body.
+async function testPassesDoNotOverlap() {
+  const { card } = await mountCard(YEAR_CONFIG);
+  let inFlight = 0;
+  let maxInFlight = 0;
+  let runs = 0;
+  const runPass = card._runPass.bind(card);
+  card._runPass = async () => {
+    inFlight++;
+    runs++;
+    maxInFlight = Math.max(maxInFlight, inFlight);
+    try {
+      await flush();
+      return await runPass();
+    } finally {
+      inFlight--;
+    }
+  };
+
+  await Promise.all([
+    card._updateCountdownAndRender(),
+    card._updateCountdownAndRender(),
+    card._updateCountdownAndRender(),
+  ]);
+
+  check('Passes: overlapping calls never run two passes at once', maxInFlight === 1, `max ${maxInFlight}`);
+  check('Passes: calls made during a pass collapse into one re-run', runs === 2, `${runs} runs`);
+}
+
 // ---------------------------------------------------------------- main
 (async () => {
   console.log('\nUpdate-loop harness\n' + '='.repeat(62));
@@ -705,6 +735,7 @@ async function churn(label, config, hassOpts, { changesPerSecond = 20, seconds =
   await testStoppedCardRestartsOnConfigChange();
   await testSecondsCardStillRepaints();
   await testCountUpKeepsTicking();
+  await testPassesDoNotOverlap();
 
   console.log('\nBaseline (60s of virtual time, one card)\n' + '-'.repeat(62));
   await baseline('days-only target_date', { ...DAYS_ONLY_CONFIG }, { entities: 1500 });

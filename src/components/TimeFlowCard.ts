@@ -1126,7 +1126,38 @@ export class TimeFlowCardBeta extends LitElement {
   /**
    * Resolves templates and updates countdown data, then requests re-render
    */
-  async _updateCountdownAndRender() {
+  // The pass in flight, if any, and whether another was asked for meanwhile.
+  private _pass: Promise<void> | null = null;
+  private _passQueued = false;
+
+  /**
+   * Runs one update pass at a time. Callers (scheduler wake, every hass change,
+   * template results, setConfig) do not await each other, and a pass awaits
+   * template renders mid-way - two could interleave on the shared
+   * CountdownService instances, handing one pinned row another's progress and
+   * clearing the watch set under a pass still using it. Calls made during a
+   * pass collapse into a single re-run, and every caller's promise settles once
+   * the pass reflecting its call has finished.
+   */
+  _updateCountdownAndRender(): Promise<void> {
+    if (this._pass) {
+      this._passQueued = true;
+      return this._pass;
+    }
+    this._pass = (async () => {
+      try {
+        do {
+          this._passQueued = false;
+          await this._runPass();
+        } while (this._passQueued);
+      } finally {
+        this._pass = null;
+      }
+    })();
+    return this._pass;
+  }
+
+  private async _runPass(): Promise<void> {
     // If we have critical configuration errors, skip updates
     if (this._validationResult?.hasCriticalErrors) return;
 

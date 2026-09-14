@@ -739,6 +739,20 @@ async function testPinnedRowsSetTheWakeDeadline() {
   check('Pinned: a count-up row sets no deadline',
     up.card._buildWakePlan().deadlineMs === null);
 
+  // A freshly added entry has an empty target_date; it used to inherit the
+  // expired row above it through the shared entry service.
+  const added = await mountCard({
+    ...LISTY,
+    countdowns: [
+      { title: 'Done', target_date: '2026-01-01T00:00:00' },
+      { title: 'New', target_date: '' },
+    ],
+  });
+  const [done, fresh] = added.card._listRows;
+  check('Pinned: a blank row does not inherit the row above',
+    done.state === 'finished' && fresh.state !== 'finished' && fresh.subtitle !== done.subtitle,
+    `above ${done.state} "${done.subtitle}", blank ${fresh.state} "${fresh.subtitle}"`);
+
   const many = await mountCard({
     ...LISTY,
     max_timers: 1,

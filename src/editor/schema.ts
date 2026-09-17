@@ -264,6 +264,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('alexa_color', { text: { placeholder: '#009bbd' } }),
         templatable('alexa_background', { text: { placeholder: '#dff3f7' } }),
         templatable('alexa_ring', { text: { placeholder: '#94809a' } }),
+        templatable('alexa_text', { text: {} }),
       ],
     },
     {
@@ -277,6 +278,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('google_color', { text: { placeholder: '#34a853' } }),
         templatable('google_background', { text: { placeholder: '#fef3c7' } }),
         templatable('google_ring', { text: { placeholder: '#b2d4bd' } }),
+        templatable('google_text', { text: {} }),
       ],
     },
     // How those rows read their time. It lives here rather than in a section

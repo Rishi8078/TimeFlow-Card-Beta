@@ -190,10 +190,12 @@ export interface CardConfig {
   alexa_color?: string;           // Alexa glyph colour
   alexa_background?: string;      // Alexa chip background
   alexa_ring?: string;            // Alexa progress ring; falls back to progress_color
+  alexa_text?: string;            // Alexa row title/subtitle colour
   google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
   google_color?: string;          // Google glyph colour
   google_background?: string;     // Google chip background
   google_ring?: string;           // Google progress ring; falls back to progress_color
+  google_text?: string;           // Google row title/subtitle colour
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
 
   // Display configuration

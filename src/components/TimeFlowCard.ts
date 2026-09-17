@@ -1200,9 +1200,11 @@ export class TimeFlowCardBeta extends LitElement {
       'alexa_color',
       'alexa_background',
       'alexa_ring',
+      'alexa_text',
       'google_color',
       'google_background',
-      'google_ring'
+      'google_ring',
+      'google_text'
     ] as const;
 
     // Resolve templates AND entity IDs where applicable.
@@ -1398,6 +1400,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconColor: palette.iconColor,
         iconBackground: palette.iconBackground,
         ringColor: palette.ringColor,
+        textColor: palette.textColor,
       };
     });
   }
@@ -1565,7 +1568,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconColor,
         iconBackground,
         background: entryConfig.background_color,
-        textColor: entryConfig.text_color,
+        textColor: entryConfig.text_color || base.textColor,
         ringColor,
       });
     }
@@ -1587,7 +1590,7 @@ export class TimeFlowCardBeta extends LitElement {
     kind: ListRowKind,
     config: CardConfig,
     entry?: ListEntryConfig
-  ): { icon: string; iconColor: string; iconBackground: string; ringColor: string } {
+  ): { icon: string; iconColor: string; iconBackground: string; ringColor: string; textColor?: string } {
     const accent = config.progress_color;
 
     // The brand tints are defaults, not fixtures. Colour and background move
@@ -1599,6 +1602,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconColor: config.alexa_color || '#009bbd',
         iconBackground: config.alexa_background || '#dff3f7',
         ringColor: config.alexa_ring || accent || '#94809a',
+        textColor: config.alexa_text,
       };
     }
 
@@ -1608,6 +1612,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconColor: config.google_color || '#34a853',
         iconBackground: config.google_background || '#fef3c7',
         ringColor: config.google_ring || accent || '#b2d4bd',
+        textColor: config.google_text,
       };
     }
 

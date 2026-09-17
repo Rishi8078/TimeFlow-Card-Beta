@@ -248,6 +248,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
       schema: [
         { name: 'auto_discover_alexa', selector: { boolean: {} } },
         { name: 'auto_discover_google', selector: { boolean: {} } },
+        { name: 'auto_discover_voice_satellite', selector: { boolean: {} } },
       ],
     },
     { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
@@ -279,6 +280,20 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('google_background', { text: { placeholder: '#fef3c7' } }),
         templatable('google_ring', { text: { placeholder: '#b2d4bd' } }),
         templatable('google_text', { text: {} }),
+      ],
+    },
+    {
+      type: 'expandable',
+      name: 'section_voice_rows',
+      flatten: true,
+      title: 'Voice Satellite Timer Styling',
+      icon: 'mdi:account-voice',
+      schema: [
+        { name: 'voice_icon', selector: { icon: {} } },
+        templatable('voice_color', { text: { placeholder: '#03a9f4' } }),
+        templatable('voice_background', { text: { placeholder: '#e1f5fe' } }),
+        templatable('voice_ring', { text: { placeholder: '#94809a' } }),
+        templatable('voice_text', { text: {} }),
       ],
     },
     // How those rows read their time. It lives here rather than in a section

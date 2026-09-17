@@ -343,6 +343,9 @@ export class CountdownService {
       if (config.auto_discover_google) {
         entityIds.push(...TimerEntityService.discoverGoogleTimers(hass, watch));
       }
+      if (config.auto_discover_voice_satellite) {
+        entityIds.push(...TimerEntityService.discoverVoiceSatelliteTimers(hass, watch));
+      }
     }
 
     const timers: TimerData[] = [];
@@ -399,7 +402,8 @@ export class CountdownService {
     if (config.timer_entity) return null;
 
     // Skip if auto-discovery is not enabled
-    if (!config.auto_discover_alexa && !config.auto_discover_google) return null;
+    if (!config.auto_discover_alexa && !config.auto_discover_google
+      && !config.auto_discover_voice_satellite) return null;
 
     const smartTimers: string[] = [];
 
@@ -414,6 +418,9 @@ export class CountdownService {
     }
     if (config.auto_discover_google) {
       smartTimers.push(...TimerEntityService.discoverGoogleTimers(hass, watch));
+    }
+    if (config.auto_discover_voice_satellite) {
+      smartTimers.push(...TimerEntityService.discoverVoiceSatelliteTimers(hass, watch));
     }
 
     if (smartTimers.length === 0) return null;

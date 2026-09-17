@@ -139,7 +139,7 @@ export interface ListEntryConfig {
 }
 
 /** What the row kind decides: which icon, which tint, which ring colour. */
-export type ListRowKind = 'alexa' | 'google' | 'timer' | 'event';
+export type ListRowKind = 'alexa' | 'google' | 'voice' | 'timer' | 'event';
 
 /**
  * A single row of the 'listy' style, fully resolved. Building these in the
@@ -179,6 +179,7 @@ export interface CardConfig {
   timer_entity?: string;
   auto_discover_alexa?: boolean; // NEW: Automatically find and use Alexa timers
   auto_discover_google?: boolean; // NEW: Automatically find and use Google Home timers
+  auto_discover_voice_satellite?: boolean; // Timers held by Voice Satellite assist_satellite entities
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
@@ -196,6 +197,11 @@ export interface CardConfig {
   google_background?: string;     // Google chip background
   google_ring?: string;           // Google progress ring; falls back to progress_color
   google_text?: string;           // Google row title/subtitle colour
+  voice_icon?: string;            // Voice Satellite row icon
+  voice_color?: string;           // Voice Satellite glyph colour
+  voice_background?: string;      // Voice Satellite chip background
+  voice_ring?: string;            // Voice Satellite progress ring; falls back to progress_color
+  voice_text?: string;            // Voice Satellite row title/subtitle colour
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
 
   // Display configuration

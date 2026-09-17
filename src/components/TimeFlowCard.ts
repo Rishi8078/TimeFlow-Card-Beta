@@ -1204,7 +1204,11 @@ export class TimeFlowCardBeta extends LitElement {
       'google_color',
       'google_background',
       'google_ring',
-      'google_text'
+      'google_text',
+      'voice_color',
+      'voice_background',
+      'voice_ring',
+      'voice_text'
     ] as const;
 
     // Resolve templates AND entity IDs where applicable.
@@ -1368,10 +1372,14 @@ export class TimeFlowCardBeta extends LitElement {
     const useDeviceTitle = devices.size > 1;
 
     return timers.map((timer, index) => {
-      const kind: ListRowKind = timer.isAlexaTimer ? 'alexa' : (timer.isGoogleTimer ? 'google' : 'timer');
+      const kind: ListRowKind = timer.isAlexaTimer
+        ? 'alexa'
+        : (timer.isGoogleTimer ? 'google' : (timer.isVoiceSatelliteTimer ? 'voice' : 'timer'));
       const brand = kind === 'alexa'
         ? 'Alexa Timer'
-        : (kind === 'google' ? 'Google Home' : (timer.deviceName || 'Timer'));
+        : (kind === 'google'
+            ? 'Google Home'
+            : (kind === 'voice' ? (timer.deviceName || 'Voice Satellite') : (timer.deviceName || 'Timer')));
 
       const palette = this._listRowPalette(kind, config);
 
@@ -1613,6 +1621,16 @@ export class TimeFlowCardBeta extends LitElement {
         iconBackground: config.google_background || '#fef3c7',
         ringColor: config.google_ring || accent || '#b2d4bd',
         textColor: config.google_text,
+      };
+    }
+
+    if (kind === 'voice') {
+      return {
+        icon: config.voice_icon || 'mdi:account-voice',
+        iconColor: config.voice_color || '#03a9f4',
+        iconBackground: config.voice_background || '#e1f5fe',
+        ringColor: config.voice_ring || accent || '#94809a',
+        textColor: config.voice_text,
       };
     }
 

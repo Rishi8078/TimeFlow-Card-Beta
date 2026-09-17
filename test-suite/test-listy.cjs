@@ -29,6 +29,7 @@ const { CountdownService } = require(path.join(outDir, 'services', 'CountdownSer
 
 const ALEXA = 'sensor.kitchen_next_timer';
 const GOOGLE = 'sensor.bedroom_speaker_timers';
+const VOICE = 'assist_satellite.portal_mini';
 
 const results = [];
 function check(name, pass, detail) {
@@ -65,6 +66,26 @@ function alexaEntity(active, all, friendly = 'Kitchen Next Timer') {
 
 function googleEntity(timers, friendly = 'Bedroom speaker timers') {
   return { state: 'unavailable', attributes: { friendly_name: friendly, timers } };
+}
+
+/** A Voice Satellite entity: timers ride in active_timers, idle keeps the key. */
+function voiceEntity(active_timers, friendly = 'Portal mini') {
+  return { state: 'idle', attributes: { friendly_name: friendly, active_timers, last_timer_event: null } };
+}
+
+/** One entry of active_timers, as the integration writes it. */
+function voiceTimer(id, name, totalSeconds, startedAtSec, spokenSeconds) {
+  const spoken = spokenSeconds === undefined ? totalSeconds : spokenSeconds;
+  return {
+    id,
+    name,
+    total_seconds: totalSeconds,
+    started_at: startedAtSec,
+    start_hours: Math.floor(spoken / 3600),
+    start_minutes: Math.floor((spoken % 3600) / 60),
+    start_seconds: spoken % 60,
+    pipeline_id: '01ktvdszszrx6trwahx9w801pn',
+  };
 }
 
 /** Minimal hass stub: the services only ever read hass.states. */
@@ -235,6 +256,55 @@ function hassWith(states) {
   const idle = { state: 'idle', attributes: { friendly_name: 'Sprinkler', duration: '00:10:00' } };
   const none = TimerEntityService.listTimers('timer.sprinkler', hassWith({ 'timer.sprinkler': idle }));
   check('Standard: an idle timer.* entity yields no rows', none.length === 0, `got ${none.length}`);
+}
+
+// ── Voice Satellite ─────────────────────────────────────────────────────────
+
+{
+  const nowSec = Date.now() / 1000;
+  const entity = voiceEntity([
+    voiceTimer('v1', 'pizza timer', 300, nowSec - 190),
+    voiceTimer('v2', '', 600, nowSec - 60),
+  ]);
+  const timers = TimerEntityService.listTimers(VOICE, hassWith({ [VOICE]: entity }));
+
+  check('Voice: both active_timers produce rows', timers.length === 2, `got ${timers.length}`);
+  const pizza = timers.find((t) => t.userDefinedLabel === 'pizza timer');
+  check('Voice: remaining counts from started_at', Math.abs(pizza.remaining - 110) <= 1, `${pizza.remaining}s`);
+  check('Voice: progress uses the timer duration', Math.round(pizza.progress) === 63, `${pizza.progress}%`);
+  check('Voice: rows carry their identity', pizza.timerId === 'v1' && pizza.entityId === VOICE);
+  check('Voice: device name comes from the satellite', pizza.deviceName === 'Portal mini', pizza.deviceName);
+  check('Voice: an unnamed timer keeps no label',
+    timers.find((t) => t.timerId === 'v2').userDefinedLabel === undefined);
+}
+
+{
+  // Pausing rewrites total_seconds to what was left and started_at to now, so
+  // the ring must measure the originally spoken duration, not the remainder.
+  const nowSec = Date.now() / 1000;
+  const entity = voiceEntity([voiceTimer('v1', 'pizza timer', 111, nowSec, 300)]);
+  const timers = TimerEntityService.listTimers(VOICE, hassWith({ [VOICE]: entity }));
+
+  check('Voice: a paused timer keeps the spoken duration for its ring',
+    timers[0].duration === 300, `${timers[0].duration}s`);
+  check('Voice: a paused timer still reports its remaining time',
+    Math.abs(timers[0].remaining - 111) <= 1, `${timers[0].remaining}s`);
+}
+
+{
+  const watched = [];
+  const found = TimerEntityService.discoverVoiceSatelliteTimers(
+    hassWith({ [VOICE]: voiceEntity([]) }), (id) => watched.push(id));
+  check('Voice: an idle satellite yields no rows but is watched',
+    found.length === 0 && watched.includes(VOICE), `found ${found.length}, watched ${watched.length}`);
+
+  const busy = voiceEntity([voiceTimer('v1', 'pizza timer', 300, Date.now() / 1000)]);
+  check('Voice: a satellite holding a timer is discovered',
+    TimerEntityService.discoverVoiceSatelliteTimers(hassWith({ [VOICE]: busy })).length === 1);
+
+  check('Voice: a non-satellite entity is never discovered',
+    TimerEntityService.discoverVoiceSatelliteTimers(
+      hassWith({ 'light.kitchen': { state: 'on', attributes: {} } })).length === 0);
 }
 
 // ── Aggregation across devices ──────────────────────────────────────────────

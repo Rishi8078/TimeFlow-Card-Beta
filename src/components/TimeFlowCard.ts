@@ -747,7 +747,9 @@ export class TimeFlowCardBeta extends LitElement {
         justify-content: center;
         width: 44px;
         height: 44px;
-        border-radius: 13px;
+        /* The token the row and every other style's icon chip use, so a theme
+           that rounds or squares its cards reshapes this one too. */
+        border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
         flex-shrink: 0;
         background: var(--timeflow-listy-chip-bg);
       }
@@ -1218,14 +1220,17 @@ export class TimeFlowCardBeta extends LitElement {
       'alexa_background',
       'alexa_ring',
       'alexa_text',
+      'alexa_pill',
       'google_color',
       'google_background',
       'google_ring',
       'google_text',
+      'google_pill',
       'voice_color',
       'voice_background',
       'voice_ring',
-      'voice_text'
+      'voice_text',
+      'voice_pill'
     ] as const;
 
     // Resolve templates AND entity IDs where applicable.
@@ -1428,6 +1433,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconBackground: palette.iconBackground,
         ringColor: palette.ringColor,
         textColor: palette.textColor,
+        background: palette.background,
       };
     });
   }
@@ -1594,7 +1600,7 @@ export class TimeFlowCardBeta extends LitElement {
         icon,
         iconColor,
         iconBackground,
-        background: entryConfig.background_color,
+        background: entryConfig.background_color || base.background,
         textColor: entryConfig.text_color || base.textColor,
         ringColor,
       });
@@ -1617,7 +1623,7 @@ export class TimeFlowCardBeta extends LitElement {
     kind: ListRowKind,
     config: CardConfig,
     entry?: ListEntryConfig
-  ): { icon: string; iconColor: string; iconBackground: string; ringColor: string; textColor?: string } {
+  ): { icon: string; iconColor: string; iconBackground: string; ringColor: string; textColor?: string; background?: string } {
     const accent = config.progress_color;
 
     // The brand tints are defaults, not fixtures. Colour and background move
@@ -1630,6 +1636,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconBackground: config.alexa_background || '#dff3f7',
         ringColor: config.alexa_ring || accent || '#94809a',
         textColor: config.alexa_text,
+        background: config.alexa_pill,
       };
     }
 
@@ -1640,6 +1647,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconBackground: config.google_background || '#fef3c7',
         ringColor: config.google_ring || accent || '#b2d4bd',
         textColor: config.google_text,
+        background: config.google_pill,
       };
     }
 
@@ -1650,6 +1658,7 @@ export class TimeFlowCardBeta extends LitElement {
         iconBackground: config.voice_background || '#e1f5fe',
         ringColor: config.voice_ring || accent || '#94809a',
         textColor: config.voice_text,
+        background: config.voice_pill,
       };
     }
 

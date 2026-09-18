@@ -280,6 +280,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('alexa_background', { text: { placeholder: '#dff3f7' } }),
         templatable('alexa_ring', { text: { placeholder: '#94809a' } }),
         templatable('alexa_text', { text: {} }),
+        templatable('alexa_pill', { text: {} }),
       ],
     },
     {
@@ -294,6 +295,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('google_background', { text: { placeholder: '#fef3c7' } }),
         templatable('google_ring', { text: { placeholder: '#b2d4bd' } }),
         templatable('google_text', { text: {} }),
+        templatable('google_pill', { text: {} }),
       ],
     },
     {
@@ -308,6 +310,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('voice_background', { text: { placeholder: '#e1f5fe' } }),
         templatable('voice_ring', { text: { placeholder: '#94809a' } }),
         templatable('voice_text', { text: {} }),
+        templatable('voice_pill', { text: {} }),
       ],
     },
     // How those rows read their time. It lives here rather than in a section

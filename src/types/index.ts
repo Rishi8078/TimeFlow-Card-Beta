@@ -193,16 +193,19 @@ export interface CardConfig {
   alexa_background?: string;      // Alexa chip background
   alexa_ring?: string;            // Alexa progress ring; falls back to progress_color
   alexa_text?: string;            // Alexa row title/subtitle colour
+  alexa_pill?: string;         // Alexa row background (the pill itself); the card background shows through when unset
   google_icon?: string;           // Icon for Google Home rows (default mdi:google-home)
   google_color?: string;          // Google glyph colour
   google_background?: string;     // Google chip background
   google_ring?: string;           // Google progress ring; falls back to progress_color
   google_text?: string;           // Google row title/subtitle colour
+  google_pill?: string;        // Google row background (the pill itself); the card background shows through when unset
   voice_icon?: string;            // Voice Satellite row icon
   voice_color?: string;           // Voice Satellite glyph colour
   voice_background?: string;      // Voice Satellite chip background
   voice_ring?: string;            // Voice Satellite progress ring; falls back to progress_color
   voice_text?: string;            // Voice Satellite row title/subtitle colour
+  voice_pill?: string;         // Voice Satellite row background (the pill itself); the card background shows through when unset
   timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
 
   // Display configuration

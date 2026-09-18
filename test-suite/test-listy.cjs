@@ -74,13 +74,14 @@ function voiceEntity(active_timers, friendly = 'Portal mini') {
 }
 
 /** One entry of active_timers, as the integration writes it. */
-function voiceTimer(id, name, totalSeconds, startedAtSec, spokenSeconds) {
+function voiceTimer(id, name, totalSeconds, startedAtSec, spokenSeconds, isActive = true) {
   const spoken = spokenSeconds === undefined ? totalSeconds : spokenSeconds;
   return {
     id,
     name,
     total_seconds: totalSeconds,
     started_at: startedAtSec,
+    is_active: isActive,
     start_hours: Math.floor(spoken / 3600),
     start_minutes: Math.floor((spoken % 3600) / 60),
     start_seconds: spoken % 60,
@@ -279,16 +280,36 @@ function hassWith(states) {
 }
 
 {
-  // Pausing rewrites total_seconds to what was left and started_at to now, so
-  // the ring must measure the originally spoken duration, not the remainder.
+  // Pausing rewrites total_seconds to what was left and flips is_active off, so
+  // the ring must measure the originally spoken duration, not the remainder,
+  // and the remaining time must freeze instead of counting on past the pause.
   const nowSec = Date.now() / 1000;
-  const entity = voiceEntity([voiceTimer('v1', 'pizza timer', 111, nowSec, 300)]);
+  const entity = voiceEntity([voiceTimer('v1', 'pizza timer', 111, nowSec - 600, 300, false)]);
   const timers = TimerEntityService.listTimers(VOICE, hassWith({ [VOICE]: entity }));
 
   check('Voice: a paused timer keeps the spoken duration for its ring',
     timers[0].duration === 300, `${timers[0].duration}s`);
-  check('Voice: a paused timer still reports its remaining time',
-    Math.abs(timers[0].remaining - 111) <= 1, `${timers[0].remaining}s`);
+  check('Voice: a paused timer freezes at total_seconds, ignoring started_at',
+    timers[0].remaining === 111, `${timers[0].remaining}s`);
+  check('Voice: a paused timer reports itself paused, not running',
+    timers[0].isPaused === true && timers[0].isActive === false);
+  check('Voice: a paused timer has no finish time', timers[0].finishesAt === null);
+
+  // An integration older than 2026.9.8 omits is_active entirely.
+  const legacy = voiceEntity([{ id: 'v1', name: 'pizza timer', total_seconds: 300, started_at: nowSec - 190 }]);
+  const legacyTimers = TimerEntityService.listTimers(VOICE, hassWith({ [VOICE]: legacy }));
+  check('Voice: a timer with no is_active flag still counts down',
+    legacyTimers[0].isActive === true && Math.abs(legacyTimers[0].remaining - 110) <= 1,
+    `${legacyTimers[0].remaining}s`);
+
+  // Single-timer cards follow a running timer even when a paused one is nearer.
+  const mixed = voiceEntity([
+    voiceTimer('paused', 'soup', 30, nowSec - 600, 300, false),
+    voiceTimer('running', 'pizza', 300, nowSec - 190),
+  ]);
+  const picked = TimerEntityService.getTimerData(VOICE, hassWith({ [VOICE]: mixed }));
+  check('Voice: the single-timer view prefers a running timer over a nearer paused one',
+    picked.timerId === 'running', picked.timerId);
 }
 
 {

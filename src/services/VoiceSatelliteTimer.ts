@@ -22,6 +22,7 @@ interface RawVoiceTimer {
   start_hours?: number;
   start_minutes?: number;
   start_seconds?: number;
+  is_active?: boolean;
   pipeline_id?: string;
 }
 
@@ -52,10 +53,10 @@ export class VoiceSatelliteTimerService {
    * Every timer currently on one satellite.
    *
    * Finished and cancelled timers are both removed from the attribute by the
-   * integration, so a listed timer is always one that is still counting. A
-   * remaining time of zero therefore means the row is a moment away from
-   * disappearing, not that it is complete - the same thing the integration's
-   * card shows while its pill sits at 0:00.
+   * integration, so a listed timer is either counting or paused. A remaining
+   * time of zero therefore means the row is a moment away from disappearing,
+   * not that it is complete - the same thing the integration's card shows
+   * while its pill sits at 0:00.
    */
   static parseAllTimers(entityId: string, entity: any): TimerData[] {
     const rawTimers = this.readRawTimers(entity);
@@ -78,9 +79,16 @@ export class VoiceSatelliteTimerService {
         ? startedAtSec * 1000
         : nowMs;
 
+      // is_active landed in integration 2026.9.8; older versions omit it and
+      // only ever list running timers, so a missing flag means running.
+      const isActive = raw?.is_active !== false;
+
       // Recomputed from started_at on every pass rather than decremented, so a
       // tab that slept through a minute comes back with the right number.
-      const elapsed = Math.max(0, Math.floor((nowMs - startedMs) / 1000));
+      // While paused, total_seconds already holds what is left and started_at
+      // is rewritten to the pause moment, so nothing is subtracted - that is
+      // what used to run a paused timer down into negative time.
+      const elapsed = isActive ? Math.max(0, Math.floor((nowMs - startedMs) / 1000)) : 0;
       const remaining = Math.max(0, total - elapsed);
 
       // start_* keeps the originally requested duration. Pausing rewrites
@@ -96,11 +104,11 @@ export class VoiceSatelliteTimerService {
         : 0;
 
       timers.push({
-        isActive: true,
-        isPaused: false,
+        isActive,
+        isPaused: !isActive,
         duration,
         remaining,
-        finishesAt: remaining > 0 ? new Date(nowMs + remaining * 1000) : null,
+        finishesAt: isActive && remaining > 0 ? new Date(nowMs + remaining * 1000) : null,
         progress,
         finished: false,
         isVoiceSatelliteTimer: true,
@@ -114,15 +122,19 @@ export class VoiceSatelliteTimerService {
     return timers;
   }
 
-  /** The timer a single-timer card should follow: the one finishing first. */
+  /**
+   * The timer a single-timer card should follow: the running one finishing
+   * first, or a paused one only when nothing is running.
+   */
   static getVoiceSatelliteTimerData(entityId: string, entity: any): TimerData | null {
     const timers = this.parseAllTimers(entityId, entity);
     if (timers.length === 0) {
       return null;
     }
-    return timers.reduce((soonest, timer) => (
-      timer.remaining < soonest.remaining ? timer : soonest
-    ));
+    return timers.reduce((best, timer) => {
+      if (best.isActive !== timer.isActive) return best.isActive ? best : timer;
+      return timer.remaining < best.remaining ? timer : best;
+    });
   }
 
   /**

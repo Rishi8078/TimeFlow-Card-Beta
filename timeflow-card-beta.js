@@ -646,9 +646,7 @@ function e(e,t,i,s){var o,r=arguments.length,a=r<3?t:null===s?s=Object.getOwnPro
         justify-content: center;
         width: 44px;
         height: 44px;
-        /* The token the row and every other style's icon chip use, so a theme
-           that rounds or squares its cards reshapes this one too. */
-        border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
+        border-radius: 13px;
         flex-shrink: 0;
         background: var(--timeflow-listy-chip-bg);
       }

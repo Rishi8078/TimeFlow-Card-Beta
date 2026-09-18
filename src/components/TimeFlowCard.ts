@@ -104,6 +104,10 @@ export class TimeFlowCardBeta extends LitElement {
   private _listEntryDeadlineMs: number | null = null;
 
   @state() private _expired: boolean = false;
+  // Set by Home Assistant on every card while a dashboard is being edited, so
+  // hide_when_inactive can keep the card reachable in the editor.
+  @property({ type: Boolean }) public editMode = false;
+  @state() private _hidden: boolean = false;
   @state() private _validationResult: ValidationResult | null = null;
   @state() private _initialized: boolean = false; // Track initialization
   @state() private _localize: LocalizeFunction | null = null; // Localization function
@@ -136,6 +140,9 @@ export class TimeFlowCardBeta extends LitElement {
 
   static get styles(): CSSResult {
     return css`
+      :host([hidden]) {
+        display: none;
+      }
       :host {
         display: block;
         /* Home Assistant's own body font, so the card reads as part of the
@@ -1080,6 +1087,16 @@ export class TimeFlowCardBeta extends LitElement {
    * of which names its entities in YAML. A timer starting on a device the card
    * has never seen is picked up by the next scheduled wake instead.
    */
+  /**
+   * hide_when_inactive leaves the element in the DOM and hides it with the
+   * native `hidden` attribute, which :host([hidden]) turns into display:none.
+   * Done here rather than in the countdown pass so flipping into edit mode
+   * brings the card straight back instead of waiting for the next tick.
+   */
+  protected willUpdate(): void {
+    this.hidden = this._hidden && !this.editMode;
+  }
+
   protected shouldUpdate(changedProperties: Map<string | number | symbol, unknown>): boolean {
     // Any internal state change is ours and always renders.
     for (const key of changedProperties.keys()) {
@@ -1256,6 +1273,8 @@ export class TimeFlowCardBeta extends LitElement {
     // Update countdown state
     this._countdown = { ...this.countdownService.getTimeRemaining() };
     this._expired = this.countdownService.isExpired();
+    this._hidden = resolvedConfig.hide_when_inactive === true
+      && await this.countdownService.isInactive(resolvedConfig);
 
     // Calculate progress (0-100). Rounded to what the eye can resolve: a ring is
     // a few hundred pixels around, so anything finer redraws for nothing. On a
@@ -1652,6 +1671,14 @@ export class TimeFlowCardBeta extends LitElement {
   }
 
   render(): TemplateResult {
+    // hide_when_inactive: rendering nothing leaves no ha-card, so the view
+    // closes the gap instead of showing an empty slot. The card stays in the
+    // dashboard's YAML and comes back on its own when the date arrives, and
+    // edit mode always draws it so it can still be selected and changed.
+    if (this._hidden && !this.editMode) {
+      return html``;
+    }
+
     // Handle validation errors and configuration issues
     if (this._validationResult && !this._validationResult.isValid) {
       // Show error display for any validation issues (critical errors or warnings)
@@ -2603,6 +2630,9 @@ export class TimeFlowCardBeta extends LitElement {
    * Helper: Returns card size (in Home Assistant's grid rows approx)
    */
   getCardSize(): number {
+    // A hidden card draws nothing, so it must claim no rows either.
+    if (this._hidden && !this.editMode) return 0;
+
     const { aspect_ratio = '2/1', height, style } = this.config;
     
     // Eventy style is always compact (1 row)

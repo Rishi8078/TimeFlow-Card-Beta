@@ -161,6 +161,16 @@ function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema
 }
 
 /**
+ * Hiding an idle card is only meaningful for a date-driven one: those are the
+ * cards with a before and an after. A timer card is already empty-handed when
+ * no timer runs, and the list style shows its own empty state.
+ */
+function hideWhenInactiveSection(source: SourceType): FormSchema[] {
+  if (!usesDateFields(source)) return [];
+  return [{ name: 'hide_when_inactive', selector: { boolean: {} } }];
+}
+
+/**
  * The only text fields left in the form: the subtitle prefix and suffix.
  *
  * Title, subtitle and expired text are rendered by the editor instead, so they
@@ -489,6 +499,7 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
   return [
     ...sourceSection(activeSource, getStyle(config)),
     ...countUpCycleSection(config, activeSource),
+    ...hideWhenInactiveSection(activeSource),
   ];
 }
 

@@ -174,6 +174,7 @@ export interface CardConfig {
   creation_date?: string;        // Optional progress start date for count-down mode
   count_up_goal_date?: string;   // Optional goal/end date for count-up progress
   count_up_cycle?: string | number; // Optional repeating cycle length for count-up progress (e.g. "30d", "12:00:00", 86400)
+  hide_when_inactive?: boolean;  // Drop the card out of the view while there is nothing to count (before the start date, after the target or goal date)
 
   // Timer entity configuration (enhanced for Alexa and Google Home)
   timer_entity?: string;

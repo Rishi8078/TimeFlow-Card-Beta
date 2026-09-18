@@ -900,6 +900,35 @@ export class CountdownService {
   }
 
   /**
+   * Is there nothing to count right now? What `hide_when_inactive` hides on.
+   *
+   * Count down: once the target date has passed. Count up: before the start
+   * date, and past the goal date when one is set - a count-up with no goal
+   * runs forever and is never idle.
+   *
+   * A card with no target_date is never idle: timer cards are driven by an
+   * entity rather than a date, and a half-configured card vanishing out of the
+   * editor would be worse than an empty one sitting there.
+   */
+  async isInactive(config: CardConfig): Promise<boolean> {
+    if (!config.target_date) return false;
+
+    const targetValue = await this.templateService.resolveValue(config.target_date);
+    const target = this.dateParser.parseISODate(targetValue);
+    if (isNaN(target)) return false;
+
+    const now = Date.now();
+    if (this._getMode(config) !== 'count_up') return now >= target;
+
+    if (now < target) return true;
+    if (!config.count_up_goal_date) return false;
+
+    const goalValue = await this.templateService.resolveValue(config.count_up_goal_date);
+    const goal = this.dateParser.parseISODate(goalValue);
+    return !isNaN(goal) && now >= goal;
+  }
+
+  /**
    * Gets expired status
    * @returns {boolean} - Whether countdown has expired
    */

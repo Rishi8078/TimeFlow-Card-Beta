@@ -164,6 +164,10 @@ function countUpCycleSection(config: CardConfig, source: SourceType): FormSchema
  * Hiding an idle card is only meaningful for a date-driven one: those are the
  * cards with a before and an after. A timer card is already empty-handed when
  * no timer runs, and the list style shows its own empty state.
+ *
+ * The switch carries no label or helper of its own: the editor renders a
+ * heading beside it whose explanation lives on hover, which ha-form has no way
+ * to attach to a field.
  */
 function hideWhenInactiveSection(source: SourceType): FormSchema[] {
   if (!usesDateFields(source)) return [];
@@ -476,6 +480,7 @@ function actionsSection(): FormSchema[] {
 export function computeSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   return [
     ...computeSourceSchema(config, source),
+    ...computeHideWhenInactiveSchema(config, source),
     // The pinned list comes first: it is the part the user builds, while
     // discovery just switches on.
     ...computeCountdownsSchema(config),
@@ -499,8 +504,15 @@ export function computeSourceSchema(config: CardConfig, source?: SourceType): Fo
   return [
     ...sourceSection(activeSource, getStyle(config)),
     ...countUpCycleSection(config, activeSource),
-    ...hideWhenInactiveSection(activeSource),
   ];
+}
+
+/**
+ * The hide_when_inactive switch, which the editor renders beside a heading of
+ * its own rather than inside the source form.
+ */
+export function computeHideWhenInactiveSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+  return hideWhenInactiveSection(source ?? getSourceType(config));
 }
 
 /** Auto-discovery settings, which the editor gives a section of its own. */

@@ -84,7 +84,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   'creation_date': 'Where the progress ring starts filling from.',
   'count_up_goal_date': 'Optional goal/end date for count-up circle progress',
   'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
-  'hide_when_inactive': 'Remove the card from the view while there is nothing to count: before the start date, and once the target or goal date has passed',
 
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',

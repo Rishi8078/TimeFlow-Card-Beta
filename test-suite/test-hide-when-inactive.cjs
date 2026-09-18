@@ -21,7 +21,7 @@ execFileSync(
   { cwd: repoRoot, stdio: 'pipe' }
 );
 const { CountdownService } = require(path.join(outDir, 'services', 'CountdownService.js'));
-const { computeSourceSchema } = require(path.join(outDir, 'editor', 'schema.js'));
+const { computeSourceSchema, computeHideWhenInactiveSchema } = require(path.join(outDir, 'editor', 'schema.js'));
 
 // The two collaborators isInactive() uses, reduced to what it asks of them.
 const service = new CountdownService(
@@ -81,9 +81,13 @@ function check(name, pass, detail) {
     return out;
   };
   check('Editor: a date card gets the switch',
-    names(computeSourceSchema({ target_date: iso(HOUR) }, 'date')).includes('hide_when_inactive'));
+    names(computeHideWhenInactiveSchema({ target_date: iso(HOUR) }, 'date')).includes('hide_when_inactive'));
   check('Editor: a timer card does not',
-    !names(computeSourceSchema({ timer_entity: 'timer.pasta' }, 'timer')).includes('hide_when_inactive'));
+    names(computeHideWhenInactiveSchema({ timer_entity: 'timer.pasta' }, 'timer')).length === 0);
+  // It rides outside the source form: the editor renders it beside a heading
+  // that carries the explanation on hover.
+  check('Editor: the source form no longer carries it',
+    !names(computeSourceSchema({ target_date: iso(HOUR) }, 'date')).includes('hide_when_inactive'));
 
   const failed = results.filter((r) => !r.pass);
   console.log(`\nRESULTS: ${results.length - failed.length} passed, ${failed.length} failed`);

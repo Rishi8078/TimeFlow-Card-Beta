@@ -1238,7 +1238,12 @@ export class TimeFlowCardBeta extends LitElement {
       'voice_background',
       'voice_ring',
       'voice_text',
-      'voice_pill'
+      'voice_pill',
+      'timer_color',
+      'timer_background',
+      'timer_ring',
+      'timer_text',
+      'timer_pill'
     ] as const;
 
     // Resolve templates AND entity IDs where applicable.
@@ -1679,11 +1684,15 @@ export class TimeFlowCardBeta extends LitElement {
       };
     }
 
+    // Home Assistant's own timer helpers. Unlike Alexa and Google these carry
+    // no brand, so the defaults are theme tokens rather than fixed tints.
     return {
       icon: config.timer_icon || 'mdi:timer-outline',
-      iconColor: 'var(--secondary-text-color, #475569)',
-      iconBackground: 'var(--timeflow-listy-chip-bg)',
-      ringColor: accent || 'var(--primary-color, #94809a)',
+      iconColor: config.timer_color || 'var(--secondary-text-color, #475569)',
+      iconBackground: config.timer_background || 'var(--timeflow-listy-chip-bg)',
+      ringColor: config.timer_ring || accent || 'var(--primary-color, #94809a)',
+      textColor: config.timer_text,
+      background: config.timer_pill,
     };
   }
 

@@ -208,7 +208,13 @@ export interface CardConfig {
   voice_ring?: string;            // Voice Satellite progress ring; falls back to progress_color
   voice_text?: string;            // Voice Satellite row title/subtitle colour
   voice_pill?: string;         // Voice Satellite row background (the pill itself); the card background shows through when unset
-  timer_icon?: string;            // Icon for standard timer.* rows (default mdi:timer-outline)
+  timer_icon?: string;            // Icon for Home Assistant timer.* helper rows (default mdi:timer-outline)
+  timer_color?: string;           // Timer helper glyph colour
+  timer_background?: string;      // Timer helper chip background
+  timer_ring?: string;            // Timer helper progress ring; falls back to progress_color
+  timer_text?: string;            // Timer helper row title/subtitle colour
+  timer_pill?: string;            // Timer helper row background (the pill itself)
+  timer_entities?: string[];      // Helpers to discover; empty or unset discovers every timer.*
 
   // Display configuration
   title?: string;

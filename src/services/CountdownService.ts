@@ -347,7 +347,7 @@ export class CountdownService {
         entityIds.push(...TimerEntityService.discoverVoiceSatelliteTimers(hass, watch));
       }
       if (config.auto_discover_timers) {
-        entityIds.push(...TimerEntityService.discoverStandardTimers(hass, watch));
+        entityIds.push(...TimerEntityService.discoverStandardTimers(hass, watch, config.timer_entities));
       }
     }
 
@@ -425,7 +425,7 @@ export class CountdownService {
       smartTimers.push(...TimerEntityService.discoverVoiceSatelliteTimers(hass, watch));
     }
     if (config.auto_discover_timers) {
-      smartTimers.push(...TimerEntityService.discoverStandardTimers(hass, watch));
+      smartTimers.push(...TimerEntityService.discoverStandardTimers(hass, watch, config.timer_entities));
     }
 
     if (smartTimers.length === 0) return null;
@@ -991,7 +991,7 @@ export class CountdownService {
       }
 
       if (config.auto_discover_timers) {
-        smartTimers.push(...TimerEntityService.discoverStandardTimers(hass));
+        smartTimers.push(...TimerEntityService.discoverStandardTimers(hass, undefined, config.timer_entities));
       }
 
       if (smartTimers.length > 0) {

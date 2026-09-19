@@ -251,10 +251,8 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
  * What the list finds on its own: the two integrations it can discover, how
  * many of their rows to draw, and the chip each one wears.
  *
- * timer_icon is deliberately absent. Discovery only finds Alexa and Google, so
- * the only rows that use it are pinned entries naming a timer.* entity - and
- * each of those can set its own header_icon, which overrides it anyway. The
- * key still works from YAML.
+ * Each source gets a panel of its own, collapsed: eight fields of styling that
+ * most cards never touch should not push the list settings off the screen.
  */
 function discoverySection(caps: StyleCapabilities): FormSchema[] {
   if (!caps.timerList) return [];
@@ -268,6 +266,9 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         { name: 'auto_discover_timers', selector: { boolean: {} } },
       ],
     },
+    // Blank means every helper on the system, which is what discovery does
+    // without it; naming a few narrows it to those.
+    { name: 'timer_entities', selector: { entity: { domain: 'timer', multiple: true } } },
     { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
     // Collapsed by default: eight fields of styling that most cards never touch
     // should not push the list settings off the screen.
@@ -314,6 +315,21 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         templatable('voice_ring', { text: { placeholder: '#94809a' } }),
         templatable('voice_text', { text: {} }),
         templatable('voice_pill', { text: {} }),
+      ],
+    },
+    {
+      type: 'expandable',
+      name: 'section_timer_rows',
+      flatten: true,
+      title: 'Timer Helper Styling',
+      icon: 'mdi:timer-outline',
+      schema: [
+        { name: 'timer_icon', selector: { icon: {} } },
+        templatable('timer_color', { text: {} }),
+        templatable('timer_background', { text: {} }),
+        templatable('timer_ring', { text: {} }),
+        templatable('timer_text', { text: {} }),
+        templatable('timer_pill', { text: {} }),
       ],
     },
     // How those rows read their time. It lives here rather than in a section

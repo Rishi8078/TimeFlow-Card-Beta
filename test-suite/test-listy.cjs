@@ -370,6 +370,24 @@ function hassWith(states) {
   service.beginPass();
   check('Helper: discovery off means no rows',
     service.listAllTimers({}, hassWith({ 'timer.tea': running })).length === 0);
+
+  // timer_entities narrows discovery; blank discovers everything.
+  const two = hassWith({ 'timer.tea': running, 'timer.pasta': helper('active', {
+    duration: '0:10:00', last_transition: 'started',
+    finishes_at: new Date(Date.now() + 500000).toISOString(),
+  }) });
+  service.beginPass();
+  check('Helper: no picker means every helper',
+    service.listAllTimers({ auto_discover_timers: true }, two).length === 2);
+  service.beginPass();
+  const picked = service.listAllTimers(
+    { auto_discover_timers: true, timer_entities: ['timer.pasta'] }, two);
+  check('Helper: the picker narrows discovery to the chosen helpers',
+    picked.length === 1 && picked[0].entityId === 'timer.pasta',
+    picked.map((t) => t.entityId).join(', '));
+  service.beginPass();
+  check('Helper: an empty picker still discovers everything',
+    service.listAllTimers({ auto_discover_timers: true, timer_entities: [] }, two).length === 2);
 }
 
 // ── Aggregation across devices ──────────────────────────────────────────────

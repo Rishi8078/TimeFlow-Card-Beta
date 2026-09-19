@@ -261,19 +261,27 @@ export class TimerEntityService {
    * changes when someone starts it, so it is watched rather than listed - the
    * same contract the Voice Satellite discovery follows.
    *
+   * `only` narrows discovery to the helpers a user picked. Left empty - which
+   * is what an untouched config carries - every timer.* helper is discovered.
+   *
    * @param hass - Home Assistant object
+   * @param onCandidate - Called for every helper worth watching
+   * @param only - Helper entity ids to limit discovery to
    * @returns string[] - Helper entity ids currently running or paused
    */
   static discoverStandardTimers(
     hass: HomeAssistant,
-    onCandidate?: (entityId: string) => void
+    onCandidate?: (entityId: string) => void,
+    only?: string[]
   ): string[] {
     if (!hass || !hass.states) return [];
 
+    const wanted = Array.isArray(only) && only.length > 0 ? new Set(only) : null;
     const found: string[] = [];
 
     for (const entityId in hass.states) {
       if (!entityId.startsWith('timer.')) continue;
+      if (wanted && !wanted.has(entityId)) continue;
 
       onCandidate?.(entityId);
 

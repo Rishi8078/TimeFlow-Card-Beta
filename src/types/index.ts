@@ -181,7 +181,7 @@ export interface CardConfig {
   auto_discover_alexa?: boolean; // NEW: Automatically find and use Alexa timers
   auto_discover_google?: boolean; // NEW: Automatically find and use Google Home timers
   auto_discover_voice_satellite?: boolean; // Timers held by Voice Satellite assist_satellite entities
-  auto_discover_timers?: boolean; // Home Assistant's own timer.* helpers
+  auto_discover_timers?: boolean; // Home Assistant's own native timer.* entities
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
@@ -214,7 +214,7 @@ export interface CardConfig {
   timer_ring?: string;            // Timer helper progress ring; falls back to progress_color
   timer_text?: string;            // Timer helper row title/subtitle colour
   timer_pill?: string;            // Timer helper row background (the pill itself)
-  timer_entities?: string[];      // Helpers to discover; empty or unset discovers every timer.*
+  timer_entities?: string[];      // Native timers to discover; empty or unset discovers every timer.*
 
   // Display configuration
   title?: string;

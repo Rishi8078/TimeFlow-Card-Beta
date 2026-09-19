@@ -266,9 +266,6 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         { name: 'auto_discover_timers', selector: { boolean: {} } },
       ],
     },
-    // Blank means every helper on the system, which is what discovery does
-    // without it; naming a few narrows it to those.
-    { name: 'timer_entities', selector: { entity: { domain: 'timer', multiple: true } } },
     { name: 'max_timers', selector: { number: { min: 1, max: 20, step: 1, mode: 'box' } } },
     // Collapsed by default: eight fields of styling that most cards never touch
     // should not push the list settings off the screen.
@@ -321,9 +318,12 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
       type: 'expandable',
       name: 'section_timer_rows',
       flatten: true,
-      title: 'Timer Helper Styling',
+      title: 'Native Timer Styling',
       icon: 'mdi:timer-outline',
       schema: [
+        // Blank means every native timer on the system, which is what
+        // discovery does without it; naming a few narrows it to those.
+        { name: 'timer_entities', selector: { entity: { domain: 'timer', multiple: true } } },
         { name: 'timer_icon', selector: { icon: {} } },
         templatable('timer_color', { text: {} }),
         templatable('timer_background', { text: {} }),

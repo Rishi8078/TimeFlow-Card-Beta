@@ -322,6 +322,7 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
       schema: [
         { name: 'show_seconds', selector: { boolean: {} } },
         { name: 'compact_format', selector: { boolean: {} } },
+        { name: 'show_count', selector: { boolean: {} } },
       ],
     },
   ];

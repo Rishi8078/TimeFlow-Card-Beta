@@ -184,6 +184,7 @@ export interface CardConfig {
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)
+  show_count?: boolean;           // Row-count badge in the list header (default true)
   countdowns?: ListEntryConfig[]; // Countdown entries pinned to the list, alongside any discovered timers
   // Per-source styling for the discovered rows. Colour and background are a
   // pair: the glyph sits on the chip, so setting one without the other leaves

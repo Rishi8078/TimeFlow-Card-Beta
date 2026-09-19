@@ -1,5 +1,5 @@
 //TimeFlowCardBeta.ts
-import { LitElement, html, css, TemplateResult, CSSResult } from 'lit';
+import { LitElement, html, css, TemplateResult, CSSResult, nothing } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { TimerEntityService, TimerData } from '../services/Timer';
@@ -667,7 +667,9 @@ export class TimeFlowCardBeta extends LitElement {
       }
 
       .listy-title {
-        font-size: 1.05rem;
+        /* A card heading, not a fourth row title: the rows are 1.02rem/700, so
+           at the old 1.05rem the header read as a peer of its own contents. */
+        font-size: var(--ha-card-header-font-size, 1.25rem);
         font-weight: 700;
         letter-spacing: -0.25px;
         line-height: 1.2;
@@ -691,7 +693,9 @@ export class TimeFlowCardBeta extends LitElement {
         font-size: 0.75rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
-        color: color-mix(in srgb, currentColor 65%, transparent);
+        /* 12px bold is not 'large text' for WCAG, so the badge needs the full
+           4.5:1 - at 65% it sat near 3.5:1 on HA's light theme. */
+        color: color-mix(in srgb, currentColor 80%, transparent);
         background: color-mix(in srgb, var(--timeflow-listy-card-base), currentColor 6%);
         border: 1px solid var(--timeflow-listy-row-border);
       }
@@ -1777,7 +1781,12 @@ export class TimeFlowCardBeta extends LitElement {
         <div class="card-content-listy">
           <div class="listy-header">
             <span class="listy-title">${this._getTitleText()}</span>
-            <span class="listy-count ${rows.length === 0 ? 'is-empty' : ''}">${rows.length}</span>
+            ${this._resolvedConfig.show_count === false ? nothing : html`
+              <span
+                class="listy-count ${rows.length === 0 ? 'is-empty' : ''}"
+                aria-label="${rows.length} ${rows.length === 1 ? 'row' : 'rows'}"
+              >${rows.length}</span>
+            `}
           </div>
 
           ${rows.length === 0

@@ -707,7 +707,11 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 9px 18px 9px 11px;
+        /* The chip sits 12px off every near edge, the same breathing room
+           classic-compact gives its icon. At the old 11px/9px the 44px chip was
+           flush with the row's padding box, which is what put its corner inside
+           the row's own corner arc. */
+        padding: 12px 18px 12px 12px;
         box-sizing: border-box;
         width: 100%;
         /* The same token ha-card uses, so rows are shaped by the user's theme
@@ -745,15 +749,19 @@ export class TimeFlowCardBeta extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 44px;
-        height: 44px;
-        border-radius: 13px;
+        width: var(--listy-icon-size, 40px);
+        height: var(--listy-icon-size, 40px);
+        /* The theme's own card radius, the same token classic-compact's icon
+           and the row itself use. */
+        border-radius: var(--ha-card-border-radius, 12px);
         flex-shrink: 0;
         background: var(--timeflow-listy-chip-bg);
       }
 
       .listy-row-chip ha-icon {
-        --mdc-icon-size: 24px;
+        /* Proportional to the chip, so resizing one resizes the other -
+           classic-compact sizes its glyph the same way. */
+        --mdc-icon-size: calc(var(--listy-icon-size, 40px) * 0.55);
         color: var(--secondary-text-color);
       }
 

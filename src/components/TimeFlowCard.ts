@@ -836,9 +836,77 @@ export class TimeFlowCardBeta extends LitElement {
         opacity: 0.45;
       }
 
+      /* ── Listy: what a finished row does to get noticed ────────────
+         Two of the four move only the icon, two move the whole pill. A
+         finished timer is the one row asking for something, so the motion is
+         short and repeats rather than playing once and going quiet. */
+      @keyframes listy-swing {
+        0%, 100% { transform: rotate(0deg); }
+        20% { transform: rotate(-13deg); }
+        40% { transform: rotate(11deg); }
+        60% { transform: rotate(-6deg); }
+        80% { transform: rotate(4deg); }
+      }
+
+      @keyframes listy-pulse {
+        0%, 100% { transform: scale(1); }
+        14% { transform: scale(1.18); }
+        28% { transform: scale(1); }
+        42% { transform: scale(1.12); }
+        70% { transform: scale(1); }
+      }
+
+      @keyframes listy-shake {
+        0%, 100% { transform: translateX(0); }
+        10% { transform: translateX(-2.5px); }
+        20% { transform: translateX(2.5px); }
+        30% { transform: translateX(-2px); }
+        40% { transform: translateX(2px); }
+        50% { transform: translateX(-1px); }
+        60% { transform: translateX(1px); }
+        70% { transform: translateX(0); }
+      }
+
+      @keyframes listy-hop {
+        0%, 100% { transform: translateY(0); }
+        35% { transform: translateY(-3.5px); }
+        50% { transform: translateY(0); }
+        65% { transform: translateY(-1.5px); }
+        80% { transform: translateY(0); }
+      }
+
+      .listy-row.anim-swing .listy-row-chip ha-icon {
+        display: inline-block;
+        transform-origin: 50% 10%;
+        animation: listy-swing 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      .listy-row.anim-pulse .listy-row-chip ha-icon {
+        display: inline-block;
+        transform-origin: center center;
+        animation: listy-pulse 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      }
+
+      .listy-row.anim-shake {
+        animation: listy-shake 1.8s ease-in-out infinite;
+      }
+
+      .listy-row.anim-hop {
+        animation: listy-hop 1.9s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .listy-ring-value {
           transition: none;
+        }
+
+        /* A row that will not move still has to read as finished: the ring is
+           already full and the subtitle already says so. */
+        .listy-row.anim-swing .listy-row-chip ha-icon,
+        .listy-row.anim-pulse .listy-row-chip ha-icon,
+        .listy-row.anim-shake,
+        .listy-row.anim-hop {
+          animation: none;
         }
       }
 
@@ -1813,6 +1881,18 @@ export class TimeFlowCardBeta extends LitElement {
    * middle of the list does not make every row below it jump to a new element
    * and replay its transitions.
    */
+  /**
+   * The animation class a finished row wears, or nothing.
+   *
+   * Only finished rows animate: a running row already moves - its ring fills
+   * every second - and a paused one is deliberately still.
+   */
+  private _expiredRowAnimation(row: ListRow): string {
+    const choice = this._resolvedConfig.expired_row_animation;
+    if (row.state !== 'finished' || !choice || choice === 'none') return '';
+    return `anim-${choice}`;
+  }
+
   private _renderListyRow(row: ListRow): TemplateResult {
     const rowStyles = [
       ...(row.background ? [`background: ${row.background}`] : []),
@@ -1820,7 +1900,10 @@ export class TimeFlowCardBeta extends LitElement {
     ].join('; ');
 
     return html`
-      <div class="listy-row ${row.state} ${row.textColor ? 'has-text-color' : ''}" style="${rowStyles}">
+      <div
+        class="listy-row ${row.state} ${this._expiredRowAnimation(row)} ${row.textColor ? 'has-text-color' : ''}"
+        style="${rowStyles}"
+      >
         <div
           class="listy-row-chip"
           style="${row.iconBackground ? `background: ${row.iconBackground}` : ''}"

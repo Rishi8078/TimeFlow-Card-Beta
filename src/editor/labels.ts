@@ -20,6 +20,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'auto_discover_timers': 'Native Timers',
   'max_timers': 'Maximum Timers Shown',
   'show_count': 'Row Count Badge',
+  'expired_row_animation': 'Finished Row Animation',
   'alexa_icon': 'Icon',
   'alexa_color': 'Icon Colour',
   'alexa_background': 'Chip Background',
@@ -97,6 +98,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   'creation_date': 'Where the progress ring starts filling from.',
   'count_up_goal_date': 'Optional goal/end date for count-up circle progress',
   'timer_entities': 'Leave empty to discover every native timer on the system',
+  'expired_row_animation': 'What a finished timer row does to get noticed. Respects the system\'s reduced-motion setting',
   'count_up_cycle': 'Optional cycle length for count-up progress: "30d", "12h", "90m", "24:00:00", or seconds',
 
   // Display

@@ -344,6 +344,21 @@ function discoverySection(caps: StyleCapabilities): FormSchema[] {
         { name: 'show_count', selector: { boolean: {} } },
       ],
     },
+    {
+      name: 'expired_row_animation',
+      selector: {
+        select: {
+          mode: 'dropdown',
+          options: [
+            { value: 'none', label: 'None' },
+            { value: 'swing', label: 'Swing the icon' },
+            { value: 'pulse', label: 'Pulse the icon' },
+            { value: 'shake', label: 'Shake the row' },
+            { value: 'hop', label: 'Hop the row' },
+          ],
+        },
+      },
+    },
   ];
 }
 

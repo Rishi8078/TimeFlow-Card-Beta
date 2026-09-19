@@ -129,4 +129,5 @@ junit.xml
 coverage.xml
 verify-fixes.js
 # Brag video scratch output
-brag-output/
+brag-output*/
+brag_assets_listy/

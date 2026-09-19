@@ -566,9 +566,7 @@ function e(e,t,i,s){var o,r=arguments.length,a=r<3?t:null===s?s=Object.getOwnPro
       }
 
       .listy-title {
-        /* A card heading, not a fourth row title: the rows are 1.02rem/700, so
-           at the old 1.05rem the header read as a peer of its own contents. */
-        font-size: var(--ha-card-header-font-size, 1.25rem);
+        font-size: 1.05rem;
         font-weight: 700;
         letter-spacing: -0.25px;
         line-height: 1.2;

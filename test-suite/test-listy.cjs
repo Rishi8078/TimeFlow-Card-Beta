@@ -328,6 +328,50 @@ function hassWith(states) {
       hassWith({ 'light.kitchen': { state: 'on', attributes: {} } })).length === 0);
 }
 
+// ── Home Assistant timer helpers ────────────────────────────────────────────
+
+{
+  const helper = (state, attrs) => ({ state, attributes: { friendly_name: 'Tea', icon: 'mdi:tea', editable: true, ...attrs } });
+  const running = helper('active', {
+    duration: '0:05:00', last_transition: 'started', remaining: '0:05:00',
+    finishes_at: new Date(Date.now() + 282000).toISOString(),
+  });
+  const paused = helper('paused', { duration: '0:05:00', last_transition: 'paused', remaining: '0:04:42' });
+  const idle = helper('idle', { duration: '0:05:00', last_transition: 'cancelled' });
+
+  const watched = [];
+  const found = TimerEntityService.discoverStandardTimers(
+    hassWith({ 'timer.tea': idle, 'light.kitchen': { state: 'on', attributes: {} } }),
+    (id) => watched.push(id));
+  check('Helper: an idle helper yields no rows but is watched',
+    found.length === 0 && watched.length === 1 && watched[0] === 'timer.tea',
+    `found ${found.length}, watched ${watched.join(', ')}`);
+
+  check('Helper: a running helper is discovered',
+    TimerEntityService.discoverStandardTimers(hassWith({ 'timer.tea': running })).length === 1);
+  check('Helper: a paused helper is discovered too',
+    TimerEntityService.discoverStandardTimers(hassWith({ 'timer.tea': paused })).length === 1);
+  check('Helper: a non-timer entity is never discovered',
+    TimerEntityService.discoverStandardTimers(
+      hassWith({ 'light.kitchen': { state: 'on', attributes: {} } })).length === 0);
+
+  // Paused helpers carry no finishes_at (core clears it on pause), so the row
+  // must read the frozen `remaining` instead of counting toward a stale end.
+  const service = new CountdownService({}, {});
+  service.beginPass();
+  const rows = service.listAllTimers({ auto_discover_timers: true },
+    hassWith({ 'timer.tea': paused }));
+  check('Helper: a paused helper row freezes at its remaining time',
+    rows.length === 1 && rows[0].remaining === 282 && rows[0].isPaused === true,
+    `${rows.length} row(s), remaining ${rows[0] && rows[0].remaining}`);
+  check('Helper: the row is titled by the helper it came from',
+    rows[0] && rows[0].userDefinedLabel === 'Tea' && rows[0].entityId === 'timer.tea');
+
+  service.beginPass();
+  check('Helper: discovery off means no rows',
+    service.listAllTimers({}, hassWith({ 'timer.tea': running })).length === 0);
+}
+
 // ── Aggregation across devices ──────────────────────────────────────────────
 
 {

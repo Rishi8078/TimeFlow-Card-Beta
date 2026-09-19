@@ -17,6 +17,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'auto_discover_alexa': 'Alexa Timers',
   'auto_discover_google': 'Google Home Timers',
   'auto_discover_voice_satellite': 'Voice Satellite Timers',
+  'auto_discover_timers': 'Timer Helpers',
   'max_timers': 'Maximum Timers Shown',
   'show_count': 'Row Count Badge',
   'alexa_icon': 'Icon',

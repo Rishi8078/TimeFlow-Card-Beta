@@ -1947,7 +1947,8 @@ export class TimeFlowCardBeta extends LitElement {
     ].join('; ');
 
     // Determine if this is a timer display (timer_entity or auto_discover_*)
-    const isTimerDisplay = this._resolvedConfig.timer_entity || this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google;
+    const isTimerDisplay = !!this._resolvedConfig.timer_entity
+      || TimerEntityService.hasAutoDiscovery(this._resolvedConfig);
     // For timers, always use compact format by default (show: 5h30m25s); for countdowns, use the calculated useCompact
     const timeFormatCompact = isTimerDisplay ? (compact_format !== false) : useCompact;
 
@@ -2609,7 +2610,7 @@ export class TimeFlowCardBeta extends LitElement {
     }
     
     // Fallback: for auto-discovery or expired state
-    if (this._resolvedConfig.auto_discover_alexa || this._resolvedConfig.auto_discover_google) {
+    if (TimerEntityService.hasAutoDiscovery(this._resolvedConfig)) {
       return 'Countdown Timer';
     }
     

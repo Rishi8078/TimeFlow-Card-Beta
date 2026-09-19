@@ -115,6 +115,7 @@ just that device's timers.
 | `title`            | string  | `"Countdown Timer"`     | Card title                           |
 | `creation_date`    | string  | `null`                  | Start date for progress              |
 | `hide_when_inactive` | boolean | `false`               | Hide the card while nothing is counting |
+| `auto_discover_timers` | boolean | `false`             | Discover Home Assistant `timer.*` helpers |
 | `expired_text`     | string  | `"Completed!"`       | Text when expired                    |
 | `show_*`           | boolean | `true`                  | Show time units                      |
 | `width/height`     | string  | `null`                  | Card dimensions                      |

@@ -181,6 +181,7 @@ export interface CardConfig {
   auto_discover_alexa?: boolean; // NEW: Automatically find and use Alexa timers
   auto_discover_google?: boolean; // NEW: Automatically find and use Google Home timers
   auto_discover_voice_satellite?: boolean; // Timers held by Voice Satellite assist_satellite entities
+  auto_discover_timers?: boolean; // Home Assistant's own timer.* helpers
 
   // Multi-timer list ('listy' style)
   max_timers?: number;            // Timer rows to draw before the list is truncated (default 5)

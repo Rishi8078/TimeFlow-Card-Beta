@@ -131,6 +131,7 @@ function sourceSection(source: SourceType, style: StyleName): FormSchema[] {
       schema: [
         { name: 'auto_discover_alexa', selector: { boolean: {} } },
         { name: 'auto_discover_google', selector: { boolean: {} } },
+        { name: 'auto_discover_voice_satellite', selector: { boolean: {} } },
         { name: 'auto_discover_timers', selector: { boolean: {} } },
       ],
     }];

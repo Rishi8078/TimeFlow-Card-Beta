@@ -118,6 +118,7 @@ just that device's timers.
 | `auto_discover_timers` | boolean | `false`             | Discover Home Assistant native `timer.*` entities |
 | `timer_entities`   | list    | `[]`                    | Native timers to discover; empty discovers all |
 | `expired_row_animation` | string | `none`             | Finished listy row: `swing`, `pulse`, `shake`, `hop` |
+| `show_name_in_countdown` | boolean | `true`           | `false` leaves the timer's name out of the countdown line |
 | `expired_text`     | string  | `"Completed!"`       | Text when expired                    |
 | `show_*`           | boolean | `true`                  | Show time units                      |
 | `width/height`     | string  | `null`                  | Card dimensions                      |

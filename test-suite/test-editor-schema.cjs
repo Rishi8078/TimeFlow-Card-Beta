@@ -489,6 +489,9 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     // Only pinned timer.* rows use it, and each of those sets its own
     // header_icon, which wins. Still honoured from YAML.
     'timer_icon',
+    // YAML-only for now (#61): it defaults to true, which a bare form switch
+    // would show as off, and eventy never draws the line it changes.
+    'show_name_in_countdown',
   ];
 
   const reachable = new Set();

@@ -235,6 +235,15 @@ export class TimeFlowCardEditorBeta extends LitElement {
                 display: block;
                 width: 100%;
             }
+            /* A switch row inside the group reads as one of its fields: the
+               form shrinks back to the switch so the label keeps its line, and
+               the label drops the heading weight. */
+            .units-section .editor-row ha-form {
+                width: auto;
+            }
+            .units-section .editor-row .editor-section-label {
+                font-weight: 400;
+            }
 
             /* The same, tinted: for a section holding several fields that need
                to read as one group. The tint is mixed from the text colour so
@@ -906,15 +915,18 @@ export class TimeFlowCardEditorBeta extends LitElement {
                         .computeLabel=${computeLabel}
                         .computeHelper=${this._computeHelper}
                     ></ha-form>
+                    <!-- Inside the group, under Compact Format: both word the
+                         countdown line, and out on its own this switch lined
+                         up with neither the group's labels nor its switches. -->
+                    ${nameSchema.length > 0
+                        ? this._renderSwitchRow(
+                            'sec-name-in-countdown',
+                            'Timer Name in Countdown',
+                            'Adds the timer or device name after the time, e.g. "4m remaining on Tea timer". Alexa and Google Home timers only.',
+                            displayCfg as CardConfig, nameSchema)
+                        : nothing}
                 </div>
             ` : nothing}
-            ${nameSchema.length > 0
-                ? this._renderSwitchRow(
-                    'sec-name-in-countdown',
-                    'Timer Name in Countdown',
-                    'Adds the timer or device name after the time, e.g. "4m remaining on Tea timer". Alexa and Google Home timers only.',
-                    displayCfg as CardConfig, nameSchema)
-                : nothing}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}

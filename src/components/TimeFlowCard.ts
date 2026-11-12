@@ -2846,6 +2846,6 @@ export class TimeFlowCardBeta extends LitElement {
 
   // Static version info
   static get version() {
-    return '4.0.0';
+    return '4.1.0';
   }
 }

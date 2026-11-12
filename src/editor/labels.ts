@@ -107,7 +107,6 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
   'subtitle': 'Shows time remaining by default; only set for custom text',
-  'show_name_in_countdown': 'Adds the timer or device name after the time, e.g. "4m remaining on Tea timer". Alexa and Google Home timers only.',
 
   // Colors
 

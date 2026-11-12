@@ -4,7 +4,7 @@ import { CardConfig } from '../types/index';
 import '../editor/ha-form-tf-template';
 import '../editor/ha-form-tf-group';
 import '../editor/ha-form-tf-countdowns';
-import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeHideWhenInactiveSchema, computeTextSchema, computeCountdownsSchema, computeDiscoverySchema, computeUnitsSchema, styleSchema } from '../editor/schema';
+import { STYLE_OPTIONS, computeExpiredSchema, computePanelsSchema, computeSourceSchema, computeHideWhenInactiveSchema, computeNameInCountdownSchema, computeTextSchema, computeCountdownsSchema, computeDiscoverySchema, computeUnitsSchema, styleSchema } from '../editor/schema';
 import { SourceType, applySource, availableSources, getCapabilities, getSourceType, getStyle, resolveSource, usesDateFields } from '../editor/capabilities';
 import { computeLabel, computeHelper } from '../editor/labels';
 
@@ -420,20 +420,17 @@ export class TimeFlowCardEditorBeta extends LitElement {
     }
 
     /**
-     * hide_when_inactive: one switch whose explanation is a sentence long.
+     * One switch whose explanation is a sentence long: hide_when_inactive and
+     * show_name_in_countdown.
      *
-     * Rendered outside the source form so that sentence can sit on hover
+     * Rendered outside the other forms so that sentence can sit on hover
      * instead of under the field - ha-tooltip binds by id within this shadow
      * root, which is something nothing inside ha-form can offer.
      */
-    private _renderHideWhenInactive(displayCfg: CardConfig, schema: unknown[]): TemplateResult {
+    private _renderSwitchRow(id: string, label: string, help: string, displayCfg: CardConfig, schema: unknown[]): TemplateResult {
         return html`
             <div class="editor-row">
-                ${this._sectionHeading(
-                    'sec-hide-inactive',
-                    'Hide When Inactive',
-                    'Removes the card from the view while there is nothing to count: before the start date, and once the target or goal date has passed.'
-                )}
+                ${this._sectionHeading(id, label, help)}
                 <ha-form
                     .hass=${this.hass}
                     .data=${displayCfg}
@@ -785,7 +782,8 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const discoverySchema = computeDiscoverySchema(displayCfg as CardConfig);
         const countdownsSchema = computeCountdownsSchema(displayCfg as CardConfig);
         const expiredSchema = computeExpiredSchema(displayCfg as CardConfig);
-        const unitsSchema = computeUnitsSchema(displayCfg as CardConfig, source);
+        const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
+        const nameSchema = computeNameInCountdownSchema(displayCfg as CardConfig, source);
         const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
         const caps = getCapabilities(displayCfg as CardConfig);
         const showsTitle = caps.title;
@@ -827,7 +825,11 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ${dateFields}
             ${isList ? nothing : this._renderSourceFields(displayCfg as CardConfig, sourceSchema, source)}
             ${hideInactiveSchema.length > 0
-                ? this._renderHideWhenInactive(displayCfg as CardConfig, hideInactiveSchema)
+                ? this._renderSwitchRow(
+                    'sec-hide-inactive',
+                    'Hide When Inactive',
+                    'Removes the card from the view while there is nothing to count: before the start date, and once the target or goal date has passed.',
+                    displayCfg as CardConfig, hideInactiveSchema)
                 : nothing}
             ${isList && showsTitle ? this._renderTitleField() : nothing}
             <!-- computeLabel is deliberately not blanked here: ha-form hands it
@@ -906,6 +908,13 @@ export class TimeFlowCardEditorBeta extends LitElement {
                     ></ha-form>
                 </div>
             ` : nothing}
+            ${nameSchema.length > 0
+                ? this._renderSwitchRow(
+                    'sec-name-in-countdown',
+                    'Timer Name in Countdown',
+                    'Adds the timer or device name after the time, e.g. "4m remaining on Tea timer". Alexa and Google Home timers only.',
+                    displayCfg as CardConfig, nameSchema)
+                : nothing}
             <ha-form
                 .hass=${this.hass}
                 .data=${displayCfg}

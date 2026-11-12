@@ -411,7 +411,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 {
   const { computeSourceSchema, computeHideWhenInactiveSchema, computeDiscoverySchema,
           computeCountdownsSchema, computeTextSchema, computeExpiredSchema, computeUnitsSchema,
-          computePanelsSchema } =
+          computePanelsSchema, computeNameInCountdownSchema } =
     require(path.join(outDir, 'editor', 'schema.js'));
 
   for (const style of STYLES) {
@@ -426,7 +426,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
         ...computeSourceSchema(cfg), ...computeHideWhenInactiveSchema(cfg),
         ...computeCountdownsSchema(cfg), ...computeDiscoverySchema(cfg),
         ...computeTextSchema(cfg), ...computeExpiredSchema(cfg), ...computeUnitsSchema(cfg),
-        ...computePanelsSchema(cfg),
+        ...computeNameInCountdownSchema(cfg), ...computePanelsSchema(cfg),
       ]);
       if (whole !== parts) {
         check(`Split: parts reassemble on ${style}`, false, JSON.stringify(cfg));
@@ -447,7 +447,7 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
 
   // show_name_in_countdown (#61) follows the line it changes: a timer's
   // countdown line, which a date card and eventy never draw.
-  const nameSwitch = (cfg) => fieldNames(computeUnitsSchema(cfg)).includes('show_name_in_countdown');
+  const nameSwitch = (cfg) => fieldNames(computeNameInCountdownSchema(cfg)).includes('show_name_in_countdown');
   check('Name switch: offered for a timer entity', nameSwitch({ timer_entity: 'sensor.x_next_timer' }));
   check('Name switch: offered for auto-discovery', nameSwitch({ style: 'classic-compact', auto_discover_alexa: true }));
   check('Name switch: not offered for a date card', !nameSwitch(dateCfg()));

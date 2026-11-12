@@ -220,7 +220,7 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
  * helper text is the only one here, so inside a two-column grid it made its own
  * row taller than the rest and threw the toggles out of alignment.
  */
-function timeUnitsSection(caps: StyleCapabilities, source: SourceType, style: StyleName): FormSchema[] {
+function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
   const units: FormSchema[] = [];
 
   if (caps.timeUnits) {
@@ -238,10 +238,6 @@ function timeUnitsSection(caps: StyleCapabilities, source: SourceType, style: St
   const schema: FormSchema[] = [];
   if (units.length > 0) schema.push({ type: 'grid', schema: units });
   if (caps.compactFormat) schema.push({ name: 'compact_format', selector: { boolean: {} } });
-  // Only a timer's countdown line names anything, and eventy puts a date there.
-  if (caps.subtitle && !usesDateFields(source) && style !== 'eventy') {
-    schema.push({ name: 'show_name_in_countdown', selector: { boolean: {} } });
-  }
 
   return schema;
 }
@@ -532,7 +528,8 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
     ...computeDiscoverySchema(config),
     ...computeTextSchema(config, source),
     ...computeExpiredSchema(config),
-    ...computeUnitsSchema(config, source),
+    ...computeUnitsSchema(config),
+    ...computeNameInCountdownSchema(config, source),
     ...computePanelsSchema(config),
   ];
 }
@@ -591,9 +588,20 @@ export function computeExpiredSchema(config: CardConfig): FormSchema[] {
  * Not on the list style: it has no units to toggle, and its two format
  * switches sit with the discovery settings whose rows they format.
  */
-export function computeUnitsSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+export function computeUnitsSchema(config: CardConfig): FormSchema[] {
   if (getStyle(config) === 'listy') return [];
-  return timeUnitsSection(getCapabilities(config), source ?? getSourceType(config), getStyle(config));
+  return timeUnitsSection(getCapabilities(config));
+}
+
+/**
+ * The show_name_in_countdown switch, which the editor renders beside a heading
+ * of its own so its explanation can sit on hover. Only a timer's countdown
+ * line names anything, and eventy puts a date there.
+ */
+export function computeNameInCountdownSchema(config: CardConfig, source?: SourceType): FormSchema[] {
+  if (!getCapabilities(config).subtitle || getStyle(config) === 'eventy'
+      || usesDateFields(source ?? getSourceType(config))) return [];
+  return [{ name: 'show_name_in_countdown', selector: { boolean: {} } }];
 }
 
 /** The collapsible panels at the foot of the form. */

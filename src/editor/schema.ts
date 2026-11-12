@@ -220,7 +220,7 @@ function headerIconSection(caps: StyleCapabilities): FormSchema[] {
  * helper text is the only one here, so inside a two-column grid it made its own
  * row taller than the rest and threw the toggles out of alignment.
  */
-function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
+function timeUnitsSection(caps: StyleCapabilities, source: SourceType, style: StyleName): FormSchema[] {
   const units: FormSchema[] = [];
 
   if (caps.timeUnits) {
@@ -238,6 +238,10 @@ function timeUnitsSection(caps: StyleCapabilities): FormSchema[] {
   const schema: FormSchema[] = [];
   if (units.length > 0) schema.push({ type: 'grid', schema: units });
   if (caps.compactFormat) schema.push({ name: 'compact_format', selector: { boolean: {} } });
+  // Only a timer's countdown line names anything, and eventy puts a date there.
+  if (caps.subtitle && !usesDateFields(source) && style !== 'eventy') {
+    schema.push({ name: 'show_name_in_countdown', selector: { boolean: {} } });
+  }
 
   return schema;
 }
@@ -528,7 +532,7 @@ export function computeSchema(config: CardConfig, source?: SourceType): FormSche
     ...computeDiscoverySchema(config),
     ...computeTextSchema(config, source),
     ...computeExpiredSchema(config),
-    ...computeUnitsSchema(config),
+    ...computeUnitsSchema(config, source),
     ...computePanelsSchema(config),
   ];
 }
@@ -587,9 +591,9 @@ export function computeExpiredSchema(config: CardConfig): FormSchema[] {
  * Not on the list style: it has no units to toggle, and its two format
  * switches sit with the discovery settings whose rows they format.
  */
-export function computeUnitsSchema(config: CardConfig): FormSchema[] {
+export function computeUnitsSchema(config: CardConfig, source?: SourceType): FormSchema[] {
   if (getStyle(config) === 'listy') return [];
-  return timeUnitsSection(getCapabilities(config));
+  return timeUnitsSection(getCapabilities(config), source ?? getSourceType(config), getStyle(config));
 }
 
 /** The collapsible panels at the foot of the form. */

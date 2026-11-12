@@ -55,6 +55,7 @@ export const FIELD_LABELS: Record<string, string> = {
   'show_years': 'Years',
   'show_weeks': 'Weeks',
   'compact_format': 'Compact Format',
+  'show_name_in_countdown': 'Timer Name in Countdown',
   'subtitle_prefix': 'Subtitle Prefix',
   'subtitle_suffix': 'Subtitle Suffix',
   'expired_animation': 'Expired Animation',
@@ -106,6 +107,7 @@ export const FIELD_HELPERS: Record<string, string> = {
   // Display
   'title': 'Card title - supports templates: "{{ states(\'sensor.event_name\') }}"',
   'subtitle': 'Shows time remaining by default; only set for custom text',
+  'show_name_in_countdown': 'Adds the timer or device name after the time, e.g. "4m remaining on Tea timer". Alexa and Google Home timers only.',
 
   // Colors
 

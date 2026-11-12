@@ -368,6 +368,10 @@ export class TimeFlowCardEditorBeta extends LitElement {
         if (!wasExplicit && value.compact_format === previousDisplayedCompactFormat) {
             delete newConfig.compact_format;
         }
+        // On is the default, so only an explicit "off" is worth writing down.
+        if (newConfig.show_name_in_countdown === true) {
+            delete newConfig.show_name_in_countdown;
+        }
 
         this._config = newConfig;
         this._fireConfigChanged(newConfig);
@@ -769,7 +773,9 @@ export class TimeFlowCardEditorBeta extends LitElement {
             ...cfg,
             mode,
             // Show the effective compact_format value for UI consistency
-            compact_format: this._getEffectiveCompactFormat()
+            compact_format: this._getEffectiveCompactFormat(),
+            // Unset means on, and a bare switch would draw unset as off.
+            show_name_in_countdown: cfg.show_name_in_countdown !== false
         };
 
         const source = resolveSource(displayCfg as CardConfig, this._pendingSource);
@@ -779,7 +785,7 @@ export class TimeFlowCardEditorBeta extends LitElement {
         const discoverySchema = computeDiscoverySchema(displayCfg as CardConfig);
         const countdownsSchema = computeCountdownsSchema(displayCfg as CardConfig);
         const expiredSchema = computeExpiredSchema(displayCfg as CardConfig);
-        const unitsSchema = computeUnitsSchema(displayCfg as CardConfig);
+        const unitsSchema = computeUnitsSchema(displayCfg as CardConfig, source);
         const panelsSchema = computePanelsSchema(displayCfg as CardConfig);
         const caps = getCapabilities(displayCfg as CardConfig);
         const showsTitle = caps.title;

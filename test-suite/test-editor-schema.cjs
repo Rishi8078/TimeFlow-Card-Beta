@@ -444,6 +444,14 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     middle.join(',') === 'subtitle_prefix,subtitle_suffix', middle.join(','));
   const units = fieldNames(computeUnitsSchema(dateCfg()));
   check('Split: the units part carries the toggles', units.includes('show_days') && units.includes('show_seconds'));
+
+  // show_name_in_countdown (#61) follows the line it changes: a timer's
+  // countdown line, which a date card and eventy never draw.
+  const nameSwitch = (cfg) => fieldNames(computeUnitsSchema(cfg)).includes('show_name_in_countdown');
+  check('Name switch: offered for a timer entity', nameSwitch({ timer_entity: 'sensor.x_next_timer' }));
+  check('Name switch: offered for auto-discovery', nameSwitch({ style: 'classic-compact', auto_discover_alexa: true }));
+  check('Name switch: not offered for a date card', !nameSwitch(dateCfg()));
+  check('Name switch: not offered on eventy', !nameSwitch({ style: 'eventy', timer_entity: 'sensor.x_next_timer' }));
   check('Split: compact_format rides with the units', units.includes('compact_format'));
 
   // expired_animation belongs with the expired text, not with the colours.
@@ -489,9 +497,6 @@ const dateCfg = (extra = {}) => ({ type: 'custom:timeflow-card-beta', target_dat
     // Only pinned timer.* rows use it, and each of those sets its own
     // header_icon, which wins. Still honoured from YAML.
     'timer_icon',
-    // YAML-only for now (#61): it defaults to true, which a bare form switch
-    // would show as off, and eventy never draws the line it changes.
-    'show_name_in_countdown',
   ];
 
   const reachable = new Set();
